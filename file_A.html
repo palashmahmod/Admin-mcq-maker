@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>ইউজার আইডি তৈরি - Palash Mahmod</title>
+    
+    <script>
+        document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=' + Date.now() + '">');
+    </script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --cream-bg: #FFFBF0;
+            --white: #ffffff;
+            --success: #27ae60;
+            --danger: #e74c3c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: var(--cream-bg);
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center;
+        }
+        .container {
+            width: 100%; max-width: 600px;
+            background: var(--white);
+            padding: 25px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px;
+        }
+        .back-btn {
+            text-decoration: none; color: var(--primary);
+            font-weight: bold; display: flex; align-items: center; gap: 8px;
+            background: #eee; padding: 8px 15px; border-radius: 10px;
+        }
+        .btn-toggle {
+            background: var(--accent); color: white; border: none;
+            padding: 12px 20px; border-radius: 10px; font-weight: bold;
+            cursor: pointer; width: 100%; margin-bottom: 20px;
+            box-shadow: 0 4px 0px #2980b9; transition: 0.2s;
+        }
+        .btn-toggle:active { transform: translateY(2px); box-shadow: 0 2px 0px #2980b9; }
+        #input-form {
+            display: none; background: #fdfdfd; padding: 20px;
+            border-radius: 15px; border: 1px solid #eee; margin-bottom: 30px;
+        }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary); }
+        input, select {
+            width: 100%; padding: 12px; border: 2px solid #e2e8f0;
+            border-radius: 10px; box-sizing: border-box; font-size: 15px;
+        }
+        .btn-row { display: flex; gap: 15px; margin-top: 15px; }
+        .btn {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            font-weight: bold; cursor: pointer; color: white;
+            box-shadow: 0 4px 0px rgba(0,0,0,0.2);
+        }
+        .btn-save { background: var(--success); }
+        .btn-cancel { background: var(--danger); }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0px rgba(0,0,0,0.2); }
+        .user-list { margin-top: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
+        th { background: var(--primary); color: white; }
+        .del-btn { color: var(--danger); cursor: pointer; border: none; background: none; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-bar">
+        <a href="index.html" id="homeLink" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <h2 style="margin:0; font-size: 18px;">ইউজার ম্যানেজমেন্ট</h2>
+    </div>
+
+    <button class="btn-toggle" onclick="toggleForm()" id="toggleBtn">
+        <i class="fas fa-plus-circle"></i> আইডি তৈরি করুন
+    </button>
+
+    <div id="input-form">
+        <div class="form-group">
+            <label>শিক্ষার্থীর নাম:</label>
+            <input type="text" id="name" placeholder="নাম লিখুন">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <div class="form-group" style="flex:1">
+                <label>শ্রেণি:</label>
+                <select id="class">
+                    <option value="৬ষ্ঠ">৬ষ্ঠ</option>
+                    <option value="৭ম">৭ম</option>
+                    <option value="৮ম">৮ম</option>
+                    <option value="৯ম">৯ম</option>
+                    <option value="১০ম">১০ম</option>
+                    <option value="এসএসসি">এসএসসি</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>শাখা:</label>
+                <select id="section">
+                    <option value="ক">ক</option>
+                    <option value="খ">খ</option>
+                    <option value="গ">গ</option>
+                    <option value="ঘ">ঘ</option>
+                </select>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <div class="form-group" style="flex:1">
+                <label>রোল নং (বাংলায়):</label>
+                <input type="text" id="roll" placeholder="উদা: ১২" oninput="toBanglaNum(this)">
+            </div>
+            <div class="form-group" style="flex:1">
+                <label>আইডি নং (English):</label>
+                <input type="number" id="userId" placeholder="Login ID">
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-save" onclick="saveUser()">সেভ করুন</button>
+            <button class="btn btn-cancel" onclick="toggleForm()">বাতিল</button>
+        </div>
+    </div>
+
+    <div class="user-list">
+        <h3 style="font-size: 16px; color: var(--primary);"><i class="fas fa-users"></i> ইউজার তালিকা</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>আইডি</th>
+                    <th>নাম</th>
+                    <th>শ্রেণি</th>
+                    <th>শাখা</th>
+                    <th>রোল</th>
+                    <th>#</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Home Link Cache Busting
+    document.getElementById('homeLink').href = "index.html?v=" + Date.now();
+
+    // Firebase Configuration with your API Key
+    const firebaseConfig = {
+        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
+        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
+        projectId: "quiz-storage-d8707"
+    };
+    
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+
+    window.onload = displayUsers;
+
+    function toggleForm() {
+        const form = document.getElementById('input-form');
+        const btn = document.getElementById('toggleBtn');
+        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+        btn.style.display = (form.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function toBanglaNum(input) {
+        const banglaDigits = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+        input.value = input.value.split('').map(digit => banglaDigits[digit] || digit).join('');
+    }
+
+    function saveUser() {
+        const name = document.getElementById('name').value;
+        const cls = document.getElementById('class').value;
+        const section = document.getElementById('section').value;
+        const roll = document.getElementById('roll').value;
+        const userId = document.getElementById('userId').value;
+
+        if(!name || !roll || !userId) {
+            alert("সবগুলো তথ্য সঠিকভাবে দিন!");
+            return;
+        }
+
+        let users = JSON.parse(localStorage.getItem('studentDB')) || [];
+        if(users.some(u => u.userId === userId)) {
+            alert("এই আইডি নং টি আগে ব্যবহার করা হয়েছে!");
+            return;
+        }
+
+        const userData = { name, cls, section, roll, userId, lastUpdated: Date.now() };
+
+        // Firebase-এ সেভ করা
+        db.ref('users/' + userId).set(userData)
+        .then(() => {
+            // সফল হলে লোকাল লিস্টে যোগ করা
+            users.push(userData);
+            const classOrder = {"৬ষ্ঠ":1, "৭ম":2, "৮ম":3, "৯ম":4, "১০ম":5, "এসএসসি":6};
+            users.sort((a, b) => (classOrder[a.cls] - classOrder[b.cls]) || a.roll.localeCompare(b.roll, 'bn'));
+            
+            localStorage.setItem('studentDB', JSON.stringify(users));
+            clearForm();
+            displayUsers();
+            toggleForm();
+            alert("সফলভাবে ডাটাবেজে সেভ হয়েছে!");
+        })
+        .catch(err => alert("ফায়ারবেস ত্রুটি: " + err.message));
+    }
+
+    function displayUsers() {
+        const users = JSON.parse(localStorage.getItem('studentDB')) || [];
+        const tbody = document.getElementById('user-table-body');
+        tbody.innerHTML = '';
+        users.forEach((u, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${u.userId}</b></td>
+                    <td>${u.name}</td>
+                    <td>${u.cls}</td>
+                    <td>${u.section}</td>
+                    <td>${u.roll}</td>
+                    <td><button class="del-btn" onclick="deleteUser('${u.userId}', ${index})"><i class="fas fa-trash-alt"></i></button></td>
+                </tr>`;
+        });
+    }
+
+    function deleteUser(uId, index) {
+        if(confirm("মুছে ফেলতে চান? ডাটাবেজ থেকেও মুছে যাবে।")) {
+            db.ref('users/' + uId).remove().then(() => {
+                let users = JSON.parse(localStorage.getItem('studentDB'));
+                users.splice(index, 1);
+                localStorage.setItem('studentDB', JSON.stringify(users));
+                displayUsers();
+            });
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('name').value = '';
+        document.getElementById('roll').value = '';
+        document.getElementById('userId').value = '';
+    }
+</script>
+</body>
+</html>
