@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced MCQ Builder - Prevention Integrated</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] },
+            chtml: { mtextInheritFont: true }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --cream: #FFFBF0; --danger: #e74c3c; --success: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--cream); margin: 0; padding-top: 85px; display: flex; justify-content: center; }
+        .sticky-header { position: fixed; top: 0; left: 0; width: 100%; background: var(--primary); color: white; padding: 12px 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .nav-content { max-width: 800px; margin: auto; display: flex; justify-content: space-around; align-items: center; }
+        .btn-nav { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; text-decoration: none; }
+        .container { width: 95%; max-width: 800px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 50px; }
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
+        input, textarea { width: 100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
+        textarea { resize: vertical; min-height: 80px; }
+        .q-card { border: 2px solid #e2e8f0; padding: 25px; border-radius: 18px; margin-bottom: 25px; position: relative; }
+        .btn-del { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .opt-row { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+        .preview-box { margin-top: 15px; padding: 15px; background: #fefce8; border: 1px dashed #facc15; border-radius: 10px; }
+        .preview-img { max-width: 100%; height: auto; margin: 10px 0; display: none; border-radius: 5px; }
+        .btn-add-q { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-header">
+    <div class="nav-content">
+        <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
+        <button class="btn-nav" onclick="saveToStorage()"><i class="fas fa-save"></i> সেইভ</button>
+        <button class="btn-nav" onclick="generateFile()"><i class="fas fa-download"></i> ডাউনলোড</button>
+        <button class="btn-nav" style="background:var(--danger)" onclick="clearEverything()"><i class="fas fa-trash"></i> সব মুছুন</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="config-grid">
+        <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
+        <div><label>শ্রেণি:</label><input type="text" id="quizClass" placeholder="শ্রেণি"></div>
+        <div><label>বিষয়:</label><input type="text" id="quizSubject" placeholder="বিষয়"></div>
+        <div><label>অধ্যায়ের নাম:</label><input type="text" id="quizChapter" placeholder="অধ্যায় (যেমন: ২য়)"></div>
+        <div><label>পূর্ণমান:</label><input type="text" id="quizTotalMarks" placeholder="পূর্ণমান"></div>
+        <div><label>সময় (মি:):</label><input type="text" id="quizTime" placeholder="সময়"></div>
+        <div><label>ফাইল নাম:</label><input type="text" id="fileName" placeholder="যেমন: 601"></div>
+    </div>
+    <div id="questions-area"></div>
+    <button class="btn-add-q" onclick="addQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
+</div>
+
+<script>
+    let qCount = 0;
+    let questionImages = {};
+
+    function addQuestion(savedData = null) {
+        qCount++;
+        const currentId = Date.now() + Math.floor(Math.random() * 1000);
+        const area = document.getElementById('questions-area');
+        const div = document.createElement('div');
+        div.className = 'q-card';
+        div.id = `q-block-${currentId}`;
+        
+        div.innerHTML = `
+            <button class="btn-del" onclick="removeQ('${currentId}')">বাতিল</button>
+            <b class="q-num-display">প্রশ্ন নং: </b>
+            <textarea class="q-text" placeholder="প্রশ্ন লিখুন..." oninput="updatePreview('${currentId}')">${savedData ? savedData.q : ''}</textarea>
+            <input type="file" class="img-input" accept="image/*" onchange="handleImage(event, '${currentId}')">
+            <div class="opt-row"><span>ক)</span><input type="text" class="o1" value="${savedData ? savedData.o1 : ''}" oninput="updatePreview('${currentId}')"> <input type="radio" name="ans-${currentId}" value="ক" ${savedData?.ans === 'ক' || !savedData ? 'checked' : ''}></div>
+            <div class="opt-row"><span>খ)</span><input type="text" class="o2" value="${savedData ? savedData.o2 : ''}" oninput="updatePreview('${currentId}')"> <input type="radio" name="ans-${currentId}" value="খ" ${savedData?.ans === 'খ' ? 'checked' : ''}></div>
+            <div class="opt-row"><span>গ)</span><input type="text" class="o3" value="${savedData ? savedData.o3 : ''}" oninput="updatePreview('${currentId}')"> <input type="radio" name="ans-${currentId}" value="গ" ${savedData?.ans === 'গ' ? 'checked' : ''}></div>
+            <div class="opt-row"><span>ঘ)</span><input type="text" class="o4" value="${savedData ? savedData.o4 : ''}" oninput="updatePreview('${currentId}')"> <input type="radio" name="ans-${currentId}" value="ঘ" ${savedData?.ans === 'ঘ' ? 'checked' : ''}></div>
+            <div class="preview-box" id="preview-${currentId}">
+                <div id="pt-${currentId}"></div>
+                <img id="pi-${currentId}" class="preview-img">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                    <div id="po1-${currentId}"></div><div id="po2-${currentId}"></div>
+                    <div id="po3-${currentId}"></div><div id="po4-${currentId}"></div>
+                </div>
+            </div>
+        `;
+        area.appendChild(div);
+        
+        if(savedData && savedData.img) {
+            questionImages[currentId] = savedData.img;
+            const pImg = document.getElementById(`pi-${currentId}`);
+            pImg.src = savedData.img;
+            pImg.style.display = 'block';
+        }
+        reIndexQuestions();
+        updatePreview(currentId);
+    }
+
+    function reIndexQuestions() {
+        const cards = document.querySelectorAll('.q-card');
+        cards.forEach((card, index) => {
+            card.querySelector('.q-num-display').innerText = `প্রশ্ন নং: ${index + 1}`;
+        });
+    }
+
+    function removeQ(id) { 
+        const el = document.getElementById(`q-block-${id}`);
+        if(el) {
+            el.remove(); 
+            delete questionImages[id];
+            reIndexQuestions();
+        }
+    }
+
+    function handleImage(e, id) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            questionImages[id] = event.target.result;
+            const pImg = document.getElementById(`pi-${id}`);
+            pImg.src = event.target.result;
+            pImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function cleanMath(text) {
+        if(!text) return "";
+        return text.replace(/sqrt\((.*?)\)/g, "\\( \\sqrt{$1} \\)")
+                   .replace(/(\d+|[a-zA-Z]+)\/(\d+|[a-zA-Z]+)/g, "\\( \\frac{$1}{$2} \\)")
+                   .replace(/\^(\d+|[a-zA-Z]+)/g, "\\( ^{$1} \\)");
+    }
+
+    function updatePreview(id) {
+        const b = document.getElementById(`q-block-${id}`);
+        if(!b) return;
+        document.getElementById(`pt-${id}`).innerHTML = cleanMath(b.querySelector('.q-text').value).replace(/\n/g, '<br>');
+        document.getElementById(`po1-${id}`).innerHTML = "ক) " + cleanMath(b.querySelector('.o1').value);
+        document.getElementById(`po2-${id}`).innerHTML = "খ) " + cleanMath(b.querySelector('.o2').value);
+        document.getElementById(`po3-${id}`).innerHTML = "গ) " + cleanMath(b.querySelector('.o3').value);
+        document.getElementById(`po4-${id}`).innerHTML = "ঘ) " + cleanMath(b.querySelector('.o4').value);
+        MathJax.typesetPromise();
+    }
+
+    function saveToStorage() {
+        const questions = [];
+        document.querySelectorAll('.q-card').forEach(card => {
+            const id = card.id.split('-')[2];
+            questions.push({
+                q: card.querySelector('.q-text').value,
+                o1: card.querySelector('.o1').value,
+                o2: card.querySelector('.o2').value,
+                o3: card.querySelector('.o3').value,
+                o4: card.querySelector('.o4').value,
+                ans: card.querySelector('input[type="radio"]:checked').value,
+                img: questionImages[id] || null
+            });
+        });
+        localStorage.setItem('mcq_draft_v3', JSON.stringify({
+            title: document.getElementById('quizTitle').value,
+            cls: document.getElementById('quizClass').value,
+            sub: document.getElementById('quizSubject').value,
+            chapter: document.getElementById('quizChapter').value,
+            marks: document.getElementById('quizTotalMarks').value,
+            time: document.getElementById('quizTime').value,
+            fName: document.getElementById('fileName').value,
+            questions: questions
+        }));
+        alert("তথ্য সেইভ হয়েছে!");
+    }
+
+    window.onload = () => {
+        const saved = JSON.parse(localStorage.getItem('mcq_draft_v3'));
+        if(saved) {
+            document.getElementById('quizTitle').value = saved.title || "";
+            document.getElementById('quizClass').value = saved.cls || "";
+            document.getElementById('quizSubject').value = saved.sub || "";
+            document.getElementById('quizChapter').value = saved.chapter || "";
+            document.getElementById('quizTotalMarks').value = saved.marks || "";
+            document.getElementById('quizTime').value = saved.time || "";
+            document.getElementById('fileName').value = saved.fName || "";
+            saved.questions.forEach(q => addQuestion(q));
+        }
+    };
+
+    function clearEverything() { if(confirm("সব মুছবেন?")) { localStorage.removeItem('mcq_draft_v3'); location.reload(); } }
+    
+    function bnToEn(str) {
+        const bn = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9'};
+        return str.toString().replace(/[০-৯]/g, m => bn[m]);
+    }
+
+    function generateFile() {
+        const rawTime = document.getElementById('quizTime').value || '30';
+        const info = {
+            title: document.getElementById('quizTitle').value || 'মডেল টেস্ট',
+            cls: document.getElementById('quizClass').value || '',
+            sub: document.getElementById('quizSubject').value || '',
+            chapter: document.getElementById('quizChapter').value || '',
+            marks: document.getElementById('quizTotalMarks').value || '',
+            fileName: document.getElementById('fileName').value || 'quiz',
+            timeTxt: rawTime,
+            timeNum: bnToEn(rawTime)
+        };
+
+        let qHTML = '';
+        let sols = {};
+        document.querySelectorAll('.q-card').forEach((block, i) => {
+            const num = i + 1;
+            const bId = block.id.split('-')[2];
+            const qTxt = cleanMath(block.querySelector('.q-text').value).replace(/\n/g, '<br>');
+            const imgData = questionImages[bId];
+            const imgTag = imgData ? `<img src="${imgData}" style="max-width:100%; display:block; margin:10px 0; border-radius:8px;">` : '';
+            sols[num] = block.querySelector(`input[name="ans-${bId}"]:checked`).value;
+            qHTML += `
+            <div class="question-card" id="q${num}">
+                <div class="q-text">${num}. ${qTxt}</div>
+                ${imgTag}
+                <div class="options-grid">
+                    <div class="option-btn" onclick="window.setAnswer(${num}, 'ক', this)">ক) ${cleanMath(block.querySelector('.o1').value)}</div>
+                    <div class="option-btn" onclick="window.setAnswer(${num}, 'খ', this)">খ) ${cleanMath(block.querySelector('.o2').value)}</div>
+                    <div class="option-btn" onclick="window.setAnswer(${num}, 'গ', this)">গ) ${cleanMath(block.querySelector('.o3').value)}</div>
+                    <div class="option-btn" onclick="window.setAnswer(${num}, 'ঘ', this)">ঘ) ${cleanMath(block.querySelector('.o4').value)}</div>
+                </div>
+            </div>`;
+        });
+
+        const template = `<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>${info.title}</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 50px; }
+        .start-screen { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .header-fixed { position: sticky; top: 0; background: #2c3e50; color: white; padding: 10px; z-index: 1000; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { max-width: 700px; margin: 20px auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .question-card { margin-bottom: 30px; padding: 15px; border-bottom: 1px solid #eee; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .option-btn { border: 2px solid #ddd; padding: 12px; border-radius: 10px; cursor: pointer; background: #fff; position: relative; }
+        .selected { border-color: #3498db !important; background: #e3f2fd !important; }
+        .correct { background: #d4edda !important; border-color: #27ae60 !important; }
+        .wrong { background: #f8d7da !important; border-color: #e74c3c !important; }
+        .tick { position: absolute; right: 10px; color: #27ae60; font-weight: bold; }
+        .btn-main { background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .res-box { background: #fff; padding: 20px; border-radius: 15px; margin-top: 20px; border: 2px solid #3498db; }
+        img { max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+    <div id="start-screen" class="start-screen">
+        <h1>${info.title}</h1>
+        <p>শ্রেণি: ${info.cls} | বিষয়: ${info.sub} | অধ্যায়: ${info.chapter}</p>
+        <p>পূর্ণমান: ${info.marks} | সময়: ${info.timeTxt} মিনিট</p>
+        <button class="btn-main" id="startBtn">পরীক্ষা শুরু করুন</button>
+    </div>
+    <div id="quiz-content" style="display:none;">
+        <div class="header-fixed">
+            <div>সময়: <span id="clock">${info.timeTxt}:00</span></div>
+            <div>পূরণ: <span id="answered">0</span>/${Object.keys(sols).length}</div>
+            <button class="btn-main" style="padding:8px 15px; font-size:14px; background:#e74c3c" id="submitBtn">সাবমিট</button>
+        </div>
+        <div class="container" id="mainArea">
+            <div id="resDisplay"></div>
+            ${qHTML}
+        </div>
+    </div>
+    <script>
+        (function() {
+            var sol = ${JSON.stringify(sols)};
+            var userAns = JSON.parse(sessionStorage.getItem('userAns_${info.fileName}')) || {}; 
+            var totalSeconds = parseInt("${info.timeNum}") * 60;
+            var isDone = sessionStorage.getItem('isDone_${info.fileName}') === 'true';
+            var startTimeFormatted = sessionStorage.getItem('startTime_${info.fileName}') || "";
+            var startTimestamp = parseInt(sessionStorage.getItem('startTS_${info.fileName}')) || 0;
+
+            function init() {
+                if(sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
+                    showQuiz();
+                    restoreAnswers();
+                    if(isDone) window.submitQuiz(true);
+                }
+            }
+
+            function showQuiz() {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('quiz-content').style.display = 'block';
+                if(!startTimestamp) {
+                   var now = new Date();
+                   startTimeFormatted = now.getHours() + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes();
+                   startTimestamp = Date.now();
+                   sessionStorage.setItem('startTime_${info.fileName}', startTimeFormatted);
+                   sessionStorage.setItem('startTS_${info.fileName}', startTimestamp);
+                }
+                startTimer();
+                if(history.state !== 'quiz') {
+                   history.pushState('quiz', null, location.href);
+                }
+            }
+
+            window.addEventListener('popstate', function(event) {
+                if(!isDone && sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
+                    window.submitQuiz(true);
+                }
+            });
+
+            document.getElementById('startBtn').addEventListener('click', function() {
+                sessionStorage.setItem('quizStarted_${info.fileName}', 'true');
+                showQuiz();
+            });
+
+            function startTimer() {
+                var timer = setInterval(function() {
+                    if(isDone) { clearInterval(timer); return; }
+                    var currentElapsed = Math.floor((Date.now() - startTimestamp) / 1000);
+                    var remaining = totalSeconds - currentElapsed;
+                    if(remaining <= 0) { 
+                        clearInterval(timer); 
+                        window.submitQuiz(true);
+                        return;
+                    }
+                    var m = Math.floor(remaining/60), s = remaining%60;
+                    document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
+                }, 1000);
+            }
+
+            window.setAnswer = function(q, a, btn) {
+                if(isDone) return;
+                userAns[q] = a;
+                sessionStorage.setItem('userAns_${info.fileName}', JSON.stringify(userAns));
+                var parent = btn.parentElement;
+                var buttons = parent.getElementsByClassName('option-btn');
+                for(var i=0; i<buttons.length; i++) buttons[i].classList.remove('selected');
+                btn.classList.add('selected');
+                document.getElementById('answered').innerText = Object.keys(userAns).length;
+            };
+
+            function restoreAnswers() {
+                for(var q in userAns) {
+                    var card = document.getElementById('q'+q);
+                    if(card){
+                        var buttons = card.getElementsByClassName('option-btn');
+                        for(var i=0; i<buttons.length; i++) {
+                            if(buttons[i].innerText.trim().charAt(0) === userAns[q]) {
+                                buttons[i].classList.add('selected');
+                            }
+                        }
+                    }
+                }
+                document.getElementById('answered').innerText = Object.keys(userAns).length;
+            }
+
+            window.submitQuiz = function(isAuto = false) {
+                if(isDone && !isAuto) return;
+                if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
+                isDone = true;
+                sessionStorage.setItem('isDone_${info.fileName}', 'true');
+                var score = 0;
+                var wrongQs = [];
+                var timeTaken = Math.floor((Date.now() - startTimestamp) / 1000);
+                var minutesTaken = Math.floor(timeTaken / 60);
+                var secondsTaken = timeTaken % 60;
+
+                for(var i in sol) {
+                    var card = document.getElementById('q'+i);
+                    var buttons = card.getElementsByClassName('option-btn');
+                    for(var j=0; j<buttons.length; j++) {
+                        var char = buttons[j].innerText.trim().charAt(0);
+                        if(char === sol[i]) {
+                            buttons[j].classList.add('correct');
+                            buttons[j].innerHTML += '<span class="tick">✔</span>';
+                        }
+                        if(userAns[i] === char && char !== sol[i]) {
+                            buttons[j].classList.add('wrong');
+                        }
+                    }
+                    if(userAns[i] === sol[i]) score++;
+                    else wrongQs.push(i);
+                }
+
+                var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
+                    '<p><b>অংশগ্রহণের সময়:</b> ' + startTimeFormatted + '</p>' +
+                    '<p><b>ব্যয়কৃত সময়:</b> ' + minutesTaken + ' মিনিট ' + secondsTaken + ' সেকেন্ড</p>' +
+                    '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
+                    '<p><b>ভুল হওয়া প্রশ্নের নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
+                
+                document.getElementById('resDisplay').innerHTML = resHTML;
+                document.getElementById('submitBtn').style.display = 'none';
+                window.scrollTo({top:0, behavior:'smooth'});
+
+                const resultData = {
+                    quizName: "${info.fileName}", // changed from quizFile to quizName for consistency
+                    quizTitle: "${info.title}",
+                    chapter: "${info.chapter}",
+                    startTime: startTimeFormatted,
+                    duration: minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken,
+                    score: score + "/" + Object.keys(sol).length,
+                    wrongList: wrongQs.join(', ') || "নাই"
+                };
+
+                if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
+                if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
+            };
+
+            document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
+            init();
+        })();
+    <\/script>
+</body>
+</html>`;
+
+        const b = new Blob([template], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = (document.getElementById('fileName').value || 'quiz') + '.html';
+        a.click();
+    }
+</script>
+</body>
+</html>
