@@ -38,7 +38,6 @@
             position: relative; transition: 0.2s;
         }
         .res-card:hover { transform: translateY(-3px); }
-
         .res-card h4 { margin: 0 0 5px 0; color: var(--primary); font-size: 15px; padding-right: 25px; }
         .info-p { margin: 2px 0; font-size: 12.5px; color: #555; line-height: 1.4; }
         .info-p b { color: #333; }
@@ -77,7 +76,6 @@
 </div>
 
 <script>
-    // আপনার নতুন Firebase কনফিগারেশন যুক্ত করা হলো
     const firebaseConfig = {
         apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
@@ -87,29 +85,24 @@
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
-    const db = firebase.database();
 
+    const db = firebase.database();
     let allResults = [];
 
     function loadResults() {
         const area = document.getElementById('resultArea');
         area.innerHTML = '<div class="no-data">লোড হচ্ছে...</div>';
-
-        // Firebase থেকে সরাসরি রেজাল্ট শোনা হচ্ছে
+        
         db.ref('quiz_results').on('value', (snapshot) => {
             allResults = [];
             const data = snapshot.val();
-
             if (!data) {
                 area.innerHTML = '<div class="no-data">এখনো কোনো ফলাফল জমা হয়নি।</div>';
                 return;
             }
-
             for (let key in data) {
                 allResults.push({ fbKey: key, ...data[key] });
             }
-
-            // নতুন রেজাল্ট আগে দেখানোর জন্য রিভার্স করা হলো
             allResults.reverse();
             displayResults(allResults);
         });
@@ -118,19 +111,18 @@
     function displayResults(dataList) {
         const area = document.getElementById('resultArea');
         area.innerHTML = '';
-
         dataList.forEach(res => {
             const card = document.createElement('div');
             card.className = 'res-card';
             
-            // রেজাল্ট অবজেক্টে প্রপার্টিগুলোর নাম ইউজার অ্যাপের সাথে মিল রেখে চেক করা হচ্ছে
+            // সময় এবং ব্যয়কৃত সময় (duration) একসাথে যুক্ত করা হলো
             card.innerHTML = `
                 <button class="btn-del" onclick="deleteResult('${res.fbKey}')"><i class="fas fa-trash"></i></button>
                 <h4>${res.name || 'Unknown'} <span class="badge">ID: ${res.id || 'N/A'}</span></h4>
                 
                 <div class="info-p"><i class="fas fa-book-open"></i> কুইজ: <b>${res.quizName || res.quizFile || 'N/A'}.html</b></div>
                 <div class="info-p"><i class="fas fa-user-graduate"></i> শ্রেণি: ${res.class || '-'} | শাখা: ${res.section || '-'} | রোল: ${res.roll || '-'}</div>
-                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${res.submitTime || 'N/A'}</div>
+                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${res.submitTime || 'N/A'}, ${res.duration || '-'}</div>
                 
                 <div class="score-tag">নম্বর: ${res.score || '0'}</div>
                 
@@ -155,14 +147,11 @@
     function deleteResult(key) {
         if(confirm("এই ফলাফলটি কি মুছে ফেলতে চান?")) {
             db.ref('quiz_results').child(key).remove()
-            .then(() => {
-                // সাকসেসফুলি ডিলিট হলে Firebase 'on' লিসেনার অটো আপডেট করে দিবে
-            })
+            .then(() => {})
             .catch(err => alert("ত্রুটি: " + err));
         }
     }
 
-    // পেজ লোড হলে রেজাল্ট আনা শুরু করবে
     loadResults();
 </script>
 </body>
