@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Result Manager - Admin Panel</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f8fafc; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; padding-top: 70px; }
+        
+        .sticky-header { 
+            position: fixed; top: 0; left: 0; width: 100%; 
+            background: white; padding: 10px 20px; 
+            z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .btn-back { 
+            background: var(--accent); color: white; border: none; 
+            padding: 6px 12px; border-radius: 6px; text-decoration: none; 
+            font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;
+        }
+        .container { max-width: 1100px; margin: auto; }
+        
+        .search-box { margin-bottom: 15px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; box-sizing: border-box; font-size: 14px; }
+        
+        .result-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+        
+        .res-card { 
+            background: white; padding: 12px 15px; border-radius: 12px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04); 
+            border-top: 4px solid var(--accent); 
+            position: relative; transition: 0.2s;
+        }
+        .res-card:hover { transform: translateY(-3px); }
+
+        .res-card h4 { margin: 0 0 5px 0; color: var(--primary); font-size: 15px; padding-right: 25px; }
+        .info-p { margin: 2px 0; font-size: 12.5px; color: #555; line-height: 1.4; }
+        .info-p b { color: #333; }
+        
+        .score-tag { 
+            background: #e8f5e9; color: #27ae60; padding: 2px 8px; 
+            border-radius: 12px; font-weight: bold; font-size: 12px; 
+            display: inline-block; margin-top: 5px; 
+        }
+        
+        .wrong-list { 
+            color: #e74c3c; font-size: 11px; margin-top: 6px; 
+            border-top: 1px dashed #eee; padding-top: 4px; 
+        }
+        
+        .btn-del { position: absolute; top: 12px; right: 12px; color: #ccc; cursor: pointer; border: none; background: none; font-size: 14px; }
+        .btn-del:hover { color: var(--danger); }
+        
+        .no-data { text-align: center; padding: 40px; color: #95a5a6; font-size: 14px; }
+        .badge { font-size: 9px; background: #f0f2f5; padding: 1px 5px; border-radius: 3px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="sticky-header">
+    <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> ব্যাক</a>
+    <h4 style="margin:0; font-size: 16px; color: var(--primary);">ফলাফল তালিকা</h4>
+    <button onclick="location.reload()" style="background:none; border:none; color:var(--accent); cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+</div>
+
+<div class="container">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="নাম, আইডি বা ফাইল দিয়ে খুঁজুন..." oninput="filterResults()">
+    </div>
+    <div id="resultArea" class="result-grid"></div>
+</div>
+
+<script>
+    // আপনার নতুন Firebase কনফিগারেশন যুক্ত করা হলো
+    const firebaseConfig = {
+        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
+        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
+        projectId: "quiz-storage-d8707"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+
+    let allResults = [];
+
+    function loadResults() {
+        const area = document.getElementById('resultArea');
+        area.innerHTML = '<div class="no-data">লোড হচ্ছে...</div>';
+
+        // Firebase থেকে সরাসরি রেজাল্ট শোনা হচ্ছে
+        db.ref('quiz_results').on('value', (snapshot) => {
+            allResults = [];
+            const data = snapshot.val();
+
+            if (!data) {
+                area.innerHTML = '<div class="no-data">এখনো কোনো ফলাফল জমা হয়নি।</div>';
+                return;
+            }
+
+            for (let key in data) {
+                allResults.push({ fbKey: key, ...data[key] });
+            }
+
+            // নতুন রেজাল্ট আগে দেখানোর জন্য রিভার্স করা হলো
+            allResults.reverse();
+            displayResults(allResults);
+        });
+    }
+
+    function displayResults(dataList) {
+        const area = document.getElementById('resultArea');
+        area.innerHTML = '';
+
+        dataList.forEach(res => {
+            const card = document.createElement('div');
+            card.className = 'res-card';
+            
+            // রেজাল্ট অবজেক্টে প্রপার্টিগুলোর নাম ইউজার অ্যাপের সাথে মিল রেখে চেক করা হচ্ছে
+            card.innerHTML = `
+                <button class="btn-del" onclick="deleteResult('${res.fbKey}')"><i class="fas fa-trash"></i></button>
+                <h4>${res.name || 'Unknown'} <span class="badge">ID: ${res.id || 'N/A'}</span></h4>
+                
+                <div class="info-p"><i class="fas fa-book-open"></i> কুইজ: <b>${res.quizName || res.quizFile || 'N/A'}.html</b></div>
+                <div class="info-p"><i class="fas fa-user-graduate"></i> শ্রেণি: ${res.class || '-'} | শাখা: ${res.section || '-'} | রোল: ${res.roll || '-'}</div>
+                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${res.submitTime || 'N/A'}</div>
+                
+                <div class="score-tag">নম্বর: ${res.score || '0'}</div>
+                
+                <div class="wrong-list">
+                    <b>ভুল প্রশ্ন:</b> ${res.wrongList || 'সবগুলো সঠিক!'}
+                </div>
+            `;
+            area.appendChild(card);
+        });
+    }
+
+    function filterResults() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = allResults.filter(r => 
+            (r.name && r.name.toLowerCase().includes(term)) || 
+            (r.id && r.id.toString().toLowerCase().includes(term)) || 
+            (r.quizName && r.quizName.toLowerCase().includes(term))
+        );
+        displayResults(filtered);
+    }
+
+    function deleteResult(key) {
+        if(confirm("এই ফলাফলটি কি মুছে ফেলতে চান?")) {
+            db.ref('quiz_results').child(key).remove()
+            .then(() => {
+                // সাকসেসফুলি ডিলিট হলে Firebase 'on' লিসেনার অটো আপডেট করে দিবে
+            })
+            .catch(err => alert("ত্রুটি: " + err));
+        }
+    }
+
+    // পেজ লোড হলে রেজাল্ট আনা শুরু করবে
+    loadResults();
+</script>
+</body>
+</html>
