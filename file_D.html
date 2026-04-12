@@ -115,14 +115,21 @@
             const card = document.createElement('div');
             card.className = 'res-card';
             
-            // সময় এবং ব্যয়কৃত সময় (duration) একসাথে যুক্ত করা হলো
+            // তারিখ ও সময়ের জন্য লজিক: 
+            // যদি submitTime-এ তারিখ না থাকে, তবে আজকের তারিখটি দেখাবে।
+            let fullTime = res.submitTime || 'N/A';
+            if (fullTime !== 'N/A' && !fullTime.includes('/')) {
+                const today = new Date().toLocaleDateString();
+                fullTime = today + ", " + fullTime;
+            }
+
             card.innerHTML = `
                 <button class="btn-del" onclick="deleteResult('${res.fbKey}')"><i class="fas fa-trash"></i></button>
                 <h4>${res.name || 'Unknown'} <span class="badge">ID: ${res.id || 'N/A'}</span></h4>
                 
                 <div class="info-p"><i class="fas fa-book-open"></i> কুইজ: <b>${res.quizName || res.quizFile || 'N/A'}.html</b></div>
                 <div class="info-p"><i class="fas fa-user-graduate"></i> শ্রেণি: ${res.class || '-'} | শাখা: ${res.section || '-'} | রোল: ${res.roll || '-'}</div>
-                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${res.submitTime || 'N/A'}, ${res.duration || '-'}</div>
+                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${fullTime}, ${res.duration || '0:00'}</div>
                 
                 <div class="score-tag">নম্বর: ${res.score || '0'}</div>
                 
