@@ -47,6 +47,7 @@
         .status-badge { position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
         #searchSection { display: none; padding-top: 15px; border-top: 2px dashed #eee; margin-top: 10px; }
         .loader { display: none; text-align: center; margin: 5px 0; color: var(--accent); font-size: 13px; font-weight: bold; }
+        .reset-token { font-size: 10px; color: #888; text-decoration: underline; cursor: pointer; display: block; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -63,6 +64,7 @@
         <input type="file" id="quizFile" accept=".html">
         <div id="uploadStatus" class="loader"><i class="fas fa-spinner fa-spin"></i> প্রসেসিং হচ্ছে...</div>
         <button class="btn btn-upload" onclick="uploadToGithub()">GitHub-এ সেভ করুন</button>
+        <span class="reset-token" onclick="resetToken()">টোকেন রিসেট করুন</span>
     </div>
 
     <div class="box">
@@ -83,14 +85,29 @@
 </div>
 
 <script>
-    // টোকেন নিরাপত্তা নিশ্চিত করা হলো (আপনার প্রদত্ত টোকেন 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)
-    const _p1 = "ghp_sUlyj";
-    const _p2 = "muWpjYNyLjg7QDq4gNL9U";
-    const _p3 = "JhuD0RuVvK";
-    const _0x4f2 = _p1 + _p2 + _p3;
-
+    // GitHub কনফিগারেশন
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
+
+    // টোকেন ম্যানেজমেন্ট সিস্টেম
+    function getGithubToken() {
+        let token = localStorage.getItem('my_gh_token');
+        if (!token) {
+            token = prompt("আপনার GitHub Personal Access Token (PAT) পেস্ট করুন:");
+            if (token && token.startsWith('ghp_')) {
+                localStorage.setItem('my_gh_token', token);
+            } else {
+                alert("সঠিক টোকেন দিন!");
+                return null;
+            }
+        }
+        return token;
+    }
+
+    function resetToken() {
+        localStorage.removeItem('my_gh_token');
+        alert("টোকেন মুছে ফেলা হয়েছে। এখন আপলোড করলে নতুন টোকেন চাইবে।");
+    }
 
     const firebaseConfig = {
         apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
@@ -106,7 +123,12 @@
     async function uploadToGithub() {
         const fileInput = document.getElementById('quizFile');
         const status = document.getElementById('uploadStatus');
+        
         if (fileInput.files.length === 0) return alert("ফাইল সিলেক্ট করুন!");
+
+        // টোকেন গ্রহণ
+        const activeToken = getGithubToken();
+        if (!activeToken) return;
 
         const file = fileInput.files[0];
         const fileName = file.name;
@@ -116,10 +138,10 @@
         reader.onload = async function(e) {
             const content = btoa(unescape(encodeURIComponent(e.target.result)));
             const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
-            
+
             let sha = "";
             try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${_0x4f2}` } });
+                const res = await fetch(url, { headers: { "Authorization": `token ${activeToken}` } });
                 if (res.ok) { const data = await res.json(); sha = data.sha; }
             } catch (err) { }
 
@@ -129,18 +151,27 @@
             };
             if (sha) body.sha = sha;
 
-            const response = await fetch(url, {
-                method: "PUT",
-                headers: { "Authorization": `token ${_0x4f2}`, "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
-
-            status.style.display = 'none';
-            if (response.ok) { 
-                alert("সফলভাবে GitHub-এ আপলোড হয়েছে!"); 
-                fileInput.value = ""; 
+            try {
+                const response = await fetch(url, {
+                    method: "PUT",
+                    headers: { "Authorization": `token ${activeToken}`, "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+                
+                status.style.display = 'none';
+                if (response.ok) { 
+                    alert("সফলভাবে GitHub-এ আপলোড হয়েছে!"); 
+                    fileInput.value = ""; 
+                } else if (response.status === 401) {
+                    alert("টোকেনটি কাজ করছে না। রিসেট করে আবার দিন।");
+                    localStorage.removeItem('my_gh_token');
+                } else {
+                    alert("ত্রুটি! আপলোড ব্যর্থ হয়েছে। রিপোজিটরি নাম চেক করুন।");
+                }
+            } catch (error) {
+                status.style.display = 'none';
+                alert("নেটওয়ার্ক সমস্যা!");
             }
-            else { alert("ত্রুটি! আপলোড ব্যর্থ হয়েছে। গিটহাব রিপোজিটরি বা টোকেন চেক করুন।"); }
         };
         reader.readAsText(file);
     }
@@ -157,16 +188,13 @@
     function loadStudentToggles() {
         const studentDisplay = document.getElementById('studentDisplay');
         const students = JSON.parse(localStorage.getItem('studentDB')) || [];
-
         if(students.length === 0) {
             studentDisplay.innerHTML = "<p style='color:red; font-size:12px;'>কোনো ইউজার ডাটা পাওয়া যায়নি। file_A থেকে আইডি তৈরি করুন।</p>";
             return;
         }
-
         db.ref(`quiz_control/${currentQuiz}`).on('value', (snapshot) => {
             const statuses = snapshot.val() || {};
             studentDisplay.innerHTML = '';
-
             students.forEach(s => {
                 const isOn = statuses[s.userId] === true;
                 const card = document.createElement('div');
