@@ -187,7 +187,7 @@
     };
 
     function clearEverything() { if(confirm("সব মুছবেন?")) { localStorage.removeItem('mcq_draft_v3'); location.reload(); } }
-    
+
     function bnToEn(str) {
         const bn = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9'};
         return str.toString().replace(/[০-৯]/g, m => bn[m]);
@@ -281,7 +281,7 @@
             var isDone = sessionStorage.getItem('isDone_${info.fileName}') === 'true';
             var startTimeFormatted = sessionStorage.getItem('startTime_${info.fileName}') || "";
             var startTimestamp = parseInt(sessionStorage.getItem('startTS_${info.fileName}')) || 0;
-
+            
             function init() {
                 if(sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
                     showQuiz();
@@ -289,7 +289,6 @@
                     if(isDone) window.submitQuiz(true);
                 }
             }
-
             function showQuiz() {
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
@@ -305,18 +304,15 @@
                    history.pushState('quiz', null, location.href);
                 }
             }
-
             window.addEventListener('popstate', function(event) {
                 if(!isDone && sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
                     window.submitQuiz(true);
                 }
             });
-
             document.getElementById('startBtn').addEventListener('click', function() {
                 sessionStorage.setItem('quizStarted_${info.fileName}', 'true');
                 showQuiz();
             });
-
             function startTimer() {
                 var timer = setInterval(function() {
                     if(isDone) { clearInterval(timer); return; }
@@ -331,7 +327,6 @@
                     document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
                 }, 1000);
             }
-
             window.setAnswer = function(q, a, btn) {
                 if(isDone) return;
                 userAns[q] = a;
@@ -342,7 +337,6 @@
                 btn.classList.add('selected');
                 document.getElementById('answered').innerText = Object.keys(userAns).length;
             };
-
             function restoreAnswers() {
                 for(var q in userAns) {
                     var card = document.getElementById('q'+q);
@@ -357,7 +351,6 @@
                 }
                 document.getElementById('answered').innerText = Object.keys(userAns).length;
             }
-
             window.submitQuiz = function(isAuto = false) {
                 if(isDone && !isAuto) return;
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
@@ -368,7 +361,6 @@
                 var timeTaken = Math.floor((Date.now() - startTimestamp) / 1000);
                 var minutesTaken = Math.floor(timeTaken / 60);
                 var secondsTaken = timeTaken % 60;
-
                 for(var i in sol) {
                     var card = document.getElementById('q'+i);
                     var buttons = card.getElementsByClassName('option-btn');
@@ -385,7 +377,6 @@
                     if(userAns[i] === sol[i]) score++;
                     else wrongQs.push(i);
                 }
-
                 var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
                     '<p><b>অংশগ্রহণের সময়:</b> ' + startTimeFormatted + '</p>' +
                     '<p><b>ব্যয়কৃত সময়:</b> ' + minutesTaken + ' মিনিট ' + secondsTaken + ' সেকেন্ড</p>' +
@@ -395,9 +386,8 @@
                 document.getElementById('resDisplay').innerHTML = resHTML;
                 document.getElementById('submitBtn').style.display = 'none';
                 window.scrollTo({top:0, behavior:'smooth'});
-
                 const resultData = {
-                    quizName: "${info.fileName}", // changed from quizFile to quizName for consistency
+                    quizName: "${info.fileName}",
                     quizTitle: "${info.title}",
                     chapter: "${info.chapter}",
                     startTime: startTimeFormatted,
@@ -405,11 +395,9 @@
                     score: score + "/" + Object.keys(sol).length,
                     wrongList: wrongQs.join(', ') || "নাই"
                 };
-
                 if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
                 if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
             };
-
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
             init();
         })();
@@ -417,12 +405,26 @@
 </body>
 </html>`;
 
-        const b = new Blob([template], { type: 'text/html' });
+        // ফাইল ডাউনলোডের আধুনিক পদ্ধতি যা WebView সাপোর্ট করবে
+        const blob = new Blob([template], { type: 'text/html' });
+        const finalFileName = (document.getElementById('fileName').value || 'quiz') + '.html';
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(b);
-        a.download = (document.getElementById('fileName').value || 'quiz') + '.html';
+        
+        a.href = url;
+        a.download = finalFileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        
+        // অ্যাপের ভেতরে ফোর্স ট্রিগার করার জন্য
         a.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
     }
 </script>
+
 </body>
 </html>
