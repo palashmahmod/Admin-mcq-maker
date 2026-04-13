@@ -233,9 +233,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>${info.title}</title>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
     <style>
@@ -300,15 +297,7 @@
                    sessionStorage.setItem('startTS_${info.fileName}', startTimestamp);
                 }
                 startTimer();
-                if(history.state !== 'quiz') {
-                   history.pushState('quiz', null, location.href);
-                }
             }
-            window.addEventListener('popstate', function(event) {
-                if(!isDone && sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
-                    window.submitQuiz(true);
-                }
-            });
             document.getElementById('startBtn').addEventListener('click', function() {
                 sessionStorage.setItem('quizStarted_${info.fileName}', 'true');
                 showQuiz();
@@ -331,8 +320,7 @@
                 if(isDone) return;
                 userAns[q] = a;
                 sessionStorage.setItem('userAns_${info.fileName}', JSON.stringify(userAns));
-                var parent = btn.parentElement;
-                var buttons = parent.getElementsByClassName('option-btn');
+                var buttons = btn.parentElement.getElementsByClassName('option-btn');
                 for(var i=0; i<buttons.length; i++) buttons[i].classList.remove('selected');
                 btn.classList.add('selected');
                 document.getElementById('answered').innerText = Object.keys(userAns).length;
@@ -343,9 +331,7 @@
                     if(card){
                         var buttons = card.getElementsByClassName('option-btn');
                         for(var i=0; i<buttons.length; i++) {
-                            if(buttons[i].innerText.trim().charAt(0) === userAns[q]) {
-                                buttons[i].classList.add('selected');
-                            }
+                            if(buttons[i].innerText.trim().charAt(0) === userAns[q]) buttons[i].classList.add('selected');
                         }
                     }
                 }
@@ -353,14 +339,11 @@
             }
             window.submitQuiz = function(isAuto = false) {
                 if(isDone && !isAuto) return;
-                if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
+                if(!isAuto && !confirm("আপনি কি নিশ্চিত?")) return;
                 isDone = true;
                 sessionStorage.setItem('isDone_${info.fileName}', 'true');
                 var score = 0;
                 var wrongQs = [];
-                var timeTaken = Math.floor((Date.now() - startTimestamp) / 1000);
-                var minutesTaken = Math.floor(timeTaken / 60);
-                var secondsTaken = timeTaken % 60;
                 for(var i in sol) {
                     var card = document.getElementById('q'+i);
                     var buttons = card.getElementsByClassName('option-btn');
@@ -370,33 +353,14 @@
                             buttons[j].classList.add('correct');
                             buttons[j].innerHTML += '<span class="tick">✔</span>';
                         }
-                        if(userAns[i] === char && char !== sol[i]) {
-                            buttons[j].classList.add('wrong');
-                        }
+                        if(userAns[i] === char && char !== sol[i]) buttons[j].classList.add('wrong');
                     }
                     if(userAns[i] === sol[i]) score++;
                     else wrongQs.push(i);
                 }
-                var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
-                    '<p><b>অংশগ্রহণের সময়:</b> ' + startTimeFormatted + '</p>' +
-                    '<p><b>ব্যয়কৃত সময়:</b> ' + minutesTaken + ' মিনিট ' + secondsTaken + ' সেকেন্ড</p>' +
-                    '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
-                    '<p><b>ভুল হওয়া প্রশ্নের নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
-                
-                document.getElementById('resDisplay').innerHTML = resHTML;
+                document.getElementById('resDisplay').innerHTML = '<div class="res-box"><h3>ফলাফল</h3><p>সঠিক: ' + score + '/' + Object.keys(sol).length + '</p></div>';
                 document.getElementById('submitBtn').style.display = 'none';
-                window.scrollTo({top:0, behavior:'smooth'});
-                const resultData = {
-                    quizName: "${info.fileName}",
-                    quizTitle: "${info.title}",
-                    chapter: "${info.chapter}",
-                    startTime: startTimeFormatted,
-                    duration: minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken,
-                    score: score + "/" + Object.keys(sol).length,
-                    wrongList: wrongQs.join(', ') || "নাই"
-                };
-                if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
-                if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
+                window.scrollTo(0,0);
             };
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
             init();
@@ -405,24 +369,16 @@
 </body>
 </html>`;
 
-        // ফাইল ডাউনলোডের আধুনিক পদ্ধতি যা WebView সাপোর্ট করবে
-        const blob = new Blob([template], { type: 'text/html' });
-        const finalFileName = (document.getElementById('fileName').value || 'quiz') + '.html';
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        // ফাইল ডাউনলোডের বিকল্প ও শক্তিশালী পদ্ধতি (Base64 Data URI)
+        const encodedData = window.btoa(unescape(encodeURIComponent(template)));
+        const dataUri = 'data:text/html;charset=utf-8;base64,' + encodedData;
         
-        a.href = url;
-        a.download = finalFileName;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        
-        // অ্যাপের ভেতরে ফোর্স ট্রিগার করার জন্য
-        a.click();
-        
-        setTimeout(() => {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 100);
+        const link = document.createElement('a');
+        link.href = dataUri;
+        link.download = (document.getElementById('fileName').value || 'quiz') + '.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 </script>
 
