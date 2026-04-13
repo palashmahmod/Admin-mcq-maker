@@ -29,8 +29,6 @@
         .preview-box { margin-top: 15px; padding: 15px; background: #fefce8; border: 1px dashed #facc15; border-radius: 10px; }
         .preview-img { max-width: 100%; height: auto; margin: 10px 0; display: none; border-radius: 5px; }
         .btn-add-q { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        
-        /* নতুন স্টাইল */
         .loader-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .reset-link { font-size: 10px; color: #ccc; cursor: pointer; text-decoration: underline; margin-left: 5px; }
     </style>
@@ -71,7 +69,6 @@
     let qCount = 0;
     let questionImages = {};
 
-    // GitHub Configuration
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
 
@@ -82,8 +79,7 @@
             if (token && token.startsWith('ghp_')) {
                 localStorage.setItem('my_gh_token', token);
             } else {
-                alert("সঠিক টোকেন দিন!");
-                return null;
+                alert("সঠিক টোকেন দিন!"); return null;
             }
         }
         return token;
@@ -141,11 +137,7 @@
 
     function removeQ(id) { 
         const el = document.getElementById(`q-block-${id}`);
-        if(el) {
-            el.remove(); 
-            delete questionImages[id];
-            reIndexQuestions();
-        }
+        if(el) { el.remove(); delete questionImages[id]; reIndexQuestions(); }
     }
 
     function handleImage(e, id) {
@@ -223,7 +215,7 @@
     function clearEverything() { if(confirm("সব মুছবেন?")) { localStorage.removeItem('mcq_draft_v3'); location.reload(); } }
 
     function bnToEn(str) {
-        const bn = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9'};
+        const bn = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','८':'8','৯':'9'};
         return str.toString().replace(/[০-৯]/g, m => bn[m]);
     }
 
@@ -267,7 +259,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>${info.title}</title>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
     <style>
@@ -323,7 +314,7 @@
                 document.getElementById('quiz-content').style.display = 'block';
                 if(!startTimestamp) {
                    var now = new Date();
-                   startTimeFormatted = now.getHours() + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes();
+                   startTimeFormatted = (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
                    startTimestamp = Date.now();
                    sessionStorage.setItem('startTime_${info.fileName}', startTimeFormatted);
                    sessionStorage.setItem('startTS_${info.fileName}', startTimestamp);
@@ -331,12 +322,6 @@
                 startTimer();
                 if(history.state !== 'quiz') { history.pushState('quiz', null, location.href); }
             }
-            window.addEventListener('popstate', function(event) {
-                if(!isDone && sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') { window.submitQuiz(true); }
-            });
-            document.getElementById('startBtn').addEventListener('click', function() {
-                sessionStorage.setItem('quizStarted_${info.fileName}', 'true'); showQuiz();
-            });
             function startTimer() {
                 var timer = setInterval(function() {
                     if(isDone) { clearInterval(timer); return; }
@@ -375,6 +360,8 @@
                 var score = 0, wrongQs = [];
                 var timeTaken = Math.floor((Date.now() - startTimestamp) / 1000);
                 var minutesTaken = Math.floor(timeTaken / 60), secondsTaken = timeTaken % 60;
+                var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
+                
                 for(var i in sol) {
                     var card = document.getElementById('q'+i);
                     var buttons = card.getElementsByClassName('option-btn');
@@ -386,19 +373,28 @@
                     if(userAns[i] === sol[i]) score++; else wrongQs.push(i);
                 }
                 var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
-                    '<p><b>ব্যয়কৃত সময়:</b> ' + minutesTaken + ' মি: ' + secondsTaken + ' সে:</p>' +
+                    '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
                     '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
                     '<p><b>ভুল নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
                 document.getElementById('resDisplay').innerHTML = resHTML;
                 document.getElementById('submitBtn').style.display = 'none';
                 window.scrollTo({top:0, behavior:'smooth'});
+                
                 const resultData = {
                     quizName: "${info.fileName}",
                     quizTitle: "${info.title}",
-                    score: score + "/" + Object.keys(sol).length
+                    chapter: "${info.chapter}",
+                    startTime: startTimeFormatted,
+                    duration: durationStr,
+                    score: score + "/" + Object.keys(sol).length,
+                    wrongList: wrongQs.join(', ') || "নাই"
                 };
                 if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
+                if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
             };
+            document.getElementById('startBtn').addEventListener('click', function() {
+                sessionStorage.setItem('quizStarted_${info.fileName}', 'true'); showQuiz();
+            });
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
             init();
         })();
@@ -407,7 +403,6 @@
 </html>`;
     }
 
-    // আগের ডাউনলোড পদ্ধতি অক্ষুণ্ণ রাখা হয়েছে
     function generateFile() {
         const template = buildTemplate();
         const fName = document.getElementById('fileName').value || 'quiz';
@@ -418,11 +413,9 @@
         a.click();
     }
 
-    // নতুন গিটহাব সরাসরি আপলোড পদ্ধতি
     async function uploadToGithub() {
         const fNameInput = document.getElementById('fileName').value;
         if (!fNameInput) return alert("ফাইল নাম লিখুন (যেমন: 601)");
-        
         const activeToken = getGithubToken();
         if (!activeToken) return;
 
@@ -433,17 +426,13 @@
         const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
 
         loader.style.display = 'flex';
-
         let sha = "";
         try {
             const res = await fetch(url, { headers: { "Authorization": `token ${activeToken}` } });
             if (res.ok) { const data = await res.json(); sha = data.sha; }
         } catch (err) { }
 
-        const body = { 
-            message: `Web Update: ${fileName}`, 
-            content: contentEncoded 
-        };
+        const body = { message: `Web Update: ${fileName}`, content: contentEncoded };
         if (sha) body.sha = sha;
 
         try {
@@ -452,18 +441,10 @@
                 headers: { "Authorization": `token ${activeToken}`, "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });
-
             loader.style.display = 'none';
-            if (response.ok) { 
-                alert("সফলভাবে GitHub-এ সরাসরি আপলোড হয়েছে!"); 
-            } else {
-                const err = await response.json();
-                alert("ত্রুটি: " + err.message);
-            }
-        } catch (error) {
-            loader.style.display = 'none';
-            alert("নেটওয়ার্ক সমস্যা!");
-        }
+            if (response.ok) alert("সফলভাবে GitHub-এ সরাসরি আপলোড হয়েছে!"); 
+            else { const err = await response.json(); alert("ত্রুটি: " + err.message); }
+        } catch (error) { loader.style.display = 'none'; alert("নেটওয়ার্ক সমস্যা!"); }
     }
 </script>
 </body>
