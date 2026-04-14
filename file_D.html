@@ -85,7 +85,6 @@
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
-
     const db = firebase.database();
     let allResults = [];
 
@@ -115,13 +114,14 @@
             const card = document.createElement('div');
             card.className = 'res-card';
             
-            // তারিখ ও সময়ের জন্য লজিক: 
-            // যদি submitTime-এ তারিখ না থাকে, তবে আজকের তারিখটি দেখাবে।
             let fullTime = res.submitTime || 'N/A';
             if (fullTime !== 'N/A' && !fullTime.includes('/')) {
                 const today = new Date().toLocaleDateString();
                 fullTime = today + ", " + fullTime;
             }
+
+            // ডিউরেশন ডাটা চেক করা হচ্ছে (যদি না থাকে তবে ০:০০ দেখাবে)
+            const durationDisplay = res.duration ? res.duration : '0:00';
 
             card.innerHTML = `
                 <button class="btn-del" onclick="deleteResult('${res.fbKey}')"><i class="fas fa-trash"></i></button>
@@ -129,12 +129,12 @@
                 
                 <div class="info-p"><i class="fas fa-book-open"></i> কুইজ: <b>${res.quizName || res.quizFile || 'N/A'}.html</b></div>
                 <div class="info-p"><i class="fas fa-user-graduate"></i> শ্রেণি: ${res.class || '-'} | শাখা: ${res.section || '-'} | রোল: ${res.roll || '-'}</div>
-                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${fullTime}, ${res.duration || '0:00'}</div>
+                <div class="info-p"><i class="fas fa-clock"></i> সময়: ${fullTime}, (<b>${durationDisplay}</b>)</div>
                 
-                <div class="score-tag">নম্বর: ${res.score || '0'}</div>
+                <div class="score-tag">নম্বর: ${res.score || '0'} / ${res.total || '0'}</div>
                 
                 <div class="wrong-list">
-                    <b>ভুল প্রশ্ন:</b> ${res.wrongList || 'সবগুলো সঠিক!'}
+                    <b>ভুল প্রশ্ন:</b> ${res.wrongQuestions || res.wrongList || 'সবগুলো সঠিক!'}
                 </div>
             `;
             area.appendChild(card);
@@ -158,7 +158,6 @@
             .catch(err => alert("ত্রুটি: " + err));
         }
     }
-
     loadResults();
 </script>
 </body>
