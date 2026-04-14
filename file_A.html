@@ -15,7 +15,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <style>
         :root {
             --primary: #2c3e50;
@@ -80,17 +79,14 @@
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="top-bar">
         <a href="index.html" id="homeLink" class="back-btn"><i class="fas fa-arrow-left"></i></a>
         <h2 style="margin:0; font-size: 18px;">ইউজার ম্যানেজমেন্ট</h2>
     </div>
-
     <button class="btn-toggle" onclick="toggleForm()" id="toggleBtn">
         <i class="fas fa-plus-circle"></i> আইডি তৈরি করুন
     </button>
-
     <div id="input-form">
         <div class="form-group">
             <label>শিক্ষার্থীর নাম:</label>
@@ -115,6 +111,9 @@
                     <option value="খ">খ</option>
                     <option value="গ">গ</option>
                     <option value="ঘ">ঘ</option>
+                    <option value="বিজ্ঞান">বিজ্ঞান</option>
+                    <option value="ব্যবসায়">ব্যবসায়</option>
+                    <option value="মানবিক">মানবিক</option>
                 </select>
             </div>
         </div>
@@ -128,18 +127,24 @@
                 <input type="number" id="userId" placeholder="Login ID">
             </div>
         </div>
+        
+        <div class="form-group">
+            <label>পিন পাসওয়ার্ড (English):</label>
+            <input type="number" id="userPass" placeholder="Login PIN">
+        </div>
+
         <div class="btn-row">
             <button class="btn btn-save" onclick="saveUser()">সেভ করুন</button>
             <button class="btn btn-cancel" onclick="toggleForm()">বাতিল</button>
         </div>
     </div>
-
     <div class="user-list">
         <h3 style="font-size: 16px; color: var(--primary);"><i class="fas fa-users"></i> ইউজার তালিকা</h3>
         <table>
             <thead>
                 <tr>
                     <th>আইডি</th>
+                    <th>পিন</th>
                     <th>নাম</th>
                     <th>শ্রেণি</th>
                     <th>শাখা</th>
@@ -153,22 +158,17 @@
 </div>
 
 <script>
-    // Home Link Cache Busting
     document.getElementById('homeLink').href = "index.html?v=" + Date.now();
-
-    // Firebase Configuration with your API Key
     const firebaseConfig = {
         apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
         projectId: "quiz-storage-d8707"
     };
     
-    // Initialize Firebase
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.database();
-
     window.onload = displayUsers;
 
     function toggleForm() {
@@ -189,8 +189,9 @@
         const section = document.getElementById('section').value;
         const roll = document.getElementById('roll').value;
         const userId = document.getElementById('userId').value;
+        const password = document.getElementById('userPass').value; 
 
-        if(!name || !roll || !userId) {
+        if(!name || !roll || !userId || !password) {
             alert("সবগুলো তথ্য সঠিকভাবে দিন!");
             return;
         }
@@ -201,12 +202,10 @@
             return;
         }
 
-        const userData = { name, cls, section, roll, userId, lastUpdated: Date.now() };
+        const userData = { name, cls, section, roll, userId, password, lastUpdated: Date.now() };
 
-        // Firebase-এ সেভ করা
         db.ref('users/' + userId).set(userData)
         .then(() => {
-            // সফল হলে লোকাল লিস্টে যোগ করা
             users.push(userData);
             const classOrder = {"৬ষ্ঠ":1, "৭ম":2, "৮ম":3, "৯ম":4, "১০ম":5, "এসএসসি":6};
             users.sort((a, b) => (classOrder[a.cls] - classOrder[b.cls]) || a.roll.localeCompare(b.roll, 'bn'));
@@ -215,9 +214,9 @@
             clearForm();
             displayUsers();
             toggleForm();
-            alert("সফলভাবে ডাটাবেজে সেভ হয়েছে!");
+            alert("সফলভাবে ডাটাবেজে সেভ হয়েছে!");
         })
-        .catch(err => alert("ফায়ারবেস ত্রুটি: " + err.message));
+        .catch(err => alert("ফায়ারবেস ত্রুটি: " + err.message));
     }
 
     function displayUsers() {
@@ -228,6 +227,7 @@
             tbody.innerHTML += `
                 <tr>
                     <td><b>${u.userId}</b></td>
+                    <td>${u.password || 'N/A'}</td>
                     <td>${u.name}</td>
                     <td>${u.cls}</td>
                     <td>${u.section}</td>
@@ -252,6 +252,7 @@
         document.getElementById('name').value = '';
         document.getElementById('roll').value = '';
         document.getElementById('userId').value = '';
+        document.getElementById('userPass').value = '';
     }
 </script>
 </body>
