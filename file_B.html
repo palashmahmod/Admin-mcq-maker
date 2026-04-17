@@ -31,15 +31,11 @@
         .btn-add-q { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .loader-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .reset-link { font-size: 10px; color: #ccc; cursor: pointer; text-decoration: underline; margin-left: 5px; }
-        
-        /* উদ্দীপক স্টাইল */
         .stimulus-view { background: #f8f9fa; border-left: 4px solid #3498db; padding: 10px; margin-bottom: 10px; font-size: 14.5px; color: #444; line-height: 1.5; }
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
-
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -53,7 +49,6 @@
         </button>
     </div>
 </div>
-
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -67,7 +62,6 @@
     <div id="questions-area"></div>
     <button class="btn-add-q" onclick="addQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     let qCount = 0;
     let questionImages = {};
@@ -167,17 +161,12 @@
     function updatePreview(id) {
         const b = document.getElementById(`q-block-${id}`);
         if(!b) return;
-        
-        // Stimulus Preview Logic
         const stemVal = b.querySelector('.q-stem').value;
         const ps = document.getElementById(`ps-${id}`);
         if(stemVal.trim()){
             ps.innerHTML = cleanMath(stemVal).replace(/\n/g, '<br>');
             ps.style.display = 'block';
-        } else {
-            ps.style.display = 'none';
-        }
-
+        } else { ps.style.display = 'none'; }
         document.getElementById(`pt-${id}`).innerHTML = cleanMath(b.querySelector('.q-text').value).replace(/\n/g, '<br>');
         document.getElementById(`po1-${id}`).innerHTML = "ক) " + cleanMath(b.querySelector('.o1').value);
         document.getElementById(`po2-${id}`).innerHTML = "খ) " + cleanMath(b.querySelector('.o2').value);
@@ -229,9 +218,9 @@
     };
 
     function clearEverything() { if(confirm("সব মুছবেন?")) { localStorage.removeItem('mcq_draft_v3'); location.reload(); } }
-
+    
     function bnToEn(str) {
-        const bn = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','६':'6','৭':'7','৮':'8','৯':'9'};
+        const bn = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9'};
         return str.toString().replace(/[০-৯]/g, m => bn[m]);
     }
 
@@ -253,11 +242,8 @@
         document.querySelectorAll('.q-card').forEach((block, i) => {
             const num = i + 1;
             const bId = block.id.split('-')[2];
-            
-            // Stem Logic for Output
             const stemText = block.querySelector('.q-stem').value;
             const stemTag = stemText.trim() ? `<div class="stem-box">${cleanMath(stemText).replace(/\n/g, '<br>')}</div>` : '';
-            
             const qTxt = cleanMath(block.querySelector('.q-text').value).replace(/\n/g, '<br>');
             const imgData = questionImages[bId];
             const imgTag = imgData ? `<img src="${imgData}" style="max-width:100%; display:block; margin:8px 0; border-radius:8px;">` : '';
@@ -327,27 +313,42 @@
             var userAns = JSON.parse(sessionStorage.getItem('userAns_${info.fileName}')) || {}; 
             var totalSeconds = parseInt("${info.timeNum}") * 60;
             var isDone = sessionStorage.getItem('isDone_${info.fileName}') === 'true';
-            var startTimeFormatted = sessionStorage.getItem('startTime_${info.fileName}') || "";
-            var startTimestamp = parseInt(sessionStorage.getItem('startTS_${info.fileName}')) || 0;
+            var startTimeFormatted = "";
+            var startTimestamp = 0;
 
-            function init() {
-                if(sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
-                    showQuiz(); restoreAnswers(); if(isDone) window.submitQuiz(true);
+            window.addEventListener('message', function(e) {
+                if (e.data.type === 'SEND_START_TIME') {
+                    startTimestamp = e.data.startTime;
+                    checkTimerStatus();
+                }
+            });
+
+            if (window.parent) window.parent.postMessage({ type: 'GET_START_TIME' }, "*");
+
+            function checkTimerStatus() {
+                var now = Date.now();
+                var elapsed = Math.floor((now - startTimestamp) / 1000);
+                var remaining = totalSeconds - elapsed;
+
+                if (remaining <= 0) {
+                    showQuiz();
+                    window.submitQuiz(true); 
+                } else if (startTimestamp > 0) {
+                    showQuiz();
                 }
             }
+
             function showQuiz() {
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
-                if(!startTimestamp) {
-                   var now = new Date();
-                   startTimeFormatted = (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
-                   startTimestamp = Date.now();
-                   sessionStorage.setItem('startTime_${info.fileName}', startTimeFormatted);
-                   sessionStorage.setItem('startTS_${info.fileName}', startTimestamp);
-                }
+                var d = new Date(startTimestamp);
+                startTimeFormatted = (d.getHours() % 12 || 12) + ":" + (d.getMinutes()<10?'0':'')+d.getMinutes() + (d.getHours() >= 12 ? ' PM' : ' AM');
                 startTimer();
                 if(history.state !== 'quiz') { history.pushState('quiz', null, location.href); }
+                restoreAnswers();
+                if(isDone) window.submitQuiz(true);
             }
+
             function startTimer() {
                 var timer = setInterval(function() {
                     if(isDone) { clearInterval(timer); return; }
@@ -358,6 +359,7 @@
                     document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
                 }, 1000);
             }
+
             window.setAnswer = function(q, a, btn) {
                 if(isDone) return;
                 userAns[q] = a;
@@ -367,6 +369,7 @@
                 btn.classList.add('selected');
                 document.getElementById('answered').innerText = Object.keys(userAns).length;
             };
+
             function restoreAnswers() {
                 for(var q in userAns) {
                     var card = document.getElementById('q'+q);
@@ -379,12 +382,15 @@
                 }
                 document.getElementById('answered').innerText = Object.keys(userAns).length;
             }
+
             window.submitQuiz = function(isAuto = false) {
                 if(isDone && !isAuto) return;
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
-                isDone = true; sessionStorage.setItem('isDone_${info.fileName}', 'true');
+                isDone = true; 
+                sessionStorage.setItem('isDone_${info.fileName}', 'true');
                 var score = 0, wrongQs = [];
                 var timeTaken = Math.floor((Date.now() - startTimestamp) / 1000);
+                if(timeTaken > totalSeconds) timeTaken = totalSeconds;
                 var minutesTaken = Math.floor(timeTaken / 60), secondsTaken = timeTaken % 60;
                 var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
                 
@@ -393,11 +399,12 @@
                     var buttons = card.getElementsByClassName('option-btn');
                     for(var j=0; j<buttons.length; j++) {
                         var char = buttons[j].innerText.trim().charAt(0);
-                        if(char === sol[i]) { buttons[j].classList.add('correct'); buttons[j].innerHTML += '<span class="tick">✔</span>'; }
+                        if(char === sol[i]) { buttons[j].classList.add('correct'); if(!buttons[j].querySelector('.tick')) buttons[j].innerHTML += '<span class="tick">✔</span>'; }
                         if(userAns[i] === char && char !== sol[i]) buttons[j].classList.add('wrong');
                     }
                     if(userAns[i] === sol[i]) score++; else wrongQs.push(i);
                 }
+
                 var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
                     '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
                     '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
@@ -416,13 +423,13 @@
                     wrongList: wrongQs.join(', ') || "নাই"
                 };
                 if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
-                if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
             };
+
             document.getElementById('startBtn').addEventListener('click', function() {
-                sessionStorage.setItem('quizStarted_${info.fileName}', 'true'); showQuiz();
+                if (window.parent) window.parent.postMessage({ type: 'GET_START_TIME' }, "*");
             });
+
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
-            init();
         })();
     <\/script>
 </body>
