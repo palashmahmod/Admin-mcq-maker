@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced MCQ Builder - Prevention Integrated</title>
+    <title>Advanced MCQ Builder - Stimulus Integrated</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         window.MathJax = {
@@ -31,13 +31,12 @@
         .btn-add-q { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .loader-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .reset-link { font-size: 10px; color: #eee; cursor: pointer; text-decoration: underline; opacity: 0.8; }
+        .stimulus-box { background: #f8fafc; border: 1px solid #e2e8f0; margin-bottom: 10px; border-left: 4px solid var(--accent); }
         @media (max-width: 600px) { body { padding-top: 140px; } .config-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
-
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -54,7 +53,6 @@
         </div>
     </div>
 </div>
-
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -105,6 +103,7 @@
         
         div.innerHTML = `
             <button class="btn-del" onclick="removeQ('${currentId}')">বাতিল</button>
+            <textarea class="stimulus-text stimulus-box" placeholder="উদ্দীপক থাকলে এখানে লিখুন (ঐচ্ছিক)..." oninput="updatePreview('${currentId}')">${savedData ? (savedData.stimulus || '') : ''}</textarea>
             <b class="q-num-display">প্রশ্ন নং: </b>
             <textarea class="q-text" placeholder="প্রশ্ন লিখুন..." oninput="updatePreview('${currentId}')">${savedData ? savedData.q : ''}</textarea>
             <input type="file" class="img-input" accept="image/*" onchange="handleImage(event, '${currentId}')">
@@ -113,6 +112,7 @@
             <div class="opt-row"><span>গ)</span><input type="text" class="o3" value="${savedData ? savedData.o3 : ''}" oninput="updatePreview('${currentId}')"> <input type="radio" name="ans-${currentId}" value="গ" ${savedData?.ans === 'গ' ? 'checked' : ''}></div>
             <div class="opt-row"><span>ঘ)</span><input type="text" class="o4" value="${savedData ? savedData.o4 : ''}" oninput="updatePreview('${currentId}')"> <input type="radio" name="ans-${currentId}" value="ঘ" ${savedData?.ans === 'ঘ' ? 'checked' : ''}></div>
             <div class="preview-box" id="preview-${currentId}">
+                <div id="ps-${currentId}" style="font-style: italic; color: #555; margin-bottom: 5px;"></div>
                 <div id="pt-${currentId}"></div>
                 <img id="pi-${currentId}" class="preview-img">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
@@ -150,7 +150,7 @@
             document.getElementById('questions-area').innerHTML = '';
             questionImages = {};
             qCount = 0;
-            saveToStorage(true); // সিলেন্ট সেভ
+            saveToStorage(true);
         }
     }
 
@@ -177,6 +177,11 @@
     function updatePreview(id) {
         const b = document.getElementById(`q-block-${id}`);
         if(!b) return;
+        const stim = b.querySelector('.stimulus-text').value;
+        const ps = document.getElementById(`ps-${id}`);
+        ps.innerHTML = stim ? cleanMath(stim).replace(/\n/g, '<br>') : "";
+        ps.style.display = stim ? "block" : "none";
+
         document.getElementById(`pt-${id}`).innerHTML = cleanMath(b.querySelector('.q-text').value).replace(/\n/g, '<br>');
         document.getElementById(`po1-${id}`).innerHTML = "ক) " + cleanMath(b.querySelector('.o1').value);
         document.getElementById(`po2-${id}`).innerHTML = "খ) " + cleanMath(b.querySelector('.o2').value);
@@ -190,6 +195,7 @@
         document.querySelectorAll('.q-card').forEach(card => {
             const id = card.id.split('-')[2];
             questions.push({
+                stimulus: card.querySelector('.stimulus-text').value,
                 q: card.querySelector('.q-text').value,
                 o1: card.querySelector('.o1').value,
                 o2: card.querySelector('.o2').value,
@@ -233,6 +239,7 @@
 
     function buildTemplate() {
         const rawTime = document.getElementById('quizTime').value || '30';
+        const creationTime = Date.now(); // Unique ID for each generation
         const info = {
             title: document.getElementById('quizTitle').value || 'মডেল টেস্ট',
             cls: document.getElementById('quizClass').value || '',
@@ -241,7 +248,8 @@
             marks: document.getElementById('quizTotalMarks').value || '',
             fileName: document.getElementById('fileName').value || 'quiz',
             timeTxt: rawTime,
-            timeNum: bnToEn(rawTime)
+            timeNum: bnToEn(rawTime),
+            cTime: creationTime
         };
 
         let qHTML = '';
@@ -249,12 +257,16 @@
         document.querySelectorAll('.q-card').forEach((block, i) => {
             const num = i + 1;
             const bId = block.id.split('-')[2];
+            const stim = block.querySelector('.stimulus-text').value;
             const qTxt = cleanMath(block.querySelector('.q-text').value).replace(/\n/g, '<br>');
             const imgData = questionImages[bId];
             const imgTag = imgData ? `<img src="${imgData}" style="max-width:100%; display:block; margin:8px 0; border-radius:8px;">` : '';
+            const stimulusHTML = stim ? `<div class="stimulus-display" style="background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee; margin-bottom:10px; font-style:italic;">${cleanMath(stim).replace(/\n/g, '<br>')}</div>` : '';
+            
             sols[num] = block.querySelector(`input[name="ans-${bId}"]:checked`).value;
             qHTML += `
             <div class="question-card" id="q${num}">
+                ${stimulusHTML}
                 <div class="q-text">${num}. ${qTxt}</div>
                 ${imgTag}
                 <div class="options-grid">
@@ -312,15 +324,29 @@
     <script>
         (function() {
             var sol = ${JSON.stringify(sols)};
+            var cTime = ${info.cTime};
             var storageKey = 'quiz_state_${info.fileName}';
-            var state = JSON.parse(localStorage.getItem(storageKey)) || {
-                quizStarted: false,
-                isDone: false,
-                userAns: {},
-                startTimeFormatted: "",
-                startTimestamp: 0
-            };
+            
+            var savedData = JSON.parse(localStorage.getItem(storageKey));
+            var state;
+
+            // Reset logic: If no saved data OR saved data time is different from current file creation time
+            if(!savedData || savedData.creationTime !== cTime) {
+                state = {
+                    creationTime: cTime,
+                    quizStarted: false,
+                    isDone: false,
+                    userAns: {},
+                    startTimeFormatted: "",
+                    startTimestamp: 0
+                };
+                localStorage.setItem(storageKey, JSON.stringify(state));
+            } else {
+                state = savedData;
+            }
+
             var totalSeconds = parseInt("${info.timeNum}") * 60;
+
             function init() {
                 if(state.quizStarted) {
                     showQuiz();
@@ -328,6 +354,7 @@
                     if(state.isDone) window.submitQuiz(true);
                 }
             }
+
             function showQuiz() {
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
@@ -341,9 +368,11 @@
                 startTimer();
                 if(history.state !== 'quiz') { history.pushState('quiz', null, location.href); }
             }
+
             function saveState() {
                 localStorage.setItem(storageKey, JSON.stringify(state));
             }
+
             function startTimer() {
                 var timer = setInterval(function() {
                     if(state.isDone) { clearInterval(timer); return; }
@@ -354,6 +383,7 @@
                     document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
                 }, 1000);
             }
+
             window.setAnswer = function(q, a, btn) {
                 if(state.isDone) return;
                 state.userAns[q] = a;
@@ -363,6 +393,7 @@
                 btn.classList.add('selected');
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             };
+
             function restoreAnswers() {
                 for(var q in state.userAns) {
                     var card = document.getElementById('q'+q);
@@ -375,6 +406,7 @@
                 }
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             }
+
             window.submitQuiz = function(isAuto = false) {
                 if(state.isDone && !isAuto) return;
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
@@ -406,19 +438,8 @@
                 document.getElementById('resDisplay').innerHTML = resHTML;
                 document.getElementById('submitBtn').style.display = 'none';
                 window.scrollTo({top:0, behavior:'smooth'});
-                const resultData = {
-                    quizName: "${info.fileName}.html",
-                    quizTitle: "${info.title}",
-                    subject: "${info.sub}",
-                    chapter: "${info.chapter}",
-                    date: state.startTimeFormatted,
-                    duration: durationStr,
-                    score: score + "/" + Object.keys(sol).length,
-                    wrongList: wrongQs.join(', ') || "নাই"
-                };
-                if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
-                if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
             };
+
             document.getElementById('startBtn').addEventListener('click', function() {
                 showQuiz();
             });
