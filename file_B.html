@@ -17,7 +17,7 @@
         :root { --primary: #2c3e50; --accent: #3498db; --cream: #FFFBF0; --danger: #e74c3c; --success: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--cream); margin: 0; padding-top: 110px; display: flex; justify-content: center; }
         .sticky-header { position: fixed; top: 0; left: 0; width: 100%; background: var(--primary); color: white; padding: 10px 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .nav-content { max-width: 850px; margin: auto; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0; }
+        .nav-content { max-width: 850px; margin: auto; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 10px; }
         .btn-nav { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 5px; }
         .container { width: 95%; max-width: 800px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 50px; }
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
@@ -253,6 +253,7 @@
             timeNum: bnToEn(rawTime),
             cTime: creationTime
         };
+
         let qHTML = '';
         let sols = {};
         document.querySelectorAll('.q-card').forEach((block, i) => {
@@ -311,6 +312,7 @@
         <p>পূর্ণমান: ${info.marks} | সময়: ${info.timeTxt} মিনিট</p>
         <button class="btn-main" id="startBtn">পরীক্ষা শুরু করুন</button>
     </div>
+
     <div id="quiz-content" style="display:none;">
         <div class="header-fixed">
             <div>সময়: <span id="clock">${info.timeTxt}:00</span></div>
@@ -322,28 +324,22 @@
             ${qHTML}
         </div>
     </div>
+
     <script>
         (function() {
             var sol = ${JSON.stringify(sols)};
             var cTime = ${info.cTime};
             var storageKey = 'quiz_state_${info.fileName}';
-            
             var savedData = JSON.parse(localStorage.getItem(storageKey));
             var state;
+
             if(!savedData || savedData.creationTime !== cTime) {
-                state = {
-                    creationTime: cTime,
-                    quizStarted: false,
-                    isDone: false,
-                    userAns: {},
-                    startTimeFormatted: "",
-                    startTimestamp: 0
-                };
+                state = { creationTime: cTime, quizStarted: false, isDone: false, userAns: {}, startTimeFormatted: "", startTimestamp: 0 };
                 localStorage.setItem(storageKey, JSON.stringify(state));
-            } else {
-                state = savedData;
-            }
+            } else { state = savedData; }
+
             var totalSeconds = parseInt("${info.timeNum}") * 60;
+
             function init() {
                 if(state.quizStarted) {
                     showQuiz();
@@ -351,6 +347,7 @@
                     if(state.isDone) window.submitQuiz(true);
                 }
             }
+
             function showQuiz() {
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
@@ -362,21 +359,25 @@
                     saveState();
                 }
                 startTimer();
-                if(history.state !== 'quiz') { history.pushState('quiz', null, location.href); }
             }
-            function saveState() {
-                localStorage.setItem(storageKey, JSON.stringify(state));
-            }
+
+            function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); }
+
             function startTimer() {
                 var timer = setInterval(function() {
                     if(state.isDone) { clearInterval(timer); return; }
                     var currentElapsed = Math.floor((Date.now() - state.startTimestamp) / 1000);
                     var remaining = totalSeconds - currentElapsed;
-                    if(remaining <= 0) { clearInterval(timer); window.submitQuiz(true); return; }
+                    if(remaining <= 0) { 
+                        clearInterval(timer); 
+                        window.submitQuiz(true); 
+                        return; 
+                    }
                     var m = Math.floor(remaining/60), s = remaining%60;
                     document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
                 }, 1000);
             }
+
             window.setAnswer = function(q, a, btn) {
                 if(state.isDone) return;
                 state.userAns[q] = a;
@@ -386,6 +387,7 @@
                 btn.classList.add('selected');
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             };
+
             function restoreAnswers() {
                 for(var q in state.userAns) {
                     var card = document.getElementById('q'+q);
@@ -398,12 +400,18 @@
                 }
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             }
+
             window.submitQuiz = function(isAuto = false) {
                 if(state.isDone && !isAuto) return;
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
+                
+                state.isDone = true;
+                saveState();
+                localStorage.removeItem(storageKey); // Clear data immediately after submit
 
                 var score = 0, wrongQs = [];
                 var timeTakenSec = Math.floor((Date.now() - state.startTimestamp) / 1000);
+                if(timeTakenSec > totalSeconds) timeTakenSec = totalSeconds;
                 var minutesTaken = Math.floor(timeTakenSec / 60), secondsTaken = timeTakenSec % 60;
                 var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
 
@@ -427,18 +435,14 @@
                     '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
                     '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
                     '<p><b>ভুল নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
-
+                
                 document.getElementById('resDisplay').innerHTML = resHTML;
                 document.getElementById('submitBtn').style.display = 'none';
+                document.getElementById('clock').innerText = "সময় শেষ";
                 window.scrollTo({top:0, behavior:'smooth'});
-
-                // অটোমেটিক ডাটা মুছে ফেলা যাতে পুনরায় প্রবেশ করলে কুইজ রিসেট থাকে
-                state.isDone = true; 
-                localStorage.removeItem(storageKey); 
             };
-            document.getElementById('startBtn').addEventListener('click', function() {
-                showQuiz();
-            });
+
+            document.getElementById('startBtn').addEventListener('click', showQuiz);
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
             init();
         })();
