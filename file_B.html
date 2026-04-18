@@ -34,9 +34,7 @@
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
-
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -50,7 +48,6 @@
         </button>
     </div>
 </div>
-
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -64,7 +61,6 @@
     <div id="questions-area"></div>
     <button class="btn-add-q" onclick="addQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     let qCount = 0;
     let questionImages = {};
@@ -299,36 +295,48 @@
     <script>
         (function() {
             var sol = ${JSON.stringify(sols)};
-            var userAns = JSON.parse(sessionStorage.getItem('userAns_${info.fileName}')) || {}; 
+            var storageKey = 'quiz_state_${info.fileName}';
+            var state = JSON.parse(localStorage.getItem(storageKey)) || {
+                quizStarted: false,
+                isDone: false,
+                userAns: {},
+                startTimeFormatted: "",
+                startTimestamp: 0
+            };
+
             var totalSeconds = parseInt("${info.timeNum}") * 60;
-            var isDone = sessionStorage.getItem('isDone_${info.fileName}') === 'true';
-            var startTimeFormatted = sessionStorage.getItem('startTime_${info.fileName}') || "";
-            var startTimestamp = parseInt(sessionStorage.getItem('startTS_${info.fileName}')) || 0;
 
             function init() {
-                if(sessionStorage.getItem('quizStarted_${info.fileName}') === 'true') {
-                    showQuiz(); restoreAnswers(); if(isDone) window.submitQuiz(true);
+                if(state.quizStarted) {
+                    showQuiz();
+                    restoreAnswers();
+                    if(state.isDone) window.submitQuiz(true);
                 }
             }
 
             function showQuiz() {
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
-                if(!startTimestamp) {
-                   var now = new Date();
-                   startTimeFormatted = now.toLocaleDateString() + ", " + (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
-                   startTimestamp = Date.now();
-                   sessionStorage.setItem('startTime_${info.fileName}', startTimeFormatted);
-                   sessionStorage.setItem('startTS_${info.fileName}', startTimestamp);
+                
+                if(!state.startTimestamp) {
+                    var now = new Date();
+                    state.startTimeFormatted = now.toLocaleDateString() + ", " + (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
+                    state.startTimestamp = Date.now();
+                    state.quizStarted = true;
+                    saveState();
                 }
                 startTimer();
                 if(history.state !== 'quiz') { history.pushState('quiz', null, location.href); }
             }
 
+            function saveState() {
+                localStorage.setItem(storageKey, JSON.stringify(state));
+            }
+
             function startTimer() {
                 var timer = setInterval(function() {
-                    if(isDone) { clearInterval(timer); return; }
-                    var currentElapsed = Math.floor((Date.now() - startTimestamp) / 1000);
+                    if(state.isDone) { clearInterval(timer); return; }
+                    var currentElapsed = Math.floor((Date.now() - state.startTimestamp) / 1000);
                     var remaining = totalSeconds - currentElapsed;
                     if(remaining <= 0) { clearInterval(timer); window.submitQuiz(true); return; }
                     var m = Math.floor(remaining/60), s = remaining%60;
@@ -337,37 +345,39 @@
             }
 
             window.setAnswer = function(q, a, btn) {
-                if(isDone) return;
-                userAns[q] = a;
-                sessionStorage.setItem('userAns_${info.fileName}', JSON.stringify(userAns));
+                if(state.isDone) return;
+                state.userAns[q] = a;
+                saveState();
                 var buttons = btn.parentElement.getElementsByClassName('option-btn');
                 for(var i=0; i<buttons.length; i++) buttons[i].classList.remove('selected');
                 btn.classList.add('selected');
-                document.getElementById('answered').innerText = Object.keys(userAns).length;
+                document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             };
 
             function restoreAnswers() {
-                for(var q in userAns) {
+                for(var q in state.userAns) {
                     var card = document.getElementById('q'+q);
                     if(card){
                         var buttons = card.getElementsByClassName('option-btn');
                         for(var i=0; i<buttons.length; i++) {
-                            if(buttons[i].innerText.trim().charAt(0) === userAns[q]) buttons[i].classList.add('selected');
+                            if(buttons[i].innerText.trim().charAt(0) === state.userAns[q]) buttons[i].classList.add('selected');
                         }
                     }
                 }
-                document.getElementById('answered').innerText = Object.keys(userAns).length;
+                document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             }
 
             window.submitQuiz = function(isAuto = false) {
-                if(isDone && !isAuto) return;
+                if(state.isDone && !isAuto) return;
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
-                isDone = true; sessionStorage.setItem('isDone_${info.fileName}', 'true');
+                state.isDone = true; 
+                saveState();
+                
                 var score = 0, wrongQs = [];
-                var timeTakenSec = Math.floor((Date.now() - startTimestamp) / 1000);
+                var timeTakenSec = Math.floor((Date.now() - state.startTimestamp) / 1000);
                 var minutesTaken = Math.floor(timeTakenSec / 60), secondsTaken = timeTakenSec % 60;
                 var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
-                
+
                 for(var i in sol) {
                     var card = document.getElementById('q'+i);
                     var buttons = card.getElementsByClassName('option-btn');
@@ -377,13 +387,12 @@
                             buttons[j].classList.add('correct'); 
                             buttons[j].innerHTML += '<span class="tick">✔</span>'; 
                         }
-                        if(userAns[i] === char && char !== sol[i]) {
+                        if(state.userAns[i] === char && char !== sol[i]) {
                             buttons[j].classList.add('wrong');
                         }
                     }
-                    if(userAns[i] === sol[i]) score++; else wrongQs.push(i);
+                    if(state.userAns[i] === sol[i]) score++; else wrongQs.push(i);
                 }
-
                 var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
                     '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
                     '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
@@ -397,7 +406,7 @@
                     quizTitle: "${info.title}",
                     subject: "${info.sub}",
                     chapter: "${info.chapter}",
-                    date: startTimeFormatted,
+                    date: state.startTimeFormatted,
                     duration: durationStr,
                     score: score + "/" + Object.keys(sol).length,
                     wrongList: wrongQs.join(', ') || "নাই"
@@ -407,8 +416,9 @@
             };
 
             document.getElementById('startBtn').addEventListener('click', function() {
-                sessionStorage.setItem('quizStarted_${info.fileName}', 'true'); showQuiz();
+                showQuiz();
             });
+
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
             init();
         })();
