@@ -34,9 +34,7 @@
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
-
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -50,7 +48,6 @@
         </button>
     </div>
 </div>
-
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -64,7 +61,6 @@
     <div id="questions-area"></div>
     <button class="btn-add-q" onclick="addQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     let qCount = 0;
     let questionImages = {};
@@ -270,9 +266,9 @@
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
         .option-btn { border: 1.5px solid #ddd; padding: 8px 10px; border-radius: 8px; cursor: pointer; background: #fff; position: relative; font-size: 13px; min-height: 38px; display: flex; align-items: center; transition: 0.2s; }
         .selected { border-color: #3498db !important; background: #e3f2fd !important; }
-        .correct { background: #d4edda !important; border-color: #27ae60 !important; }
-        .wrong { background: #f8d7da !important; border-color: #e74c3c !important; }
-        .tick { position: absolute; right: 5px; color: #27ae60; font-weight: bold; }
+        .correct { background: #d4edda !important; border-color: #27ae60 !important; color: #155724 !important; }
+        .wrong { background: #f8d7da !important; border-color: #e74c3c !important; color: #721c24 !important; }
+        .tick { position: absolute; right: 8px; color: #27ae60; font-weight: bold; }
         .btn-main { background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .res-box { background: #fff; padding: 20px; border-radius: 15px; margin-top: 10px; border: 2px solid #3498db; }
         @media (max-width: 480px) { .options-grid { gap: 8px; } .option-btn { padding: 6px 8px; } }
@@ -316,7 +312,7 @@
                 document.getElementById('quiz-content').style.display = 'block';
                 if(!startTimestamp) {
                    var now = new Date();
-                   startTimeFormatted = (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
+                   startTimeFormatted = now.toLocaleDateString() + ", " + (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
                    startTimestamp = Date.now();
                    sessionStorage.setItem('startTime_${info.fileName}', startTimeFormatted);
                    sessionStorage.setItem('startTS_${info.fileName}', startTimestamp);
@@ -364,8 +360,8 @@
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
                 isDone = true; sessionStorage.setItem('isDone_${info.fileName}', 'true');
                 var score = 0, wrongQs = [];
-                var timeTaken = Math.floor((Date.now() - startTimestamp) / 1000);
-                var minutesTaken = Math.floor(timeTaken / 60), secondsTaken = timeTaken % 60;
+                var timeTakenSec = Math.floor((Date.now() - startTimestamp) / 1000);
+                var minutesTaken = Math.floor(timeTakenSec / 60), secondsTaken = timeTakenSec % 60;
                 var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
                 
                 for(var i in sol) {
@@ -373,8 +369,15 @@
                     var buttons = card.getElementsByClassName('option-btn');
                     for(var j=0; j<buttons.length; j++) {
                         var char = buttons[j].innerText.trim().charAt(0);
-                        if(char === sol[i]) { buttons[j].classList.add('correct'); buttons[j].innerHTML += '<span class="tick">✔</span>'; }
-                        if(userAns[i] === char && char !== sol[i]) buttons[j].classList.add('wrong');
+                        // সঠিক উত্তর হলে সবুজ এবং টিক চিহ্ন
+                        if(char === sol[i]) { 
+                            buttons[j].classList.add('correct'); 
+                            buttons[j].innerHTML += '<span class="tick">✔</span>'; 
+                        }
+                        // ইউজারের উত্তর ভুল হলে লাল ব্যাকগ্রাউন্ড
+                        if(userAns[i] === char && char !== sol[i]) {
+                            buttons[j].classList.add('wrong');
+                        }
                     }
                     if(userAns[i] === sol[i]) score++; else wrongQs.push(i);
                 }
@@ -389,10 +392,11 @@
                 window.scrollTo({top:0, behavior:'smooth'});
                 
                 const resultData = {
-                    quizName: "${info.fileName}",
+                    quizName: "${info.fileName}.html",
                     quizTitle: "${info.title}",
+                    subject: "${info.sub}",
                     chapter: "${info.chapter}",
-                    startTime: startTimeFormatted,
+                    date: startTimeFormatted,
                     duration: durationStr,
                     score: score + "/" + Object.keys(sol).length,
                     wrongList: wrongQs.join(', ') || "নাই"
