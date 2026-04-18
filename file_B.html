@@ -34,7 +34,9 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
+
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -48,6 +50,7 @@
         </button>
     </div>
 </div>
+
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -61,6 +64,7 @@
     <div id="questions-area"></div>
     <button class="btn-add-q" onclick="addQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
+
 <script>
     let qCount = 0;
     let questionImages = {};
@@ -369,12 +373,10 @@
                     var buttons = card.getElementsByClassName('option-btn');
                     for(var j=0; j<buttons.length; j++) {
                         var char = buttons[j].innerText.trim().charAt(0);
-                        // সঠিক উত্তর হলে সবুজ এবং টিক চিহ্ন
                         if(char === sol[i]) { 
                             buttons[j].classList.add('correct'); 
                             buttons[j].innerHTML += '<span class="tick">✔</span>'; 
                         }
-                        // ইউজারের উত্তর ভুল হলে লাল ব্যাকগ্রাউন্ড
                         if(userAns[i] === char && char !== sol[i]) {
                             buttons[j].classList.add('wrong');
                         }
@@ -386,7 +388,6 @@
                     '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
                     '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
                     '<p><b>ভুল নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
-
                 document.getElementById('resDisplay').innerHTML = resHTML;
                 document.getElementById('submitBtn').style.display = 'none';
                 window.scrollTo({top:0, behavior:'smooth'});
@@ -401,7 +402,6 @@
                     score: score + "/" + Object.keys(sol).length,
                     wrongList: wrongQs.join(', ') || "নাই"
                 };
-
                 if(window.parent) window.parent.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
                 if(window.opener) window.opener.postMessage({ type: 'QUIZ_SUBMITTED', data: resultData }, "*");
             };
@@ -409,7 +409,6 @@
             document.getElementById('startBtn').addEventListener('click', function() {
                 sessionStorage.setItem('quizStarted_${info.fileName}', 'true'); showQuiz();
             });
-
             document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
             init();
         })();
