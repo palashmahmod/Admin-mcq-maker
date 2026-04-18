@@ -17,7 +17,7 @@
         :root { --primary: #2c3e50; --accent: #3498db; --cream: #FFFBF0; --danger: #e74c3c; --success: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--cream); margin: 0; padding-top: 110px; display: flex; justify-content: center; }
         .sticky-header { position: fixed; top: 0; left: 0; width: 100%; background: var(--primary); color: white; padding: 10px 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .nav-content { max-width: 850px; margin: auto; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 10px; }
+        .nav-content { max-width: 850px; margin: auto; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0; }
         .btn-nav { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 5px; }
         .container { width: 95%; max-width: 800px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 50px; }
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f1f5f9; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
@@ -36,7 +36,9 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
+
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -53,6 +55,7 @@
         </div>
     </div>
 </div>
+
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -181,7 +184,6 @@
         const ps = document.getElementById(`ps-${id}`);
         ps.innerHTML = stim ? cleanMath(stim).replace(/\n/g, '<br>') : "";
         ps.style.display = stim ? "block" : "none";
-
         document.getElementById(`pt-${id}`).innerHTML = cleanMath(b.querySelector('.q-text').value).replace(/\n/g, '<br>');
         document.getElementById(`po1-${id}`).innerHTML = "ক) " + cleanMath(b.querySelector('.o1').value);
         document.getElementById(`po2-${id}`).innerHTML = "খ) " + cleanMath(b.querySelector('.o2').value);
@@ -239,7 +241,7 @@
 
     function buildTemplate() {
         const rawTime = document.getElementById('quizTime').value || '30';
-        const creationTime = Date.now(); // Unique ID for each generation
+        const creationTime = Date.now();
         const info = {
             title: document.getElementById('quizTitle').value || 'মডেল টেস্ট',
             cls: document.getElementById('quizClass').value || '',
@@ -251,7 +253,6 @@
             timeNum: bnToEn(rawTime),
             cTime: creationTime
         };
-
         let qHTML = '';
         let sols = {};
         document.querySelectorAll('.q-card').forEach((block, i) => {
@@ -329,8 +330,6 @@
             
             var savedData = JSON.parse(localStorage.getItem(storageKey));
             var state;
-
-            // Reset logic: If no saved data OR saved data time is different from current file creation time
             if(!savedData || savedData.creationTime !== cTime) {
                 state = {
                     creationTime: cTime,
@@ -344,9 +343,7 @@
             } else {
                 state = savedData;
             }
-
             var totalSeconds = parseInt("${info.timeNum}") * 60;
-
             function init() {
                 if(state.quizStarted) {
                     showQuiz();
@@ -354,7 +351,6 @@
                     if(state.isDone) window.submitQuiz(true);
                 }
             }
-
             function showQuiz() {
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
@@ -368,11 +364,9 @@
                 startTimer();
                 if(history.state !== 'quiz') { history.pushState('quiz', null, location.href); }
             }
-
             function saveState() {
                 localStorage.setItem(storageKey, JSON.stringify(state));
             }
-
             function startTimer() {
                 var timer = setInterval(function() {
                     if(state.isDone) { clearInterval(timer); return; }
@@ -383,7 +377,6 @@
                     document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
                 }, 1000);
             }
-
             window.setAnswer = function(q, a, btn) {
                 if(state.isDone) return;
                 state.userAns[q] = a;
@@ -393,7 +386,6 @@
                 btn.classList.add('selected');
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             };
-
             function restoreAnswers() {
                 for(var q in state.userAns) {
                     var card = document.getElementById('q'+q);
@@ -406,16 +398,15 @@
                 }
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             }
-
             window.submitQuiz = function(isAuto = false) {
                 if(state.isDone && !isAuto) return;
                 if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
-                state.isDone = true; 
-                saveState();
+
                 var score = 0, wrongQs = [];
                 var timeTakenSec = Math.floor((Date.now() - state.startTimestamp) / 1000);
                 var minutesTaken = Math.floor(timeTakenSec / 60), secondsTaken = timeTakenSec % 60;
                 var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
+
                 for(var i in sol) {
                     var card = document.getElementById('q'+i);
                     var buttons = card.getElementsByClassName('option-btn');
@@ -431,15 +422,20 @@
                     }
                     if(state.userAns[i] === sol[i]) score++; else wrongQs.push(i);
                 }
+
                 var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
                     '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
                     '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
                     '<p><b>ভুল নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
+
                 document.getElementById('resDisplay').innerHTML = resHTML;
                 document.getElementById('submitBtn').style.display = 'none';
                 window.scrollTo({top:0, behavior:'smooth'});
-            };
 
+                // অটোমেটিক ডাটা মুছে ফেলা যাতে পুনরায় প্রবেশ করলে কুইজ রিসেট থাকে
+                state.isDone = true; 
+                localStorage.removeItem(storageKey); 
+            };
             document.getElementById('startBtn').addEventListener('click', function() {
                 showQuiz();
             });
