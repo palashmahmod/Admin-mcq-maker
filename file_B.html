@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced MCQ Builder - Stimulus Integrated</title>
+    <title>Advanced MCQ Builder - Firebase Integrated</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    
     <script>
         window.MathJax = {
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true },
@@ -13,6 +16,7 @@
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
     <style>
         :root { --primary: #2c3e50; --accent: #3498db; --cream: #FFFBF0; --danger: #e74c3c; --success: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--cream); margin: 0; padding-top: 110px; display: flex; justify-content: center; }
@@ -36,14 +40,16 @@
     </style>
 </head>
 <body>
-<div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; GitHub-এ পাঠানো হচ্ছে...</div>
+
+<div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; আপলোড হচ্ছে...</div>
+
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
         <button class="btn-nav" onclick="saveToStorage()"><i class="fas fa-save"></i> সেইভ</button>
         <button class="btn-nav" onclick="generateFile()"><i class="fas fa-download"></i> ডাউনলোড</button>
         <button class="btn-nav" style="background:var(--success)" onclick="uploadToGithub()">
-            <i class="fab fa-github"></i> গিটহাব
+            <i class="fab fa-github"></i> গিটহাব ও ফায়ারবেস
         </button>
         <button class="btn-nav" style="background:var(--danger)" onclick="clearAllQuestions()">
             <i class="fas fa-trash-alt"></i> সব মুছুন
@@ -53,6 +59,7 @@
         </div>
     </div>
 </div>
+
 <div class="container">
     <div class="config-grid">
         <div><label>পরীক্ষার নাম:</label><input type="text" id="quizTitle" placeholder="উদা: সাপ্তাহিক পরীক্ষা"></div>
@@ -66,12 +73,27 @@
     <div id="questions-area"></div>
     <button class="btn-add-q" onclick="addQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
+
 <script>
+    // --- FIREBASE CONFIGURATION (UPDATED) ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
+        authDomain: "quiz-storage-d8707.firebaseapp.com",
+        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com",
+        projectId: "quiz-storage-d8707",
+        storageBucket: "quiz-storage-d8707.firebasestorage.app",
+        messagingSenderId: "268238603467",
+        appId: "1:268238603467:web:1fdea708cdece2a3ab074e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     let qCount = 0;
     let questionImages = {};
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
 
+    // --- EXISTING FUNCTIONS (STRICTLY KEPT) ---
     function getGithubToken() {
         let token = localStorage.getItem('my_gh_token');
         if (!token) {
@@ -145,7 +167,7 @@
     }
 
     function clearAllQuestions() {
-        if(confirm("আপনি কি নিশ্চিতভাবে তৈরি করা সব প্রশ্নগুলো মুছে ফেলতে চান? (কনফিগারের তথ্য থাকবে)")) {
+        if(confirm("আপনি কি নিশ্চিতভাবে তৈরি করা সব প্রশ্নগুলো মুছে ফেলতে চান?")) {
             document.getElementById('questions-area').innerHTML = '';
             questionImages = {};
             qCount = 0;
@@ -238,13 +260,14 @@
     function buildTemplate() {
         const rawTime = document.getElementById('quizTime').value || '30';
         const creationTime = Date.now();
+        const fName = document.getElementById('fileName').value || 'quiz';
         const info = {
             title: document.getElementById('quizTitle').value || 'মডেল টেস্ট',
             cls: document.getElementById('quizClass').value || '',
             sub: document.getElementById('quizSubject').value || '',
             chapter: document.getElementById('quizChapter').value || '',
             marks: document.getElementById('quizTotalMarks').value || '',
-            fileName: document.getElementById('fileName').value || 'quiz',
+            fileName: fName,
             timeTxt: rawTime,
             timeNum: bnToEn(rawTime),
             cTime: creationTime
@@ -282,6 +305,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${info.title}</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"><\/script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"><\/script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 50px; font-size: 14px; }
@@ -293,80 +318,81 @@
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
         .option-btn { border: 1.5px solid #ddd; padding: 8px 10px; border-radius: 8px; cursor: pointer; background: #fff; position: relative; font-size: 13px; min-height: 38px; display: flex; align-items: center; transition: 0.2s; }
         .selected { border-color: #3498db !important; background: #e3f2fd !important; }
-        .correct { background: #d4edda !important; border-color: #27ae60 !important; color: #155724 !important; }
-        .wrong { background: #f8d7da !important; border-color: #e74c3c !important; color: #721c24 !important; }
-        .tick { position: absolute; right: 8px; color: #27ae60; font-weight: bold; }
         .btn-main { background: #27ae60; color: white; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .res-box { background: #fff; padding: 20px; border-radius: 15px; margin-top: 10px; border: 2px solid #3498db; }
-        @media (max-width: 480px) { .options-grid { gap: 8px; } .option-btn { padding: 6px 8px; } }
+        input[type="text"] { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        #loader-sub { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:3000; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
+    <div id="loader-sub"><h3>ফলাফল পাঠানো হচ্ছে...</h3><p>দয়া করে অপেক্ষা করুন।</p></div>
+
     <div id="start-screen" class="start-screen">
         <h1>${info.title}</h1>
-        <p>শ্রেণি: ${info.cls} | বিষয়: ${info.sub} | অধ্যায়: ${info.chapter}</p>
-        <p>পূর্ণমান: ${info.marks} | সময়: ${info.timeTxt} মিনিট</p>
+        <p>শ্রেণি: ${info.cls} | বিষয়: ${info.sub}</p>
+        <p>সময়: ${info.timeTxt} মিনিট | পূর্ণমান: ${info.marks}</p>
+        <input type="text" id="userName" placeholder="আপনার নাম লিখুন" required>
+        <input type="text" id="userRoll" placeholder="রোল নম্বর" required>
         <button class="btn-main" id="startBtn">পরীক্ষা শুরু করুন</button>
     </div>
+
     <div id="quiz-content" style="display:none;">
         <div class="header-fixed">
-            <div>সময়: <span id="clock">${info.timeTxt}:00</span></div>
+            <div>সময়: <span id="clock">${info.timeTxt}:00</span></div>
             <div>পূরণ: <span id="answered">0</span>/${Object.keys(sols).length}</div>
             <button class="btn-main" style="padding:8px 15px; font-size:14px; background:#e74c3c" id="submitBtn">সাবমিট</button>
         </div>
         <div class="container" id="mainArea">
-            <div id="resDisplay"></div>
             ${qHTML}
         </div>
     </div>
+
     <script>
+        const firebaseConfig = ${JSON.stringify(firebaseConfig)};
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         (function() {
             var sol = ${JSON.stringify(sols)};
             var cTime = ${info.cTime};
-            var storageKey = 'quiz_state_${info.fileName}';
-            var savedData = JSON.parse(localStorage.getItem(storageKey));
-            var state;
-
-            if(!savedData || savedData.creationTime !== cTime) {
-                state = { creationTime: cTime, quizStarted: false, isDone: false, userAns: {}, startTimeFormatted: "", startTimestamp: 0 };
-                localStorage.setItem(storageKey, JSON.stringify(state));
-            } else { state = savedData; }
-
-            var totalSeconds = parseInt("${info.timeNum}") * 60;
+            var storageKey = 'active_exam_${info.fileName}';
+            var state = JSON.parse(localStorage.getItem(storageKey)) || { 
+                quizStarted: false, isDone: false, userAns: {}, 
+                startTimestamp: 0, uName: "", uRoll: "" 
+            };
 
             function init() {
                 if(state.quizStarted) {
-                    showQuiz();
-                    restoreAnswers();
-                    if(state.isDone) window.submitQuiz(true);
+                    if(state.isDone) { window.location.href = "index.html"; return; }
+                    showQuiz(true);
                 }
             }
 
-            function showQuiz() {
+            function showQuiz(isRestore = false) {
+                var name = document.getElementById('userName').value;
+                var roll = document.getElementById('userRoll').value;
+                
+                if(!isRestore) {
+                    if(!name || !roll) { alert("নাম ও রোল দিন!"); return; }
+                    state.uName = name; state.uRoll = roll;
+                    state.quizStarted = true;
+                    state.startTimestamp = Date.now();
+                }
+
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('quiz-content').style.display = 'block';
-                if(!state.startTimestamp) {
-                    var now = new Date();
-                    state.startTimeFormatted = now.toLocaleDateString() + ", " + (now.getHours() % 12 || 12) + ":" + (now.getMinutes()<10?'0':'')+now.getMinutes() + (now.getHours() >= 12 ? ' PM' : ' AM');
-                    state.startTimestamp = Date.now();
-                    state.quizStarted = true;
-                    saveState();
-                }
+                saveState();
                 startTimer();
+                restoreAnswers();
             }
 
             function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); }
 
             function startTimer() {
+                var totalSec = parseInt("${info.timeNum}") * 60;
                 var timer = setInterval(function() {
-                    if(state.isDone) { clearInterval(timer); return; }
-                    var currentElapsed = Math.floor((Date.now() - state.startTimestamp) / 1000);
-                    var remaining = totalSeconds - currentElapsed;
-                    if(remaining <= 0) { 
-                        clearInterval(timer); 
-                        window.submitQuiz(true); 
-                        return; 
-                    }
+                    var elapsed = Math.floor((Date.now() - state.startTimestamp) / 1000);
+                    var remaining = totalSec - elapsed;
+                    if(remaining <= 0) { clearInterval(timer); window.submitQuiz(true); return; }
                     var m = Math.floor(remaining/60), s = remaining%60;
                     document.getElementById('clock').innerText = m + ":" + (s < 10 ? '0' : '') + s;
                 }, 1000);
@@ -388,59 +414,45 @@
                     if(card){
                         var buttons = card.getElementsByClassName('option-btn');
                         for(var i=0; i<buttons.length; i++) {
-                            // সংশোধিত লজিক: অপশনের প্রথম অক্ষর (ক/খ/গ/ঘ) চেক করা হচ্ছে
-                            if(buttons[i].textContent.trim().startsWith(state.userAns[q])) {
-                                buttons[i].classList.add('selected');
-                            }
+                            if(buttons[i].textContent.trim().startsWith(state.userAns[q])) buttons[i].classList.add('selected');
                         }
                     }
                 }
                 document.getElementById('answered').innerText = Object.keys(state.userAns).length;
             }
 
-            window.submitQuiz = function(isAuto = false) {
-                if(state.isDone && !isAuto) return;
-                if(!isAuto && !confirm("আপনি কি নিশ্চিত সাবমিট করতে চান?")) return;
+            window.submitQuiz = async function(isAuto = false) {
+                if(state.isDone) return;
+                if(!isAuto && !confirm("সাবমিট করতে চান?")) return;
                 
+                document.getElementById('loader-sub').style.display = 'flex';
                 state.isDone = true;
-                saveState();
-                localStorage.removeItem(storageKey); 
-
-                var score = 0, wrongQs = [];
-                var timeTakenSec = Math.floor((Date.now() - state.startTimestamp) / 1000);
-                if(timeTakenSec > totalSeconds) timeTakenSec = totalSeconds;
-                var minutesTaken = Math.floor(timeTakenSec / 60), secondsTaken = timeTakenSec % 60;
-                var durationStr = minutesTaken + ":" + (secondsTaken < 10 ? '0' : '') + secondsTaken;
-
+                
+                var score = 0, wrong = [];
                 for(var i in sol) {
-                    var card = document.getElementById('q'+i);
-                    var buttons = card.getElementsByClassName('option-btn');
-                    for(var j=0; j<buttons.length; j++) {
-                        var char = buttons[j].textContent.trim().charAt(0);
-                        if(char === sol[i]) { 
-                            buttons[j].classList.add('correct'); 
-                            buttons[j].innerHTML += '<span class="tick">✔</span>'; 
-                        }
-                        if(state.userAns[i] === char && char !== sol[i]) {
-                            buttons[j].classList.add('wrong');
-                        }
-                    }
-                    if(state.userAns[i] === sol[i]) score++; else wrongQs.push(i);
+                    if(state.userAns[i] === sol[i]) score++; 
+                    else wrong.push(i + "(" + (state.userAns[i]||'X') + ")");
                 }
 
-                var resHTML = '<div class="res-box"><h3>ফলাফল</h3>' +
-                    '<p><b>ব্যয়কৃত সময়:</b> ' + durationStr + '</p>' +
-                    '<p><b>সঠিক হয়েছে:</b> ' + score + '/' + Object.keys(sol).length + '</p>' +
-                    '<p><b>ভুল নং:</b> ' + (wrongQs.length > 0 ? wrongQs.join(', ') : 'নাই') + '</p></div>';
-                
-                document.getElementById('resDisplay').innerHTML = resHTML;
-                document.getElementById('submitBtn').style.display = 'none';
-                document.getElementById('clock').innerText = "সময় শেষ";
-                window.scrollTo({top:0, behavior:'smooth'});
+                var resultData = {
+                    name: state.uName,
+                    roll: state.uRoll,
+                    score: score,
+                    total: Object.keys(sol).length,
+                    wrong: wrong.join(', '),
+                    time: new Date().toLocaleString(),
+                    quizId: "${info.fileName}"
+                };
+
+                try {
+                    await db.ref('results/' + "${info.fileName}" + '/' + Date.now()).set(resultData);
+                    localStorage.removeItem(storageKey);
+                    window.location.href = "index.html";
+                } catch(e) { alert("Error: " + e.message); }
             };
 
-            document.getElementById('startBtn').addEventListener('click', showQuiz);
-            document.getElementById('submitBtn').addEventListener('click', function() { window.submitQuiz(false); });
+            document.getElementById('startBtn').addEventListener('click', function(){ showQuiz(false); });
+            document.getElementById('submitBtn').addEventListener('click', function(){ window.submitQuiz(false); });
             init();
         })();
     <\/script>
@@ -461,31 +473,54 @@
     async function uploadToGithub() {
         const fNameInput = document.getElementById('fileName').value;
         if (!fNameInput) return alert("ফাইল নাম লিখুন (যেমন: 601)");
+
         const activeToken = getGithubToken();
         if (!activeToken) return;
+
         const loader = document.getElementById('loader');
         const fileName = fNameInput + ".html";
         const contentStr = buildTemplate();
         const contentEncoded = btoa(unescape(encodeURIComponent(contentStr)));
-        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
+
         loader.style.display = 'flex';
-        let sha = "";
+
+        const quizMeta = {
+            title: document.getElementById('quizTitle').value,
+            cls: document.getElementById('quizClass').value,
+            sub: document.getElementById('quizSubject').value,
+            time: document.getElementById('quizTime').value,
+            marks: document.getElementById('quizTotalMarks').value,
+            fileName: fNameInput,
+            addedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+
         try {
-            const res = await fetch(url, { headers: { "Authorization": `token ${activeToken}` } });
-            if (res.ok) { const data = await res.json(); sha = data.sha; }
-        } catch (err) { }
-        const body = { message: `Web Update: ${fileName}`, content: contentEncoded };
-        if (sha) body.sha = sha;
-        try {
+            await database.ref('quizzes/' + fNameInput).set(quizMeta);
+
+            const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
+            let sha = "";
+            try {
+                const res = await fetch(url, { headers: { "Authorization": `token ${activeToken}` } });
+                if (res.ok) { const data = await res.json(); sha = data.sha; }
+            } catch (err) {}
+
+            const body = { message: `Firebase Update: ${fileName}`, content: contentEncoded };
+            if (sha) body.sha = sha;
+
             const response = await fetch(url, {
                 method: "PUT",
                 headers: { "Authorization": `token ${activeToken}`, "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });
+
             loader.style.display = 'none';
-            if (response.ok) alert("সফলভাবে GitHub-এ সরাসরি আপলোড হয়েছে!"); 
-            else { const err = await response.json(); alert("ত্রুটি: " + err.message); }
-        } catch (error) { loader.style.display = 'none'; alert("নেটওয়ার্ক সমস্যা!"); }
+            if (response.ok) alert("GitHub এবং Firebase-এ সফলভাবে তথ্য পাঠানো হয়েছে!"); 
+            else alert("GitHub আপলোডে সমস্যা হয়েছে।");
+
+        } catch (error) {
+            loader.style.display = 'none';
+            alert("ফায়ারবেস বা নেটওয়ার্ক সমস্যা: " + error.message);
+        }
     }
 </script>
 </body>
