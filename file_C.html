@@ -85,11 +85,9 @@
 </div>
 
 <script>
-    // GitHub কনফিগারেশন
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
 
-    // টোকেন ম্যানেজমেন্ট সিস্টেম
     function getGithubToken() {
         let token = localStorage.getItem('my_gh_token');
         if (!token) {
@@ -106,7 +104,7 @@
 
     function resetToken() {
         localStorage.removeItem('my_gh_token');
-        alert("টোকেন মুছে ফেলা হয়েছে। এখন আপলোড করলে নতুন টোকেন চাইবে।");
+        alert("টোকেন মুছে ফেলা হয়েছে।");
     }
 
     const firebaseConfig = {
@@ -115,18 +113,14 @@
         projectId: "quiz-storage-d8707"
     };
 
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
 
     async function uploadToGithub() {
         const fileInput = document.getElementById('quizFile');
         const status = document.getElementById('uploadStatus');
-        
         if (fileInput.files.length === 0) return alert("ফাইল সিলেক্ট করুন!");
 
-        // টোকেন গ্রহণ
         const activeToken = getGithubToken();
         if (!activeToken) return;
 
@@ -138,15 +132,15 @@
         reader.onload = async function(e) {
             const content = btoa(unescape(encodeURIComponent(e.target.result)));
             const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
-
             let sha = "";
+
             try {
                 const res = await fetch(url, { headers: { "Authorization": `token ${activeToken}` } });
                 if (res.ok) { const data = await res.json(); sha = data.sha; }
             } catch (err) { }
 
             const body = { 
-                message: `Admin Update: ${fileName} at ${new Date().toLocaleString()}`, 
+                message: `Admin Update: ${fileName}`, 
                 content: content 
             };
             if (sha) body.sha = sha;
@@ -162,15 +156,12 @@
                 if (response.ok) { 
                     alert("সফলভাবে GitHub-এ আপলোড হয়েছে!"); 
                     fileInput.value = ""; 
-                } else if (response.status === 401) {
-                    alert("টোকেনটি কাজ করছে না। রিসেট করে আবার দিন।");
-                    localStorage.removeItem('my_gh_token');
                 } else {
-                    alert("ত্রুটি! আপলোড ব্যর্থ হয়েছে। রিপোজিটরি নাম চেক করুন।");
+                    alert("আপলোড ব্যর্থ হয়েছে!");
                 }
             } catch (error) {
                 status.style.display = 'none';
-                alert("নেটওয়ার্ক সমস্যা!");
+                alert("নেটওয়ার্ক সমস্যা!");
             }
         };
         reader.readAsText(file);
@@ -188,26 +179,33 @@
     function loadStudentToggles() {
         const studentDisplay = document.getElementById('studentDisplay');
         const students = JSON.parse(localStorage.getItem('studentDB')) || [];
+
         if(students.length === 0) {
-            studentDisplay.innerHTML = "<p style='color:red; font-size:12px;'>কোনো ইউজার ডাটা পাওয়া যায়নি। file_A থেকে আইডি তৈরি করুন।</p>";
+            studentDisplay.innerHTML = "<p style='color:red; font-size:12px;'>কোনো ইউজার ডাটা পাওয়া যায়নি।</p>";
             return;
         }
+
+        // Firebase Listener: এটি রিয়েল-টাইমে আপডেট করবে
         db.ref(`quiz_control/${currentQuiz}`).on('value', (snapshot) => {
             const statuses = snapshot.val() || {};
             studentDisplay.innerHTML = '';
+
             students.forEach(s => {
+                // স্ট্যাটাস চেক: true মানে On, অন্য কিছু মানে Off
                 const isOn = statuses[s.userId] === true;
                 const card = document.createElement('div');
                 card.className = `student-card ${isOn ? 'on' : 'off'}`;
                 card.innerHTML = `
                     <div class="status-badge">${isOn ? 'Active' : 'Off'}</div>
                     <span class="name-tag">${s.name}</span>
-                    <div class="detail-tag">
-                        ${s.cls} | শাখা: ${s.section} | রোল: ${s.roll}
-                    </div>
+                    <div class="detail-tag">${s.cls} | রোল: ${s.roll}</div>
                     <div class="id-tag">ID: ${s.userId}</div>
                 `;
-                card.onclick = () => db.ref(`quiz_control/${currentQuiz}/${s.userId}`).set(!isOn);
+
+                // ক্লিক করলে স্ট্যাটাস উল্টে যাবে (On থাকলে Off হবে, Off থাকলে On)
+                card.onclick = () => {
+                    db.ref(`quiz_control/${currentQuiz}/${s.userId}`).set(!isOn);
+                };
                 studentDisplay.appendChild(card);
             });
         });
