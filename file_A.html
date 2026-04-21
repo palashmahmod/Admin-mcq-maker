@@ -10,6 +10,7 @@
     <title>ইউজার আইডি তৈরি - Palash Mahmod</title>
     
     <script>
+        // Cache busting for CSS
         document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=' + Date.now() + '">');
     </script>
     
@@ -76,22 +77,27 @@
         th, td { padding: 12px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
         th { background: var(--primary); color: white; }
         .del-btn { color: var(--danger); cursor: pointer; border: none; background: none; font-size: 18px; }
+        .status-msg { font-size: 12px; text-align: center; color: #7f8c8d; margin-top: 5px; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="top-bar">
         <a href="index.html" id="homeLink" class="back-btn"><i class="fas fa-arrow-left"></i></a>
         <h2 style="margin:0; font-size: 18px;">ইউজার ম্যানেজমেন্ট</h2>
     </div>
+
     <button class="btn-toggle" onclick="toggleForm()" id="toggleBtn">
         <i class="fas fa-plus-circle"></i> আইডি তৈরি করুন
     </button>
+
     <div id="input-form">
         <div class="form-group">
             <label>শিক্ষার্থীর নাম:</label>
             <input type="text" id="name" placeholder="নাম লিখুন">
         </div>
+
         <div style="display: flex; gap: 10px;">
             <div class="form-group" style="flex:1">
                 <label>শ্রেণি:</label>
@@ -117,6 +123,7 @@
                 </select>
             </div>
         </div>
+
         <div style="display: flex; gap: 10px;">
             <div class="form-group" style="flex:1">
                 <label>রোল নং (বাংলায়):</label>
@@ -138,6 +145,7 @@
             <button class="btn btn-cancel" onclick="toggleForm()">বাতিল</button>
         </div>
     </div>
+
     <div class="user-list">
         <h3 style="font-size: 16px; color: var(--primary);"><i class="fas fa-users"></i> ইউজার তালিকা</h3>
         <table>
@@ -152,13 +160,18 @@
                     <th>#</th>
                 </tr>
             </thead>
-            <tbody id="user-table-body"></tbody>
+            <tbody id="user-table-body">
+                <tr><td colspan="7">লোড হচ্ছে...</td></tr>
+            </tbody>
         </table>
+        <div id="sync-status" class="status-msg">সার্ভারের সাথে যুক্ত হচ্ছে...</div>
     </div>
 </div>
 
 <script>
+    // Cache busting for back link
     document.getElementById('homeLink').href = "index.html?v=" + Date.now();
+
     const firebaseConfig = {
         apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
@@ -169,7 +182,11 @@
         firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.database();
-    window.onload = displayUsers;
+
+    // অ্যাপ ওপেন হলেই Firebase থেকে ডাটা নিয়ে আসবে (ক্লিয়ার ডাটা করলেও থাকবে)
+    window.onload = function() {
+        syncWithFirebase();
+    };
 
     function toggleForm() {
         const form = document.getElementById('input-form');
@@ -183,47 +200,77 @@
         input.value = input.value.split('').map(digit => banglaDigits[digit] || digit).join('');
     }
 
+    // Firebase থেকে সকল ইউজার ডাটা সিঙ্ক করা
+    function syncWithFirebase() {
+        db.ref('users').on('value', (snapshot) => {
+            const data = snapshot.val();
+            let users = [];
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    users.push(data[key]);
+                });
+
+                // সর্টিং (শ্রেণি ও রোল অনুযায়ী)
+                const classOrder = {"৬ষ্ঠ":1, "৭ম":2, "৮ম":3, "৯ম":4, "১০ম":5, "এসএসসি":6};
+                users.sort((a, b) => (classOrder[a.cls] - classOrder[b.cls]) || a.roll.localeCompare(b.roll, 'bn'));
+            }
+            
+            // LocalStorage আপডেট রাখা যাতে অফলাইনেও দেখা যায়
+            localStorage.setItem('studentDB', JSON.stringify(users));
+            renderTable(users);
+            document.getElementById('sync-status').innerText = "সার্ভার ডাটা সিঙ্ক্রোনাইজড";
+        }, (error) => {
+            console.error("Firebase sync failed: ", error);
+            // অফলাইন থাকলে লোকাল ডাটা দেখানো
+            const cachedUsers = JSON.parse(localStorage.getItem('studentDB')) || [];
+            renderTable(cachedUsers);
+            document.getElementById('sync-status').innerText = "অফলাইন মোড (লোকাল ডাটা)";
+        });
+    }
+
     function saveUser() {
-        const name = document.getElementById('name').value;
+        const name = document.getElementById('name').value.trim();
         const cls = document.getElementById('class').value;
         const section = document.getElementById('section').value;
-        const roll = document.getElementById('roll').value;
-        const userId = document.getElementById('userId').value;
-        const password = document.getElementById('userPass').value; 
+        const roll = document.getElementById('roll').value.trim();
+        const userId = document.getElementById('userId').value.trim();
+        const password = document.getElementById('userPass').value.trim(); 
 
         if(!name || !roll || !userId || !password) {
             alert("সবগুলো তথ্য সঠিকভাবে দিন!");
             return;
         }
 
-        let users = JSON.parse(localStorage.getItem('studentDB')) || [];
-        if(users.some(u => u.userId === userId)) {
-            alert("এই আইডি নং টি আগে ব্যবহার করা হয়েছে!");
+        const userData = { 
+            name, 
+            cls, 
+            section, 
+            roll, 
+            userId, 
+            password, 
+            createdAt: firebase.database.ServerValue.TIMESTAMP 
+        };
+
+        // সরাসরি Firebase এ সেভ (সেখান থেকে অটুমেটিক লিস্ট আপডেট হবে)
+        db.ref('users/' + userId).set(userData)
+        .then(() => {
+            clearForm();
+            toggleForm();
+            alert("ইউজার সফলভাবে তৈরি হয়েছে!");
+        })
+        .catch(err => alert("ত্রুটি: " + err.message));
+    }
+
+    function renderTable(users) {
+        const tbody = document.getElementById('user-table-body');
+        tbody.innerHTML = '';
+
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7">কোন ইউজার পাওয়া যায়নি</td></tr>';
             return;
         }
 
-        const userData = { name, cls, section, roll, userId, password, lastUpdated: Date.now() };
-
-        db.ref('users/' + userId).set(userData)
-        .then(() => {
-            users.push(userData);
-            const classOrder = {"৬ষ্ঠ":1, "৭ম":2, "৮ম":3, "৯ম":4, "১০ম":5, "এসএসসি":6};
-            users.sort((a, b) => (classOrder[a.cls] - classOrder[b.cls]) || a.roll.localeCompare(b.roll, 'bn'));
-            
-            localStorage.setItem('studentDB', JSON.stringify(users));
-            clearForm();
-            displayUsers();
-            toggleForm();
-            alert("সফলভাবে ডাটাবেজে সেভ হয়েছে!");
-        })
-        .catch(err => alert("ফায়ারবেস ত্রুটি: " + err.message));
-    }
-
-    function displayUsers() {
-        const users = JSON.parse(localStorage.getItem('studentDB')) || [];
-        const tbody = document.getElementById('user-table-body');
-        tbody.innerHTML = '';
-        users.forEach((u, index) => {
+        users.forEach((u) => {
             tbody.innerHTML += `
                 <tr>
                     <td><b>${u.userId}</b></td>
@@ -232,19 +279,19 @@
                     <td>${u.cls}</td>
                     <td>${u.section}</td>
                     <td>${u.roll}</td>
-                    <td><button class="del-btn" onclick="deleteUser('${u.userId}', ${index})"><i class="fas fa-trash-alt"></i></button></td>
+                    <td><button class="del-btn" onclick="deleteUser('${u.userId}')"><i class="fas fa-trash-alt"></i></button></td>
                 </tr>`;
         });
     }
 
-    function deleteUser(uId, index) {
-        if(confirm("মুছে ফেলতে চান? ডাটাবেজ থেকেও মুছে যাবে।")) {
-            db.ref('users/' + uId).remove().then(() => {
-                let users = JSON.parse(localStorage.getItem('studentDB'));
-                users.splice(index, 1);
-                localStorage.setItem('studentDB', JSON.stringify(users));
-                displayUsers();
-            });
+    function deleteUser(uId) {
+        if(confirm("আপনি কি নিশ্চিত? ডিলিট করলে Firebase ডাটাবেজ থেকে এই ইউজারের সকল তথ্য স্থায়ীভাবে মুছে যাবে।")) {
+            // Firebase থেকে ডিলিট করা হলে syncWithFirebase এর কারণে লিস্ট অটো আপডেট হবে
+            db.ref('users/' + uId).remove()
+            .then(() => {
+                alert("ইউজার সফলভাবে মুছে ফেলা হয়েছে।");
+            })
+            .catch(err => alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message));
         }
     }
 
