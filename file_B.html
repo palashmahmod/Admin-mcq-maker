@@ -37,6 +37,7 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; আপলোড হচ্ছে...</div>
 
 <div class="sticky-header">
@@ -145,7 +146,6 @@
     function saveToStorage() {
         const questions = [];
         document.querySelectorAll('.q-card').forEach(card => {
-            const id = card.id.split('-')[2];
             questions.push({
                 stimulus: card.querySelector('.stimulus-text').value,
                 q: card.querySelector('.q-text').value,
@@ -209,14 +209,12 @@
             });
         });
 
-        // This is the content of the generated HTML file (Student Side)
-        return `
-<!DOCTYPE html>
+        return `<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${quizData.title}</title>
+    <title>\${quizInfo.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -236,23 +234,22 @@
     </style>
 </head>
 <body>
-
     <div id="setup-page" class="card">
         <h2>${quizData.title}</h2>
         <p>শ্রেণি: ${quizData.cls} | বিষয়: ${quizData.sub}</p>
-        <p>অধ্যায়: ${quizData.chapter} | পূর্ণমান: ${quizData.marks}</p>
-        <p>সময়: ${quizData.time} মিনিট</p>
+        <p>অধ্যায়: ${quizData.chapter} | পূর্ণমান: ${quizData.marks}</p>
+        <p>সময়: ${quizData.time} মিনিট</p>
         <hr>
         <div id="user-info">
-            <p>নাম: <b id="disp-name"></b></p>
-            <p>রোল: <b id="disp-roll"></b></p>
+            <p>নাম: <b id="disp-name">লোড হচ্ছে...</b></p>
+            <p>রোল: <b id="disp-roll">লোড হচ্ছে...</b></p>
         </div>
         <button class="btn btn-start" onclick="startQuiz()">পরীক্ষা শুরু করুন</button>
         <button class="btn btn-back" onclick="goBack()">ব্যাক</button>
     </div>
 
     <div id="exam-page" style="display:none">
-        <div id="timer">অবশিষ্ট সময়: <span id="time-left">00:00</span></div>
+        <div id="timer">অবশিষ্ট সময়: <span id="time-left">00:00</span></div>
         <div id="questions-container" class="card" style="margin-top:10px"></div>
         <button class="btn btn-start" onclick="submitQuiz(false)">সাবমিট করুন</button>
     </div>
@@ -261,11 +258,12 @@
         <h3 style="text-align:center; color:#2c3e50">পরীক্ষার ফলাফল</h3>
         <div id="result-details" class="result-info"></div>
         <div id="review-area" style="margin-top:20px"></div>
+        <button class="btn btn-back" onclick="goBack()">ড্যাশবোর্ডে ফিরুন</button>
     </div>
 
     <script>
         const firebaseConfig = ${JSON.stringify(firebaseConfig)};
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.database();
 
         const quizInfo = ${JSON.stringify(quizData)};
@@ -274,7 +272,6 @@
         let startTime;
         let timerInterval;
 
-        // Load user info from LocalStorage (from Login Page)
         const studentInfo = {
             name: localStorage.getItem("uName") || "N/A",
             cls: localStorage.getItem("uClass") || "N/A",
@@ -287,23 +284,24 @@
             document.getElementById('disp-name').innerText = studentInfo.name;
             document.getElementById('disp-roll').innerText = studentInfo.roll;
             
-            // Check if exam already started (Resume functionality)
             const savedStart = localStorage.getItem('start_' + quizInfo.fileName);
             if(savedStart) {
-                startTime = parseInt(savedStart);
-                startQuiz(true);
+                if(confirm("আপনার পরীক্ষাটি মাঝপথে ছিল। পুনরায় সেখান থেকে শুরু করতে চান?")) {
+                    startTime = parseInt(savedStart);
+                    startQuiz(true);
+                } else {
+                    localStorage.removeItem('start_' + quizInfo.fileName);
+                }
             }
         };
 
         function startQuiz(isResume = false) {
             document.getElementById('setup-page').style.display = 'none';
             document.getElementById('exam-page').style.display = 'block';
-            
             if(!isResume) {
                 startTime = Date.now();
                 localStorage.setItem('start_' + quizInfo.fileName, startTime);
             }
-
             renderQuestions();
             runTimer();
         }
@@ -337,7 +335,6 @@
             timerInterval = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
                 const remain = totalSec - elapsed;
-                
                 if(remain <= 0) {
                     clearInterval(timerInterval);
                     submitQuiz(true);
@@ -350,86 +347,70 @@
         }
 
         async function submitQuiz(isAuto) {
+            if(!isAuto && !confirm("সাবমিট করতে চান?")) return;
             clearInterval(timerInterval);
             const endTime = Date.now();
             const spentTime = Math.floor((endTime - startTime) / 1000);
             
             let correctCount = 0;
             let wrongQuestions = [];
-
             questions.forEach(q => {
                 if(userAnswers[q.num] === q.ans) correctCount++;
-                else {
-                    wrongQuestions.push(q.num);
-                }
+                else wrongQuestions.push(q.num);
             });
 
             const resultData = {
                 name: studentInfo.name,
                 id: studentInfo.id,
                 cls: studentInfo.cls,
-                section: studentInfo.section,
                 roll: studentInfo.roll,
-                quizFile: quizInfo.fileName,
                 quizTitle: quizInfo.title,
+                quizFile: quizInfo.fileName,
                 date: new Date().toLocaleString(),
                 spentTime: Math.floor(spentTime/60) + ":" + (spentTime%60),
                 correct: correctCount,
                 wrongCount: questions.length - correctCount,
-                wrongList: wrongQuestions.join(", ") || "সবগুলো সঠিক",
+                wrongList: wrongQuestions.join(", ") || "সব সঠিক",
                 total: questions.length
             };
 
-            // Push to Firebase (Admin File_D)
             await db.ref('results').push(resultData);
-
+            localStorage.removeItem('start_' + quizInfo.fileName);
             showResultPage(resultData);
         }
 
         function showResultPage(data) {
             document.getElementById('exam-page').style.display = 'none';
             document.getElementById('result-page').style.display = 'block';
-
             document.getElementById('result-details').innerHTML = \`
                 <p>শিক্ষার্থী: <b>\${data.name}</b></p>
-                <p>আইডি: \${data.id} | রোল: \${data.roll}</p>
-                <p>সঠিক: <span style="color:green">\${data.correct}</span> | ভুল: <span style="color:red">\${data.wrongCount}</span></p>
-                <p>ভুল প্রশ্ন নং: \${data.wrongList}</p>
+                <p>সঠিক: \${data.correct} | ভুল: \${data.wrongCount}</p>
             \`;
 
-            // Review Questions with Colors
             let reviewHtml = '<h4>উত্তরপত্র পর্যালোচনা:</h4>';
             questions.forEach(q => {
                 const uAns = userAnswers[q.num];
                 reviewHtml += \`
                     <div style="border:1px solid #eee; padding:10px; margin-bottom:10px; border-radius:8px">
                         <p><b>\${q.num}. \${q.q}</b></p>
-                        <div class="option \${q.ans==='ক'?'correct':(uAns==='ক'?'wrong':'')}">ক) \${q.o1} \${q.ans==='ক'?' <i class="fas fa-check"></i>':''}</div>
-                        <div class="option \${q.ans==='খ'?'correct':(uAns==='খ'?'wrong':'')}">খ) \${q.o2} \${q.ans==='খ'?' <i class="fas fa-check"></i>':''}</div>
-                        <div class="option \${q.ans==='গ'?'correct':(uAns==='গ'?'wrong':'')}">গ) \${q.o3} \${q.ans==='গ'?' <i class="fas fa-check"></i>':''}</div>
-                        <div class="option \${q.ans==='ঘ'?'correct':(uAns==='ঘ'?'wrong':'')}">ঘ) \${q.o4} \${q.ans==='ঘ'?' <i class="fas fa-check"></i>':''}</div>
+                        <div class="option \${q.ans==='ক'?'correct':(uAns==='ক'?'wrong':'')}">ক) \${q.o1}</div>
+                        <div class="option \${q.ans==='খ'?'correct':(uAns==='খ'?'wrong':'')}">খ) \${q.o2}</div>
+                        <div class="option \${q.ans==='গ'?'correct':(uAns==='গ'?'wrong':'')}">গ) \${q.o3}</div>
+                        <div class="option \${q.ans==='ঘ'?'correct':(uAns==='ঘ'?'wrong':'')}">ঘ) \${q.o4}</div>
                     </div>
                 \`;
             });
             document.getElementById('review-area').innerHTML = reviewHtml;
-
-            // Auto delete and move after 2 minutes
-            setTimeout(() => goHome(), 120000);
-        }
-
-        function goHome() {
-            localStorage.removeItem('start_' + quizInfo.fileName);
-            // Firebase signal to delete from user home (Admin file_C logic)
-            db.ref('users/' + studentInfo.id + '/activeQuiz').remove();
-            window.location.href = "home.html";
         }
 
         function goBack() {
-            window.location.href = "home.html";
+            if(confirm("আপনি কি ফিরে যেতে চান?")) {
+                location.reload(); 
+            }
         }
     <\/script>
 </body>
-</html>`;
+</html>\`;
     }
 
     function generateFile() {
@@ -445,7 +426,6 @@
     async function uploadToGithub() {
         const fNameInput = document.getElementById('fileName').value;
         if (!fNameInput) return alert("ফাইল নাম লিখুন!");
-        
         const activeToken = getGithubToken();
         if (!activeToken) return;
 
@@ -453,7 +433,6 @@
         const fileName = fNameInput + ".html";
         const contentStr = buildTemplate();
         const contentEncoded = btoa(unescape(encodeURIComponent(contentStr)));
-
         loader.style.display = 'flex';
 
         const quizMeta = {
@@ -465,10 +444,7 @@
         };
 
         try {
-            // Update Firebase for Control Panel (File_C)
             await database.ref('quiz_list/' + fNameInput).set(quizMeta);
-
-            // Upload to GitHub
             const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
             let sha = "";
             try {
