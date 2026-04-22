@@ -36,9 +36,10 @@
         @media (max-width: 600px) { body { padding-top: 140px; } .config-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
-
 <body>
+
 <div id="loader" class="loader-overlay"><i class="fas fa-spinner fa-spin"></i> &nbsp; আপলোড হচ্ছে...</div>
+
 <div class="sticky-header">
     <div class="nav-content">
         <a href="index.html" class="btn-nav"><i class="fas fa-arrow-left"></i> ব্যাক</a>
@@ -63,7 +64,7 @@
         <div><label>বিষয়:</label><input type="text" id="quizSubject" placeholder="বিষয়" oninput="saveToStorage()"></div>
         <div><label>অধ্যায়ের নাম:</label><input type="text" id="quizChapter" placeholder="অধ্যায় (যেমন: ২য়)" oninput="saveToStorage()"></div>
         <div><label>পূর্ণমান:</label><input type="text" id="quizTotalMarks" placeholder="পূর্ণমান" oninput="saveToStorage()"></div>
-        <div><label>সময় (মি:):</label><input type="text" id="quizTime" placeholder="সময়" oninput="saveToStorage()"></div>
+        <div><label>সময় (মি:):</label><input type="text" id="quizTime" placeholder="সময়" oninput="saveToStorage()"></div>
         <div><label>ফাইল নাম:</label><input type="text" id="fileName" placeholder="যেমন: 601" oninput="saveToStorage()"></div>
     </div>
     <div id="questions-area"></div>
@@ -99,7 +100,7 @@
     function resetToken() {
         if(confirm("টোকেনটি মুছে ফেলতে চান?")) {
             localStorage.removeItem('my_gh_token');
-            alert("টোকেন মুছে ফেলা হয়েছে।");
+            alert("টোকেন মুছে ফেলা হয়েছে।");
         }
     }
 
@@ -171,7 +172,7 @@
             questions: questions
         };
         localStorage.setItem('mcq_draft_v3', JSON.stringify(data));
-        if(showAlert) alert("ড্রাফট সেইভ হয়েছে!");
+        if(showAlert) alert("ড্রাফট সেইভ হয়েছে!");
     }
 
     window.onload = () => {
@@ -212,12 +213,13 @@
             });
         });
 
+        // সংশোধিত টেম্পলেট লজিক (সিনট্যাক্স এরর মুক্ত)
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${quizData.title}</title>
+    <title>${quizData.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -249,14 +251,14 @@
     </div>
 
     <div id="exam-page" style="display:none">
-        <div id="timer-bar">অবশিষ্ট সময়: <span id="time-left">${quizData.time}</span>:00</div>
+        <div id="timer-bar">অবশিষ্ট সময়: <span id="time-left">${quizData.time}</span>:00</div>
         <div class="card" id="quiz-container"></div>
         <button class="btn btn-start" style="max-width:600px; margin:20px auto; display:block;" onclick="submitQuiz()">সাবমিট করুন</button>
     </div>
 
     <script>
         const studentInfo = JSON.parse(localStorage.getItem('loggedUser')) || {};
-        // অটো-ফিল ডাটা লোড
+        
         window.addEventListener('load', () => {
              if(document.getElementById('studentName')) document.getElementById('studentName').innerText = studentInfo.name || "--";
              if(document.getElementById('studentClass')) document.getElementById('studentClass').innerText = studentInfo.cls || "--";
@@ -276,16 +278,17 @@
 
         function renderQuestions() {
             const container = document.getElementById('quiz-container');
-            container.innerHTML = questions.map((q, index) => \`
-                <div class="q-box">
-                    \\\${q.stimulus ? '<div class="stimulus">' + q.stimulus + '</div>' : ''}
-                    <b>\\\${index + 1}. \\\${q.q}</b>
-                    <label class="option-label"><input type="radio" name="q\\\${index}" value="ক"> ক) \\\${q.o1}</label>
-                    <label class="option-label"><input type="radio" name="q\\\${index}" value="খ"> খ) \\\${q.o2}</label>
-                    <label class="option-label"><input type="radio" name="q\\\${index}" value="গ"> গ) \\\${q.o3}</label>
-                    <label class="option-label"><input type="radio" name="q\\\${index}" value="ঘ"> ঘ) \\\${q.o4}</label>
-                </div>
-            \`).join('');
+            container.innerHTML = questions.map((q, index) => {
+                let html = '<div class="q-box">';
+                if(q.stimulus) html += '<div class="stimulus">' + q.stimulus + '</div>';
+                html += '<b>' + (index + 1) + '. ' + q.q + '</b>';
+                html += '<label class="option-label"><input type="radio" name="q' + index + '" value="ক"> ক) ' + q.o1 + '</label>';
+                html += '<label class="option-label"><input type="radio" name="q' + index + '" value="খ"> খ) ' + q.o2 + '</label>';
+                html += '<label class="option-label"><input type="radio" name="q' + index + '" value="গ"> গ) ' + q.o3 + '</label>';
+                html += '<label class="option-label"><input type="radio" name="q' + index + '" value="ঘ"> ঘ) ' + q.o4 + '</label>';
+                html += '</div>';
+                return html;
+            }).join('');
         }
 
         function startTimer() {
@@ -293,7 +296,7 @@
             const interval = setInterval(() => {
                 let mins = Math.floor(timeLeft / 60);
                 let secs = timeLeft % 60;
-                display.innerText = \\\`\\\${mins}:\\\${secs < 10 ? '0' : ''}\\\${secs}\\\`;
+                display.innerText = mins + ":" + (secs < 10 ? '0' : '') + secs;
                 if (timeLeft <= 0) {
                     clearInterval(interval);
                     submitQuiz();
@@ -303,7 +306,7 @@
         }
 
         function submitQuiz() {
-            alert("পরীক্ষা সফলভাবে সাবমিট হয়েছে!");
+            alert("পরীক্ষা সফলভাবে সাবমিট হয়েছে!");
             location.reload();
         }
     <\/script>
@@ -333,7 +336,6 @@
         const fileName = fNameInput + ".html";
         const contentStr = buildTemplate();
         const contentEncoded = btoa(unescape(encodeURIComponent(contentStr)));
-
         try {
             const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fileName}`;
             let sha = "";
@@ -342,19 +344,16 @@
                 const existingData = await checkRes.json(); 
                 sha = existingData.sha; 
             }
-
             const body = { message: `Update: ${fileName}`, content: contentEncoded };
             if (sha) body.sha = sha;
-
             const response = await fetch(url, {
                 method: "PUT",
                 headers: { "Authorization": `token ${activeToken}`, "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });
-
             loader.style.display = 'none';
-            if (response.ok) alert("গিটহাব ও ফায়ারবেসে সফলভাবে আপলোড হয়েছে!"); 
-            else alert("আপলোডে সমস্যা হয়েছে। টোকেন চেক করুন।");
+            if (response.ok) alert("গিটহাব ও ফায়ারবেসে সফলভাবে আপলোড হয়েছে!"); 
+            else alert("আপলোডে সমস্যা হয়েছে। টোকেন চেক করুন।");
         } catch (error) {
             loader.style.display = 'none';
             alert("ত্রুটি: " + error.message);
