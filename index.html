@@ -3,188 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>শিক্ষার্থী ড্যাশবোর্ড - স্মার্ট কুইজ</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Admin Dashboard - Palash Mahmod</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f0f2f5; --success: #27ae60; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .card { width: 95%; max-width: 450px; background: #ffffff; padding: 25px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; }
-        .header-profile { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; text-align: left; }
-        .profile-pic { width: 80px; height: 106px; border: 1px solid #000; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
-        .profile-info { color: var(--primary); line-height: 1.4; text-align: left; flex-grow: 1; }
-        .profile-info h2 { margin: 0; font-size: 20px; font-weight: 900; color: #1a202c; }
-        .profile-info p { margin: 1px 0; font-size: 13px; font-weight: 600; color: #4a5568; }
-        .divider { height: 1.5px; background-color: #000; margin: 10px 0 20px 0; border: none; }
-        .profile-header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; text-align: left; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9rem; }
-        .info-item b { opacity: 0.8; font-weight: normal; font-size: 0.8rem; display: block; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 14px; }
-        .btn { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        #dashboard { display: none; }
-        .quiz-card { background: #fff; padding: 15px; border-radius: 18px; margin-top: 15px; border: 1px solid #e1e8ed; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 5px; background: #e8f5e9; color: var(--success); }
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --cream-bg: #FFFBF0; 
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--cream-bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            width: 90%;
+            max-width: 400px;
+        }
+        /* Shared Header Style */
+        .header-profile {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+        .profile-pic {
+            width: 80px;
+            height: 106px; /* 3:4 ratio */
+            border: 1px solid #000;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .profile-info {
+            color: var(--primary-color);
+            line-height: 1.4;
+            text-align: left;
+        }
+        .profile-info h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 900;
+            color: #1a202c;
+        }
+        .profile-info p {
+            margin: 1px 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .divider {
+            height: 1.5px;
+            background-color: #000;
+            margin: 10px 0 20px 0;
+            border: none;
+        }
+        /* Login Form */
+        .login-form {
+            text-align: center;
+        }
+        .login-form input {
+            padding: 12px; width: 100%; border: 1px solid #ddd;
+            border-radius: 8px; margin-bottom: 15px; display: block;
+            font-size: 16px; box-sizing: border-box;
+            background: #f9fafb;
+        }
+        .login-form button {
+            background: var(--accent-color); color: white; border: none;
+            padding: 12px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; width: 100%; font-size: 16px;
+            transition: 0.3s;
+        }
+        .login-form button:hover { background: #2980b9; }
+
+        /* Main Dashboard Container */
+        .dashboard {
+            width: 95%;
+            max-width: 550px;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            display: none;
+        }
+        /* 3D Button Grid */
+        .nav-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            padding: 5px;
+        }
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--white);
+            border-radius: 20px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 15px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(0,0,0,0.05));
+            box-shadow: 0 10px 20px rgba(0,0,0,0.12), inset 0 -5px 0 rgba(0,0,0,0.2); 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-btn i { font-size: 42px; margin-bottom: 15px; }
+        .nav-btn:hover { transform: translateY(-6px); }
+        .nav-btn:active { transform: translateY(3px); }
+
+        .btn-a { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .btn-b { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
+        .btn-c { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .btn-d { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
+
+        .logout-link {
+            display: block; text-align: center; margin-top: 35px;
+            color: #718096; font-size: 14px; text-decoration: none;
+            font-weight: 600; cursor: pointer;
+        }
     </style>
 </head>
 <body>
-
-<div id="login-section" class="card">
-    <div class="header-profile">
-        <img src="photo1.jpg" alt="Palash Mahmod" class="profile-pic">
-        <div class="profile-info">
-            <h2>Palash Mahmod</h2>
-            <p>BSC(SCIENCE), MSC(BOTANY)</p>
-            <p>Mob: 01757935522</p>
+    <div id="login-overlay">
+        <div class="login-box">
+            <div class="header-profile">
+                <img src="photo1.jpg" alt="Palash Mahmod" class="profile-pic">
+                <div class="profile-info">
+                    <h2>Palash Mahmod</h2>
+                    <p>BSC(SCIENCE), MSC(BOTANY)</p>
+                    <p>Mob: 01757935522</p>
+                </div>
+            </div>
+            <hr class="divider">
+            <div class="login-form">
+                <input type="password" id="pass-input" placeholder="পাসওয়ার্ড দিন">
+                <button onclick="checkLogin()">প্রবেশ করুন</button>
+            </div>
         </div>
     </div>
-    <hr class="divider">
-    <h2 style="color: var(--primary); margin: 0 0 15px 0;">শিক্ষার্থী প্রবেশদ্বার</h2>
-    <input type="text" id="uName" placeholder="সম্পূর্ণ নাম">
-    <div style="display: flex; gap: 10px;">
-        <input type="text" id="uClass" placeholder="শ্রেণি">
-        <input type="text" id="uSection" placeholder="শাখা">
-    </div>
-    <div style="display: flex; gap: 10px;">
-        <input type="number" id="uRoll" placeholder="রোল নং">
-        <input type="number" id="uID" placeholder="আইডি নং">
-    </div>
-    <input type="number" id="uPass" placeholder="পিন পাসওয়ার্ড">
-    <button class="btn" onclick="login()">প্রবেশ করুন</button>
-</div>
 
-<div id="dashboard" class="card">
-    <div class="header-profile">
-        <img src="photo1.jpg" alt="Palash Mahmod" class="profile-pic">
-        <div class="profile-info"><h2>Palash Mahmod</h2><p>BSC(SCIENCE), MSC(BOTANY)</p><p>Mob: 01757935522</p></div>
-    </div>
-    <hr class="divider">
-    <div class="profile-header">
-        <h3 id="welcomeMsg" style="margin:0 0 10px 0;">স্বাগতম</h3>
-        <div class="info-grid">
-            <div class="info-item"><b>আইডি নং</b> <span id="dispID"></span></div>
-            <div class="info-item"><b>শ্রেণি</b> <span id="dispClass"></span></div>
-            <div class="info-item"><b>শাখা</b> <span id="dispSection"></span></div>
-            <div class="info-item"><b>রোল</b> <span id="dispRoll"></span></div>
+    <div class="dashboard" id="main-content">
+        <div class="header-profile">
+            <img src="photo1.jpg" alt="Palash Mahmod" class="profile-pic">
+            <div class="profile-info">
+                <h2>Palash Mahmod</h2>
+                <p>BSC(SCIENCE), MSC(BOTANY)</p>
+                <p>Mob: 01757935522</p>
+            </div>
         </div>
+        <hr class="divider">
+        <div class="nav-menu">
+            <a href="file_A.html" class="nav-btn btn-a">
+                <i class="fas fa-user-gear"></i>
+                <span>ইউজার আইডি তৈরি</span>
+            </a>
+            <a href="file_B.html" class="nav-btn btn-b">
+                <i class="fas fa-file-pen"></i>
+                <span>MCQ প্রশ্ন তৈরি</span>
+            </a>
+            <a href="file_C.html" class="nav-btn btn-c">
+                <i class="fas fa-list-check"></i>
+                <span>প্রশ্ন সিলেকশন</span>
+            </a>
+            <a href="file_D.html" class="nav-btn btn-d">
+                <i class="fas fa-square-poll-vertical"></i>
+                <span>রেজাল্ট পর্যবেক্ষণ</span>
+            </a>
+        </div>
+        <a class="logout-link" onclick="logout()">লগআউট করুন</a>
     </div>
-    <div id="quizList"></div>
-    <div id="noQuiz" style="margin-top:20px; color:#95a5a6; display:none;">বর্তমানে কোনো পরীক্ষা নেই।</div>
-    <button class="btn" style="background:#fdf0ef; color:#e74c3c; margin-top:25px; border:1px solid #fadbd8;" onclick="logout()">লগআউট করুন</button>
-</div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
-        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
-        projectId: "quiz-storage-d8707"
-    };
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const db = firebase.database();
-    let currentUser = JSON.parse(localStorage.getItem('loggedUser'));
+    <script>
+        const secret = "cG01NTIy"; // pm5522
 
-    window.onload = () => { if(currentUser) showDashboard(); };
-
-    function login() {
-        const fields = ['uName', 'uClass', 'uSection', 'uRoll', 'uID', 'uPass'];
-        const values = {};
-        for(let f of fields) {
-            values[f] = document.getElementById(f).value.trim();
-            if(!values[f]) return alert("সবগুলো বক্স পূরণ করুন।");
+        // পেজ লোড হলে চেক করা
+        if(localStorage.getItem('isLoggedIn') === 'true') {
+            showDashboard();
         }
-        db.ref('users/' + values.uID).once('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data && (data.password == values.uPass || data.pin == values.uPass)) {
-                currentUser = { name: values.uName, cls: values.uClass, sec: values.uSection, roll: values.uRoll, id: values.uID };
-                localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-                showDashboard();
-            } else {
-                alert("আইডি বা পিন ভুল!");
-            }
-        });
-    }
 
-    function showDashboard() {
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        document.getElementById('welcomeMsg').innerText = currentUser.name;
-        document.getElementById('dispID').innerText = currentUser.id;
-        document.getElementById('dispClass').innerText = currentUser.cls;
-        document.getElementById('dispSection').innerText = currentUser.sec;
-        document.getElementById('dispRoll').innerText = currentUser.roll;
-        fetchQuizzes();
-    }
-
-    function fetchQuizzes() {
-        const listDiv = document.getElementById('quizList');
-        db.ref('quiz_control').on('value', (snapshot) => {
-            listDiv.innerHTML = '';
-            let hasQuiz = false;
-            const data = snapshot.val();
-            if(data) {
-                for(let key in data) {
-                    const studentStatus = data[key][currentUser.id];
-                    if(studentStatus === true) {
-                        hasQuiz = true;
-                        const card = document.createElement('div');
-                        card.className = 'quiz-card';
-                        card.innerHTML = `
-                            <span class="status-badge">লাইভ পরীক্ষা</span>
-                            <div style="font-weight:bold; color:var(--primary);">পরীক্ষার কোড: ${key}</div>
-                            <button class="btn" onclick="openQuiz('${key}')">পরীক্ষা শুরু করুন</button>
-                        `;
-                        listDiv.appendChild(card);
-                    }
+        // ব্রাউজার ব্যাক বাটন বা হিস্ট্রি নেভিগেশনের জন্য ফিক্স
+        window.onpageshow = function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                if(localStorage.getItem('isLoggedIn') === 'true') {
+                    showDashboard();
                 }
             }
-            document.getElementById('noQuiz').style.display = hasQuiz ? 'none' : 'block';
-        });
-    }
+        };
 
-    function openQuiz(fileName) {
-        const user = "palashmahmod";
-        const repo = "quiz-files";
-        const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/main/${fileName}.html`;
-        
-        fetch(rawUrl)
-            .then(response => response.text())
-            .then(html => {
-                // কুইজ ফাইলের ভেতরে ডেটা পাঠানোর জন্য স্ক্রিপ্ট
-                const injectionScript = `
-                <script>
-                    window.addEventListener('load', function() {
-                        if(document.getElementById('studentName')) document.getElementById('studentName').innerText = "${currentUser.name}";
-                        if(document.getElementById('studentRoll')) document.getElementById('studentRoll').innerText = "${currentUser.roll}";
-                        if(document.getElementById('studentClass')) document.getElementById('studentClass').innerText = "${currentUser.cls}";
-                        if(document.getElementById('studentSection')) document.getElementById('studentSection').innerText = "${currentUser.sec}";
-                        
-                        // ব্যাক বাটন যুক্ত করা
-                        let bBtn = document.createElement('button');
-                        bBtn.innerHTML = "ড্যাশবোর্ডে ফিরুন";
-                        bBtn.style.cssText = "width:100%; padding:14px; background:#95a5a6; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px;";
-                        bBtn.onclick = function() { window.location.href = window.location.origin + window.location.pathname; };
-                        let card = document.querySelector('.card');
-                        if(card) card.appendChild(bBtn);
-                    });
-                <\/script>`;
+        function checkLogin() {
+            const input = document.getElementById('pass-input').value;
+            if(btoa(input) === secret) {
+                localStorage.setItem('isLoggedIn', 'true');
+                showDashboard();
+            } else {
+                alert("পাসওয়ার্ড সঠিক নয়!");
+            }
+        }
 
-                const finalHtml = html + injectionScript;
-                
-                // Blob তৈরি করে ফাইলটি ওপেন করা (সবচেয়ে নিরাপদ পদ্ধতি)
-                const blob = new Blob([finalHtml], { type: 'text/html' });
-                const blobUrl = URL.createObjectURL(blob);
-                window.location.href = blobUrl;
-            })
-            .catch(err => {
-                alert("ত্রুটি: পরীক্ষা ফাইলটি লোড করা যাচ্ছে না।");
-            });
-    }
+        function showDashboard() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
 
-    function logout() {
-        if (prompt("লগআউট পাসওয়ার্ড:") === "pm5522") {
-            localStorage.clear();
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
             location.reload();
         }
-    }
-</script>
+    </script>
 </body>
 </html>
