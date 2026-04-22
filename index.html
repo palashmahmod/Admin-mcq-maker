@@ -15,7 +15,6 @@
             --cream-bg: #FFFBF0; 
             --white: #ffffff;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--cream-bg);
@@ -25,7 +24,6 @@
             align-items: center;
             min-height: 100vh;
         }
-
         /* Login Overlay */
         #login-overlay {
             position: fixed;
@@ -36,7 +34,6 @@
             align-items: center;
             z-index: 1000;
         }
-
         .login-box {
             background: var(--white);
             padding: 30px;
@@ -45,15 +42,13 @@
             width: 90%;
             max-width: 400px;
         }
-
-        /* Shared Header Style (Login & Dashboard) */
+        /* Shared Header Style */
         .header-profile {
             display: flex;
             align-items: flex-end;
             gap: 15px;
             margin-bottom: 5px;
         }
-
         .profile-pic {
             width: 80px;
             height: 106px; /* 3:4 ratio */
@@ -61,53 +56,45 @@
             object-fit: cover;
             border-radius: 4px;
         }
-
         .profile-info {
             color: var(--primary-color);
             line-height: 1.4;
             text-align: left;
         }
-
         .profile-info h2 {
             margin: 0;
             font-size: 20px;
             font-weight: 900;
             color: #1a202c;
         }
-
         .profile-info p {
             margin: 1px 0;
             font-size: 13px;
             font-weight: 600;
             color: #4a5568;
         }
-
         .divider {
             height: 1.5px;
             background-color: #000;
             margin: 10px 0 20px 0;
             border: none;
         }
-
-        /* Login Form Elements */
+        /* Login Form */
         .login-form {
             text-align: center;
         }
-
         .login-form input {
             padding: 12px; width: 100%; border: 1px solid #ddd;
             border-radius: 8px; margin-bottom: 15px; display: block;
             font-size: 16px; box-sizing: border-box;
             background: #f9fafb;
         }
-
         .login-form button {
             background: var(--accent-color); color: white; border: none;
             padding: 12px; border-radius: 8px; cursor: pointer;
             font-weight: bold; width: 100%; font-size: 16px;
             transition: 0.3s;
         }
-
         .login-form button:hover { background: #2980b9; }
 
         /* Main Dashboard Container */
@@ -120,7 +107,6 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.08);
             display: none;
         }
-
         /* 3D Button Grid */
         .nav-menu {
             display: grid;
@@ -128,7 +114,6 @@
             gap: 25px;
             padding: 5px;
         }
-
         .nav-btn {
             display: flex;
             flex-direction: column;
@@ -147,9 +132,7 @@
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             border: 1px solid rgba(255,255,255,0.1);
         }
-
         .nav-btn i { font-size: 42px; margin-bottom: 15px; }
-
         .nav-btn:hover { transform: translateY(-6px); }
         .nav-btn:active { transform: translateY(3px); }
 
@@ -166,7 +149,6 @@
     </style>
 </head>
 <body>
-
     <div id="login-overlay">
         <div class="login-box">
             <div class="header-profile">
@@ -178,7 +160,6 @@
                 </div>
             </div>
             <hr class="divider">
-            
             <div class="login-form">
                 <input type="password" id="pass-input" placeholder="পাসওয়ার্ড দিন">
                 <button onclick="checkLogin()">প্রবেশ করুন</button>
@@ -195,9 +176,7 @@
                 <p>Mob: 01757935522</p>
             </div>
         </div>
-
         <hr class="divider">
-
         <div class="nav-menu">
             <a href="file_A.html" class="nav-btn btn-a">
                 <i class="fas fa-user-gear"></i>
@@ -216,16 +195,25 @@
                 <span>রেজাল্ট পর্যবেক্ষণ</span>
             </a>
         </div>
-
         <a class="logout-link" onclick="logout()">লগআউট করুন</a>
     </div>
 
     <script>
         const secret = "cG01NTIy"; // pm5522
 
+        // পেজ লোড হলে চেক করা
         if(localStorage.getItem('isLoggedIn') === 'true') {
             showDashboard();
         }
+
+        // ব্রাউজার ব্যাক বাটন বা হিস্ট্রি নেভিগেশনের জন্য ফিক্স
+        window.onpageshow = function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                if(localStorage.getItem('isLoggedIn') === 'true') {
+                    showDashboard();
+                }
+            }
+        };
 
         function checkLogin() {
             const input = document.getElementById('pass-input').value;
