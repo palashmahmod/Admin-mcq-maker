@@ -3,109 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result List - file_D</title>
+    <title>ফলাফল তালিকা - এডমিন</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        :root { --p: #2c3e50; --a: #3498db; --d: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
-        .back-btn { text-decoration: none; color: var(--p); font-weight: bold; background: #eee; padding: 8px 15px; border-radius: 8px; }
-        .res-card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; transition: 0.2s; }
-        .res-card:hover { border-color: var(--a); background: #f9f9f9; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; margin-top: 5px; }
-        .score-badge { background: #e8f5e9; color: #2e7d32; }
-        .wrong-badge { background: #ffebee; color: #c62828; }
-        .del-btn { position: absolute; top: 15px; right: 15px; color: var(--d); cursor: pointer; border: none; background: none; font-size: 18px; }
-        .search-box { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        :root { --p: #2c3e50; --bg: #f0f2f5; --danger: #e74c3c; --success: #27ae60; --card-bg: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        
+        .header-nav { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto 20px; }
+        .back-btn { background: #e8eaed; color: #333; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px; border: none; cursor: pointer; }
+        .clear-all { background: var(--danger); color: white; padding: 10px 20px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+
+        .search-container { max-width: 600px; margin: 0 auto 20px; }
+        #searchBox { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; outline: none; font-size: 16px; }
+
+        .result-list { max-width: 600px; margin: 0 auto; }
+        .result-card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; border-left: 5px solid var(--p); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .student-info h3 { margin: 0; color: #333; font-size: 1.2rem; }
+        .student-id { color: #666; font-size: 14px; font-weight: normal; }
+        
+        .delete-btn { color: var(--danger); background: none; border: none; font-size: 20px; cursor: pointer; }
+
+        .info-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; color: #444; font-size: 14px; }
+        .info-row i { width: 18px; color: #555; }
+
+        .badge-container { display: flex; gap: 10px; margin-top: 15px; }
+        .badge { padding: 6px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; }
+        .badge-success { background: #e8f5e9; color: var(--success); }
+        .badge-error { background: #ffebee; color: var(--danger); }
+
+        .loader { text-align: center; margin-top: 50px; font-size: 20px; color: #666; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> ব্যাক</a>
-        <h2 style="margin:0; font-size: 18px;">ফলাফল তালিকা</h2>
-        <button onclick="clearAllResults()" style="background:var(--d); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">সব মুছুন</button>
-    </div>
-
-    <input type="text" id="search" class="search-box" placeholder="নাম বা কুইজ দিয়ে খুঁজুন..." oninput="filterResults()">
-
-    <div id="resultsArea">লোড হচ্ছে...</div>
+<div class="header-nav">
+    <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i> ব্যাক</button>
+    <h2 style="margin:0;">ফলাফল তালিকা</h2>
+    <button class="clear-all" onclick="clearAllData()">সব মুছুন</button>
 </div>
 
+<div class="search-container">
+    <input type="text" id="searchBox" placeholder="নাম বা কুইজ দিয়ে খুঁজুন..." onkeyup="filterResults()">
+</div>
+
+<div id="loading" class="loader"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>
+<div id="resultArea" class="result-list"></div>
+
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
-        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
-        projectId: "quiz-storage-d8707"
+    // Firebase Configuration (Same as your file_B)
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
+        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", 
+        projectId: "quiz-storage-d8707" 
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let allResults = [];
-
-    function fetchResults() {
-        db.ref('QuizResults').on('value', (snap) => {
-            allResults = [];
-            const data = snap.val();
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    allResults.push({ id: key, ...data[key] });
-                });
-                allResults.reverse(); // নতুন ফলাফল আগে দেখাবে
+    function loadResults() {
+        db.ref("QuizResults").on("value", (snapshot) => {
+            document.getElementById('loading').style.display = 'none';
+            const area = document.getElementById('resultArea');
+            area.innerHTML = "";
+            
+            if (!snapshot.exists()) {
+                area.innerHTML = "<p style='text-align:center;'>কোনো ফলাফল পাওয়া যায়নি।</p>";
+                return;
             }
-            renderResults(allResults);
+
+            snapshot.forEach((child) => {
+                const data = child.val();
+                const key = child.key;
+
+                const card = `
+                <div class="result-card" data-search="${data.name} ${data.quizTitle}">
+                    <div class="card-header">
+                        <div class="student-info">
+                            <h3>${data.name} <span class="student-id">(ID: ${data.userId || data.roll})</span></h3>
+                        </div>
+                        <button class="delete-btn" onclick="deleteEntry('${key}')"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    
+                    <div class="info-row"><i class="fas fa-book"></i> <b>কুইজ:</b> ${data.quizTitle} | <b>বিষয়:</b> ${data.subject || 'N/A'}</div>
+                    <div class="info-row"><i class="fas fa-graduation-cap"></i> <b>শ্রেণি:</b> ${data.cls || data.class} | <b>শাখা:</b> ${data.sec || 'undefined'} | <b>রোল:</b> ${data.roll}</div>
+                    <div class="info-row"><i class="fas fa-clock"></i> <b>সময়:</b> ${data.timestamp || 'undefined'} (${data.timeSpent || 'undefined'})</div>
+                    
+                    <div class="badge-container">
+                        <div class="badge badge-success">সঠিক: ${data.correct} / ${data.total}</div>
+                        <div class="badge badge-error">ভুল প্রশ্ন নং: ${data.wrongIndices || 'নেই'}</div>
+                    </div>
+                </div>
+                `;
+                area.innerHTML = card + area.innerHTML;
+            });
         });
     }
 
-    function renderResults(data) {
-        const area = document.getElementById('resultsArea');
-        if (data.length === 0) {
-            area.innerHTML = "<p style='text-align:center'>কোনো ফলাফল পাওয়া যায়নি।</p>";
-            return;
+    function deleteEntry(key) {
+        if(confirm("এই ফলাফলটি মুছতে চান?")) {
+            db.ref("QuizResults/" + key).remove();
         }
+    }
 
-        area.innerHTML = data.map(r => `
-            <div class="res-card">
-                <button class="del-btn" onclick="deleteResult('${r.id}')"><i class="fas fa-trash-alt"></i></button>
-                <div style="font-weight:bold; font-size: 16px; color: var(--p);">${r.name} <span style="font-size:12px; color:#777;">(ID: ${r.roll})</span></div>
-                <div style="font-size: 13px; margin-top:5px;">
-                    <i class="fas fa-book"></i> কুইজ: <b>${r.quizTitle}</b> | বিষয়: ${r.subject}<br>
-                    <i class="fas fa-graduation-cap"></i> শ্রেণি: ${r.cls} | শাখা: ${r.section} | রোল: ${r.roll}<br>
-                    <i class="fas fa-clock"></i> সময়: ${r.startTime} (${r.duration})
-                </div>
-                <div class="badge score-badge">সঠিক: ${r.correct} / ${r.total}</div>
-                <div class="badge wrong-badge">ভুল প্রশ্ন নং: ${r.wrongIndices || 'সব সঠিক'}</div>
-            </div>
-        `).join('');
+    function clearAllData() {
+        if(confirm("সব ফলাফল চিরতরে মুছে ফেলবেন? এটি রিকভার করা যাবে না।")) {
+            db.ref("QuizResults").remove();
+        }
     }
 
     function filterResults() {
-        const term = document.getElementById('search').value.toLowerCase();
-        const filtered = allResults.filter(r => 
-            r.name.toLowerCase().includes(term) || 
-            r.quizTitle.toLowerCase().includes(term) ||
-            r.roll.toString().includes(term)
-        );
-        renderResults(filtered);
+        const query = document.getElementById('searchBox').value.toLowerCase();
+        const cards = document.querySelectorAll('.result-card');
+        
+        cards.forEach(card => {
+            const text = card.getAttribute('data-search').toLowerCase();
+            card.style.display = text.includes(query) ? "block" : "none";
+        });
     }
 
-    function deleteResult(id) {
-        if(confirm("এই ফলাফলটি মুছে ফেলতে চান?")) {
-            db.ref('QuizResults/' + id).remove();
-        }
-    }
-
-    function clearAllResults() {
-        if(confirm("সাবধান! সব ফলাফল মুছে যাবে। আপনি কি নিশ্চিত?")) {
-            db.ref('QuizResults').remove();
-        }
-    }
-
-    window.onload = fetchResults;
+    // Initialize
+    loadResults();
 </script>
+
 </body>
 </html>
