@@ -3,37 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Control - file_C</title>
+    <title>Individual Quiz Control - file_C</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        :root { --p: #2c3e50; --s: #27ae60; --d: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-        .back-btn { display: inline-block; margin-bottom: 20px; text-decoration: none; color: var(--p); font-weight: bold; background: #eee; padding: 10px 20px; border-radius: 10px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .status-badge { padding: 10px; border-radius: 10px; font-weight: bold; margin-bottom: 20px; }
-        .on { background: #d4edda; color: #155724; }
-        .off { background: #f8d7da; color: #721c24; }
-        .btn-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        :root { --p: #2c3e50; --s: #27ae60; --d: #e74c3c; --a: #3498db; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .search-box { background: #fffbe6; border-color: #f1c40f; }
+        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; }
+        .user-info { flex-grow: 1; }
+        .user-name { font-weight: bold; color: var(--p); }
+        .user-meta { font-size: 12px; color: #666; }
+        .btn-send { background: #eee; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; min-width: 100px; }
+        .btn-send.active { background: var(--s); color: white; }
+        .btn-send:hover { opacity: 0.8; }
+        .back-btn { text-decoration: none; color: var(--p); background: #eee; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> ফিরে যান</a>
-    <h2>কুইজ নিয়ন্ত্রণ প্যানেল</h2>
-    
-    <div id="statusDisplay" class="status-badge off">বর্তমান অবস্থা: লোড হচ্ছে...</div>
+<div class="container">
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> ব্যাক</a>
+            <h2 style="font-size: 18px; margin: 0;">ব্যক্তিগত কুইজ কন্ট্রোল</h2>
+        </div>
+    </div>
 
-    <input type="text" id="cTitle" placeholder="কুইজের শিরোনাম (উদা: গণিত পরীক্ষা)">
-    <input type="text" id="cFile" placeholder="ফাইলের নাম (উদা: 601)">
-    
-    <div class="btn-group">
-        <button class="btn" style="background:var(--s)" onclick="updateStatus('on')"><i class="fas fa-play"></i> কুইজ চালু করুন</button>
-        <button class="btn" style="background:var(--d)" onclick="updateStatus('off')"><i class="fas fa-stop"></i> বন্ধ করুন</button>
+    <div style="background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 15px;">
+        <label style="font-weight: bold; font-size: 13px;">১. কুইজ তথ্য সেট করুন:</label>
+        <input type="text" id="quizTitle" placeholder="কুইজের শিরোনাম (উদা: গণিত ১)">
+        <input type="text" id="quizFile" placeholder="ফাইলের নাম (উদা: 601)">
+    </div>
+
+    <label style="font-weight: bold; font-size: 13px;">২. শিক্ষার্থী খুঁজুন ও কুইজ পাঠান:</label>
+    <input type="text" id="userSearch" class="search-box" placeholder="নাম বা আইডি দিয়ে খুঁজুন..." oninput="filterUsers()">
+
+    <div id="userListArea" style="margin-top: 10px; max-height: 400px; overflow-y: auto;">
+        লোড হচ্ছে...
     </div>
 </div>
 
@@ -46,39 +57,82 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // বর্তমান অবস্থা দেখা
-    db.ref('quiz_control').on('value', (snap) => {
-        const data = snap.val();
-        const display = document.getElementById('statusDisplay');
-        if (data && data.status === 'on') {
-            display.innerText = "বর্তমান অবস্থা: চালু আছে (" + data.file + ")";
-            display.className = "status-badge on";
-            document.getElementById('cTitle').value = data.title || "";
-            document.getElementById('cFile').value = data.file || "";
-        } else {
-            display.innerText = "বর্তমান অবস্থা: বন্ধ আছে";
-            display.className = "status-badge off";
-        }
-    });
+    let allUsers = [];
+    let assignedQuizzes = {};
 
-    function updateStatus(state) {
-        const title = document.getElementById('cTitle').value;
-        const file = document.getElementById('cFile').value;
+    // ১. ইউজার লিস্ট এবং বর্তমানে কাদের কুইজ পাঠানো আছে তা লোড করা
+    function init() {
+        // ইউজার লিস্ট আনা
+        db.ref('users').on('value', (snap) => {
+            const data = snap.val();
+            allUsers = data ? Object.values(data) : [];
+            renderList();
+        });
 
-        if (state === 'on' && (!title || !file)) {
-            alert("শিরোনাম এবং ফাইলের নাম দিন!");
+        // কুইজ অ্যাসাইনমেন্ট স্ট্যাটাস চেক করা
+        db.ref('IndividualQuizzes').on('value', (snap) => {
+            assignedQuizzes = snap.val() || {};
+            renderList();
+        });
+    }
+
+    function renderList() {
+        const area = document.getElementById('userListArea');
+        const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+        
+        const filtered = allUsers.filter(u => 
+            u.name.toLowerCase().includes(searchTerm) || 
+            u.userId.toString().includes(searchTerm)
+        );
+
+        if(filtered.length === 0) {
+            area.innerHTML = "<p style='text-align:center; color:#999;'>কোনো ইউজার পাওয়া যায়নি।</p>";
             return;
         }
 
-        db.ref('quiz_control').set({
-            status: state,
-            title: title,
-            file: file,
-            updatedAt: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-            alert(state === 'on' ? "কুইজ এখন শিক্ষার্থীর অ্যাপে দেখা যাবে!" : "কুইজ বন্ধ করা হয়েছে।");
-        });
+        area.innerHTML = filtered.map(u => {
+            const isAssigned = assignedQuizzes[u.userId] ? true : false;
+            return `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">${u.name}</div>
+                        <div class="user-meta">ID: ${u.userId} | শ্রেণি: ${u.cls} | রোল: ${u.roll}</div>
+                    </div>
+                    <button class="btn-send ${isAssigned ? 'active' : ''}" 
+                            onclick="toggleQuiz('${u.userId}')">
+                        ${isAssigned ? '<i class="fas fa-check"></i> পাঠানো হয়েছে' : 'কুইজ পাঠান'}
+                    </button>
+                </div>
+            `;
+        }).join('');
     }
+
+    function filterUsers() { renderList(); }
+
+    // কুইজ পাঠানো বা মুছে ফেলার লজিক
+    function toggleQuiz(userId) {
+        const title = document.getElementById('quizTitle').value.trim();
+        const file = document.getElementById('quizFile').value.trim();
+
+        if (!assignedQuizzes[userId]) {
+            // যদি পাঠানো না থাকে, তবে পাঠাও
+            if (!title || !file) return alert("আগে কুইজ শিরোনাম এবং ফাইল নাম লিখুন!");
+            
+            db.ref('IndividualQuizzes/' + userId).set({
+                title: title,
+                file: file,
+                status: "assigned",
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        } else {
+            // যদি অলরেডি পাঠানো থাকে, তবে ক্লিক করলে মুছে যাবে (Off)
+            if(confirm("এই ইউজারের আইডি থেকে কুইজটি মুছে ফেলতে চান?")) {
+                db.ref('IndividualQuizzes/' + userId).remove();
+            }
+        }
+    }
+
+    init();
 </script>
 </body>
 </html>
