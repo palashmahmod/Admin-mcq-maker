@@ -3,43 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student App - index</title>
+    <title>Individual Quiz Control - file_C</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #FFFBF0; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; background: #3498db; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
-        .btn:active { transform: scale(0.98); }
-        #home-screen { display: none; }
-        .quiz-btn { background: #27ae60; margin-top: 10px; animation: pulse 2s infinite; width: 100%; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.01); } 100% { transform: scale(1); } }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
-        .u-info-text { color: #555; font-size: 15px; line-height: 1.6; }
-        .loader-text { color: #f39c12; font-weight: bold; display: none; margin-top: 10px; }
+        :root { --p: #2c3e50; --s: #27ae60; --d: #e74c3c; --a: #3498db; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .search-box { background: #fffbe6; border-color: #f1c40f; }
+        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 8px; transition: 0.3s; }
+        .user-info { flex-grow: 1; }
+        .user-name { font-weight: bold; color: var(--p); }
+        .user-meta { font-size: 12px; color: #666; }
+        .btn-send { background: #eee; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; min-width: 100px; }
+        .btn-send.active { background: var(--s); color: white; }
+        .back-btn { text-decoration: none; color: var(--p); background: #eee; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
-
-<div id="login-screen" class="card">
-    <i class="fas fa-user-graduate" style="font-size: 40px; color: #3498db; margin-bottom: 15px;"></i>
-    <h2>শিক্ষার্থী লগইন</h2>
-    <input type="number" id="loginId" placeholder="আইডি নং">
-    <input type="number" id="loginPin" placeholder="পিন নম্বর">
-    <button class="btn" onclick="handleLogin()">লগইন করুন</button>
-</div>
-
-<div id="home-screen" class="card">
-    <h3 id="uName">স্বাগতম!</h3>
-    <div class="u-info-text"><p id="uInfo"></p></div>
-    <hr>
-    <div id="quiz-list-area">
-        <p style="color: #888;">লোড হচ্ছে...</p>
+<div class="container">
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> ব্যাক</a>
+            <h2 style="font-size: 18px; margin: 0;">ব্যক্তিগত কুইজ কন্ট্রোল</h2>
+        </div>
     </div>
-    <p id="check-msg" class="loader-text"><i class="fas fa-spinner fa-spin"></i> যাচাই হচ্ছে...</p>
-    <button class="btn" style="background:#e74c3c; margin-top:30px;" onclick="logout()">লগআউট</button>
+    <div style="background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 15px;">
+        <label style="font-weight: bold; font-size: 13px;">১. কুইজ তথ্য সেট করুন:</label>
+        <input type="text" id="quizTitle" placeholder="কুইজের শিরোনাম (উদা: মডেল টেস্ট ১)">
+        <input type="text" id="quizFile" placeholder="ফাইলের নাম (উদা: 601)" oninput="renderList()">
+    </div>
+    <label style="font-weight: bold; font-size: 13px;">২. শিক্ষার্থী খুঁজুন ও কুইজ পাঠান:</label>
+    <input type="text" id="userSearch" class="search-box" placeholder="নাম বা আইডি দিয়ে খুঁজুন..." oninput="renderList()">
+    <div id="userListArea" style="margin-top: 10px; max-height: 400px; overflow-y: auto;">লোডিং...</div>
 </div>
 
 <script>
@@ -48,75 +47,74 @@
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
         projectId: "quiz-storage-d8707"
     };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function handleLogin() {
-        const id = document.getElementById('loginId').value.trim();
-        const pin = document.getElementById('loginPin').value.trim();
-        db.ref('users/' + id).once('value', (snap) => {
-            const user = snap.val();
-            if(user && user.password == pin) {
-                user.id = id;
-                localStorage.setItem('loggedUser', JSON.stringify(user));
-                showHome();
-            } else { alert("আইডি বা পিন ভুল!"); }
+    let allUsers = [];
+    let assignedData = {};
+
+    function init() {
+        db.ref('users').on('value', (snap) => {
+            allUsers = snap.val() ? Object.values(snap.val()) : [];
+            renderList();
+        });
+        db.ref('IndividualQuizzes').on('value', (snap) => {
+            assignedData = snap.val() || {};
+            renderList();
         });
     }
 
-    function showHome() {
-        const user = JSON.parse(localStorage.getItem('loggedUser'));
-        if(!user) return;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('home-screen').style.display = 'block';
-        document.getElementById('uName').innerText = "স্বাগতম, " + user.name;
-        document.getElementById('uInfo').innerHTML = `<b>আইডি:</b> ${user.id} | <b>রোল:</b> ${user.roll}`;
-
-        // ব্যক্তিগত কুইজ লিস্ট লোড করা
-        db.ref('IndividualQuizzes/' + user.id).on('value', (snap) => {
-            const area = document.getElementById('quiz-list-area');
-            const data = snap.val();
-            area.innerHTML = "";
-            if(data) {
-                Object.values(data).forEach(q => {
-                    area.innerHTML += `
-                        <button class="btn quiz-btn" onclick="checkAndGo('${q.file}', '${q.title}')">
-                            <i class="fas fa-book-open"></i> ${q.title}
-                        </button>`;
-                });
-            } else {
-                area.innerHTML = "<p style='color: #888;'>বর্তমানে কোনো কুইজ নেই।</p>";
-            }
-        });
-    }
-
-    function checkAndGo(fileName, quizTitle) {
-        const user = JSON.parse(localStorage.getItem('loggedUser'));
-        document.getElementById('check-msg').style.display = "block";
+    function renderList() {
+        const area = document.getElementById('userListArea');
+        const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+        const currentFile = document.getElementById('quizFile').value.trim();
         
-        db.ref('QuizResults').orderByChild('userId').equalTo(user.id).once('value', (snap) => {
-            document.getElementById('check-msg').style.display = "none";
-            let done = false;
-            if(snap.val()) {
-                Object.values(snap.val()).forEach(res => {
-                    if(res.quizTitle === quizTitle) done = true;
-                });
+        const filtered = allUsers.filter(u => 
+            u.name.toLowerCase().includes(searchTerm) || u.userId.toString().includes(searchTerm)
+        );
+
+        if(!filtered.length) {
+            area.innerHTML = "<p style='text-align:center; color:#999;'>ইউজার পাওয়া যায়নি।</p>";
+            return;
+        }
+
+        area.innerHTML = filtered.map(u => {
+            // চেক করা হচ্ছে এই ইউজারের এই নির্দিষ্ট ফাইলটি পাঠানো আছে কি না
+            const isAssigned = (assignedData[u.userId] && assignedData[u.userId][currentFile]) ? true : false;
+            return `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">${u.name}</div>
+                        <div class="user-meta">ID: ${u.userId} | রোল: ${u.roll}</div>
+                    </div>
+                    <button class="btn-send ${isAssigned ? 'active' : ''}" onclick="toggleQuiz('${u.userId}')">
+                        ${isAssigned ? '<i class="fas fa-check"></i> পাঠানো আছে' : 'কুইজ পাঠান'}
+                    </button>
+                </div>`;
+        }).join('');
+    }
+
+    function toggleQuiz(userId) {
+        const title = document.getElementById('quizTitle').value.trim();
+        const file = document.getElementById('quizFile').value.trim();
+        if (!title || !file) return alert("শিরোনাম এবং ফাইল নাম দিন!");
+
+        const path = `IndividualQuizzes/${userId}/${file}`;
+        
+        if (!assignedData[userId] || !assignedData[userId][file]) {
+            db.ref(path).set({
+                title: title,
+                file: file,
+                status: "assigned",
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        } else {
+            if(confirm("এই কুইজটি মুছতে চান?")) {
+                db.ref(path).remove();
             }
-            if(done) alert("আপনি ইতিমধ্যে এটি দিয়েছেন!");
-            else goToExam(fileName);
-        });
+        }
     }
-
-    function goToExam(fileName) {
-        const user = JSON.parse(localStorage.getItem('loggedUser'));
-        const params = new URLSearchParams({
-            id: user.id, name: user.name, roll: user.roll, cls: user.cls, sec: user.section
-        }).toString();
-        window.location.href = `https://palashmahmod.github.io/quiz-files/${fileName}.html?${params}`;
-    }
-
-    function logout() { localStorage.removeItem('loggedUser'); location.reload(); }
-    window.onload = () => { if(localStorage.getItem('loggedUser')) showHome(); }
+    init();
 </script>
 </body>
 </html>
