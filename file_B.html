@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master MCQ Generator - Palash Mahmod</title>
+    <title>Master MCQ Generator - Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
@@ -53,6 +53,7 @@
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
     let qCount = 0;
+
     function addQ(data = null) {
         qCount++;
         const id = Date.now() + qCount;
@@ -163,16 +164,18 @@
     const urlParams = new URLSearchParams(window.location.search);
     const uID = urlParams.get('id');
     const uName = urlParams.get('name');
+    const uRoll = urlParams.get('roll');
+    const uSec = urlParams.get('sec');
+    const uCls = urlParams.get('cls');
     const fName = "${d.fName}";
+
     document.getElementById('stName').innerText = uName;
     document.getElementById('stID').innerText = uID;
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
 
     window.history.pushState(null, null, window.location.href);
-    window.onpopstate = function() { 
-        exitApp();
-    };
+    window.onpopstate = function() { exitApp(); };
 
     window.onload = function() {
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
@@ -227,19 +230,17 @@
         let correct = 0, results = [], wrongQ = [];
         questions.forEach((q, i) => {
             const sel = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
-            if(sel === q.ans) {
-                correct++;
-            } else {
-                wrongQ.push(i + 1);
-            }
+            if(sel === q.ans) { correct++; } else { wrongQ.push(i + 1); }
             results.push({ sel, correct: sel === q.ans });
         });
         const timeSpentRaw = Math.floor((${d.time || 0} * 60) - ((endTime - Date.now()) / 1000));
         const finalData = {
             userId: uID, 
             name: uName, 
+            roll: uRoll || "N/A",
+            section: uSec || "N/A",
             quizTitle: "${d.title}",
-            class: "${d.cls}",
+            class: uCls || "${d.cls}",
             subject: "${d.sub}",
             chapter: "${d.chap}",
             correct: correct, 
@@ -259,7 +260,6 @@
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
-        
         document.getElementById('resultSummary').innerHTML = '<b>তারিখ:</b> ' + data.date + ' | <b>সময়:</b> ' + data.time + '<br>' +
             '<b>ব্যয়িত সময়:</b> ' + data.timeSpent + ' | <b>সঠিক:</b> ' + data.correct + '/' + data.total + '<br>' +
             '<b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> ' + (data.wrongQuestions || 'সব সঠিক');
@@ -272,14 +272,14 @@
                 }).join('') + '</div>';
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
-        
         window.history.pushState(null, null, window.location.href);
         setTimeout(exitApp, 120000);
     }
 
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
-        window.location.replace("index.html");
+        // ইউজার এ্যাপের সঠিক লিঙ্কে ফিরে যাওয়া
+        window.location.replace("https://palashmahmod.github.io/index.html");
     }
 <\/script>
 </body>
@@ -290,7 +290,6 @@
         saveDraft();
         const fName = document.getElementById('fName').value;
         if(!fName) return alert("ফাইলের নাম দিন!");
-        
         let token = localStorage.getItem('gh_token');
         if(!token) {
             token = prompt("GitHub Token দিন:");
