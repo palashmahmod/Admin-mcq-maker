@@ -21,18 +21,15 @@
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
-
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro Version)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
-
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -52,12 +49,10 @@
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
     let qCount = 0;
-
     function addQ(data = null) {
         qCount++;
         const id = Date.now() + qCount;
@@ -85,9 +80,7 @@
         `;
         document.getElementById('q-area').appendChild(div);
     }
-
     function removeQ(id) { document.getElementById('block-'+id).remove(); }
-
     function saveDraft() {
         const qs = [];
         document.querySelectorAll('.q-card').forEach(b => {
@@ -106,12 +99,10 @@
         };
         localStorage.setItem('draft_quiz', JSON.stringify(fullData));
     }
-
-    // এই ফাংশনটিই কুইজ ফাইল তৈরি করে, এখানে সংশোধন করা হয়েছে
+    
     function generateFullHTML() {
         const d = JSON.parse(localStorage.getItem('draft_quiz'));
         if(!d) return "";
-
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -175,17 +166,12 @@
     const fName = "${d.fName}";
     document.getElementById('stName').innerText = uName;
     document.getElementById('stID').innerText = uID;
-
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
 
     window.history.pushState(null, null, window.location.href);
     window.onpopstate = function() { 
-        if(document.getElementById('page3').classList.contains('active-page')) {
-            exitApp();
-        } else {
-            window.history.go(1); 
-        }
+        exitApp();
     };
 
     window.onload = function() {
@@ -248,7 +234,6 @@
             }
             results.push({ sel, correct: sel === q.ans });
         });
-
         const timeSpentRaw = Math.floor((${d.time || 0} * 60) - ((endTime - Date.now()) / 1000));
         const finalData = {
             userId: uID, 
@@ -265,7 +250,6 @@
             time: new Date().toLocaleTimeString('bn-BD'),
             timestamp: firebase.database.ServerValue.TIMESTAMP
         };
-
         db.ref('QuizResults').push(finalData);
         db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
         db.ref('LiveTimers/' + uID + '/' + fName).remove();
@@ -279,7 +263,6 @@
         document.getElementById('resultSummary').innerHTML = '<b>তারিখ:</b> ' + data.date + ' | <b>সময়:</b> ' + data.time + '<br>' +
             '<b>ব্যয়িত সময়:</b> ' + data.timeSpent + ' | <b>সঠিক:</b> ' + data.correct + '/' + data.total + '<br>' +
             '<b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> ' + (data.wrongQuestions || 'সব সঠিক');
-
         let reviewHtml = '';
         questions.forEach((q, i) => {
             reviewHtml += '<div class="q-box"><b>' + (i+1) + '. ' + q.ques + '</b>' +
@@ -290,7 +273,7 @@
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
         
-        window.history.replaceState(null, null, window.location.href);
+        window.history.pushState(null, null, window.location.href);
         setTimeout(exitApp, 120000);
     }
 
@@ -333,9 +316,7 @@
             alert("Error: " + e.message); 
         }
     }
-
     function clearAll() { if(confirm("সব মুছতে চান?")) { localStorage.removeItem('draft_quiz'); location.reload(); } }
-
     window.onload = () => {
         const saved = JSON.parse(localStorage.getItem('draft_quiz'));
         if(saved) {
