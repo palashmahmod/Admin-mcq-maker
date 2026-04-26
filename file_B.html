@@ -47,7 +47,7 @@
         </div>
     </div>
     <div id="q-area"></div>
-    <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
+    <button class="btn btn-add" id="addBtn" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
 
 <script>
@@ -89,17 +89,25 @@
         const qs = [];
         document.querySelectorAll('.q-card').forEach(b => {
             qs.push({
-                stim: b.querySelector('.stim').value, ques: b.querySelector('.ques').value,
-                img: b.querySelector('.img').value, o1: b.querySelector('.o1').value,
-                o2: b.querySelector('.o2').value, o3: b.querySelector('.o3').value,
-                o4: b.querySelector('.o4').value, ans: b.querySelector('.ans').value
+                stim: b.querySelector('.stim').value, 
+                ques: b.querySelector('.ques').value,
+                img: b.querySelector('.img').value, 
+                o1: b.querySelector('.o1').value,
+                o2: b.querySelector('.o2').value, 
+                o3: b.querySelector('.o3').value,
+                o4: b.querySelector('.o4').value, 
+                ans: b.querySelector('.ans').value
             });
         });
         const fullData = {
-            title: document.getElementById('qTitle').value, cls: document.getElementById('qClass').value,
-            sub: document.getElementById('qSub').value, chap: document.getElementById('qChap').value,
-            time: document.getElementById('qTime').value, marks: document.getElementById('qMarks').value,
-            fName: document.getElementById('fName').value, questions: qs
+            title: document.getElementById('qTitle').value, 
+            cls: document.getElementById('qClass').value,
+            sub: document.getElementById('qSub').value, 
+            chap: document.getElementById('qChap').value,
+            time: document.getElementById('qTime').value, 
+            marks: document.getElementById('qMarks').value,
+            fName: document.getElementById('fName').value, 
+            questions: qs
         };
         localStorage.setItem('draft_quiz', JSON.stringify(fullData));
     }
@@ -108,6 +116,9 @@
         const d = JSON.parse(localStorage.getItem('draft_quiz'));
         if(!d) return "";
         
+        // Escape quotes for JS injection
+        const questionsString = JSON.stringify(d.questions).replace(/`/g, "\\`").replace(/\${/g, "\\${");
+
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -182,10 +193,9 @@
     document.getElementById('stCls').innerText = uCls || 'N/A';
     document.getElementById('stRoll').innerText = uRoll || 'N/A';
 
-    const questions = ${JSON.stringify(d.questions)};
+    const questions = ${questionsString};
     let timerInt, endTime;
 
-    // ব্যাক বাটন প্রোটেকশন
     window.history.pushState(null, null, window.location.href);
     window.onpopstate = function() { window.history.go(1); };
 
@@ -221,15 +231,17 @@
         let html = '';
         questions.forEach((q, i) => {
             const saved = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
-            html += \`<div class="q-box">
-                <b>\${i+1}. \${q.stim ? q.stim + '<br>' : ''} \${q.ques}</b>
-                \${q.img ? '<img src="'+q.img+'">' : ''}
-                \${['ক','খ','গ','ঘ'].map((opt, j) => \`
-                    <label class="opt">
-                        <input type="radio" name="q\${i}" value="\${opt}" onchange="saveProgress(\${i}, '\${opt}')" \${saved === opt ? 'checked' : ''}> 
-                        \${opt}) \${q['o'+(j+1)]}
-                    </label>\`).join('')}
-            </div>\`;
+            html += '<div class="q-box">' +
+                '<b>' + (i+1) + '. ' + (q.stim ? q.stim + '<br>' : '') + q.ques + '</b>' +
+                (q.img ? '<img src="'+q.img+'">' : '') +
+                ['ক','খ','গ','ঘ'].map((opt, j) => {
+                    const optionText = q['o' + (j + 1)];
+                    return '<label class="opt">' +
+                        '<input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + (saved === opt ? 'checked' : '') + '> ' +
+                        opt + ') ' + optionText +
+                    '</label>';
+                }).join('') +
+            '</div>';
         });
         document.getElementById('quizArea').innerHTML = html;
     }
@@ -280,20 +292,19 @@
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
         
-        document.getElementById('resultSummary').innerHTML = \`
-            <b>অংশগ্রহণের সময়:</b> \${data.timestamp}<br>
-            <b>ব্যয়িত সময়:</b> \${data.timeSpent}<br>
-            <b>সঠিক উত্তর:</b> \${data.correct} টি | <b>ভুল:</b> \${data.total - data.correct} টি<br>
-            <b>ভুল প্রশ্নের ক্রমিক:</b> \${data.wrongIndices}
-        \`;
+        document.getElementById('resultSummary').innerHTML = 
+            '<b>অংশগ্রহণের সময়:</b> ' + data.timestamp + '<br>' +
+            '<b>ব্যয়িত সময়:</b> ' + data.timeSpent + '<br>' +
+            '<b>সঠিক উত্তর:</b> ' + data.correct + ' টি | <b>ভুল:</b> ' + (data.total - data.correct) + ' টি<br>' +
+            '<b>ভুল প্রশ্নের ক্রমিক:</b> ' + data.wrongIndices;
 
         let reviewHtml = '<h3>প্রশ্নের বিশ্লেষণ:</h3>';
         questions.forEach((q, i) => {
-            reviewHtml += \`<div class="q-box"><b>\${i+1}. \${q.ques}</b>
-                \${['ক','খ','গ','ঘ'].map((opt, j) => {
+            reviewHtml += '<div class="q-box"><b>' + (i+1) + '. ' + q.ques + '</b>' +
+                ['ক','খ','গ','ঘ'].map((opt, j) => {
                     let cls = (opt === q.ans) ? 'correct' : (opt === results[i].sel ? 'wrong' : '');
-                    return \`<div class="opt \${cls}">\${opt}) \${q['o'+(j+1)]}</div>\`;
-                }).join('')}</div>\`;
+                    return '<div class="opt ' + cls + '">' + opt + ') ' + q['o'+(j+1)] + '</div>';
+                }).join('') + '</div>';
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
         setTimeout(exitApp, 120000);
@@ -321,16 +332,16 @@
 
         document.getElementById('loader').style.display='flex';
         const content = btoa(unescape(encodeURIComponent(generateFullHTML())));
-        const url = \`https://api.github.com/repos/\${GITHUB_USER}/\${GITHUB_REPO}/contents/\${fName}.html\`;
+        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fName}.html`;
 
         try {
-            const check = await fetch(url, { headers: { "Authorization": \`token \${token}\` } });
+            const check = await fetch(url, { headers: { "Authorization": `token ${token}` } });
             let sha = "";
             if(check.ok) { const d = await check.json(); sha = d.sha; }
 
             const res = await fetch(url, {
                 method: "PUT",
-                headers: { "Authorization": \`token \${token}\`, "Content-Type": "application/json" },
+                headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ message: "Pro Quiz Upload", content: content, sha: sha || undefined })
             });
 
@@ -354,8 +365,14 @@
             document.getElementById('qTime').value = saved.time || '';
             document.getElementById('qMarks').value = saved.marks || '';
             document.getElementById('fName').value = saved.fName || '';
-            if(saved.questions) saved.questions.forEach(q => addQ(q));
-        } else { addQ(); }
+            if(saved.questions && saved.questions.length > 0) {
+                saved.questions.forEach(q => addQ(q));
+            } else {
+                addQ();
+            }
+        } else { 
+            addQ(); 
+        }
     };
 </script>
 </body>
