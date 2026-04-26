@@ -120,8 +120,6 @@
     function generateFullHTML() {
         const d = JSON.parse(localStorage.getItem('draft_quiz'));
         if(!d) return "";
-        
-        // Escape content to prevent script breakdown
         const questionsJson = JSON.stringify(d.questions).replace(/`/g, "\\`").replace(/\${/g, "\\${");
 
         return `<!DOCTYPE html>
@@ -129,7 +127,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${d.title}</title>
+    <title>\${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -154,11 +152,11 @@
 </head>
 <body oncontextmenu="return false">
     <div id="page1" class="card page active-page">
-        <h2 style="text-align:center;">${d.title}</h2>
+        <h2 style="text-align:center;">\${d.title}</h2>
         <div class="info-box">
             <b>শিক্ষার্থী:</b> <span id="stName">...</span> (ID: <span id="stID">...</span>)<br>
             <b>শ্রেণি:</b> <span id="stCls">...</span> | <b>রোল:</b> <span id="stRoll">...</span><br>
-            <b>বিষয়:</b> ${d.sub} | <b>সময়:</b> ${d.time} মিনিট
+            <b>বিষয়:</b> \${d.sub} | <b>সময়:</b> \${d.time} মিনিট
         </div>
         <button class="btn btn-start" onclick="startExam()">পরীক্ষা শুরু করুন</button>
         <button class="btn" style="background:#888; color:white;" onclick="exitApp()">ব্যাক</button>
@@ -175,11 +173,14 @@
         <div id="resultSummary" class="info-box"></div>
         <div id="reviewArea"></div>
         <button class="btn" style="background:var(--a); color:white;" onclick="exitApp()">হোম পেজে ফিরে যান</button>
-        <p style="font-size:12px; color:red; text-align:center;">২ মিনিট পর অটোমেটিক হোম পেজে নিয়ে যাওয়া হবে।</p>
     </div>
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", projectId: "quiz-storage-d8707" };
-    firebase.initializeApp(firebaseConfig);
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
+        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", 
+        projectId: "quiz-storage-d8707" 
+    };
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
     
     const urlParams = new URLSearchParams(window.location.search);
@@ -187,39 +188,22 @@
     const uName = urlParams.get('name');
     const uRoll = urlParams.get('roll');
     const uCls = urlParams.get('cls');
-    const uSec = urlParams.get('sec');
-    const fName = "${d.fName}";
+    const fName = "\${d.fName}";
 
     document.getElementById('stName').innerText = uName || 'N/A';
     document.getElementById('stID').innerText = uID || 'N/A';
     document.getElementById('stCls').innerText = uCls || 'N/A';
     document.getElementById('stRoll').innerText = uRoll || 'N/A';
 
-    const questions = ${questionsJson};
+    const questions = \${questionsJson};
     let timerInt, endTime;
-
-    window.history.pushState(null, null, window.location.href);
-    window.onpopstate = function() { window.history.go(1); };
-
-    window.onload = function() {
-        const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
-        if(savedTime) {
-             db.ref('IndividualQuizzes/' + uID + '/' + fName).once('value', snap => {
-                if(snap.exists()) startExam(true);
-                else {
-                    alert("পরীক্ষা ইতিমধ্যে শেষ হয়েছে!");
-                    exitApp();
-                }
-             });
-        }
-    };
 
     function startExam(isResume = false) {
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
         renderQuestions();
         if(!isResume) {
-            endTime = Date.now() + (${d.time} * 60 * 1000);
+            endTime = Date.now() + (\${d.time} * 60 * 1000);
             localStorage.setItem('end_' + uID + '_' + fName, endTime);
             db.ref('LiveTimers/' + uID + '/' + fName).set(endTime);
         } else {
@@ -268,49 +252,28 @@
             else wrongIdx.push(i + 1);
             results.push({ sel, correct: sel === q.ans });
         });
-        const timeTakenMs = (${d.time} * 60 * 1000) - (endTime - Date.now());
-        const sec = Math.floor((timeTakenMs / 1000) % 60);
-        const min = Math.floor(timeTakenMs / (1000 * 60));
-        const timestamp = new Date().toLocaleString('bn-BD');
         const finalData = {
-            userId: uID, name: uName, roll: uRoll, cls: uCls, sec: uSec,
-            quizTitle: "${d.title}", subject: "${d.sub}",
+            userId: uID, name: uName, roll: uRoll, cls: uCls,
+            quizTitle: "\${d.title}",
             correct: correct, total: questions.length,
-            wrongIndices: wrongIdx.join(', ') || 'নেই',
-            timeSpent: min + "m " + sec + "s",
-            timestamp: timestamp
+            timestamp: new Date().toLocaleString('bn-BD')
         };
         db.ref('QuizResults').push(finalData);
-        db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
-        db.ref('LiveTimers/' + uID + '/' + fName).remove();
         showResult(finalData, results);
     }
 
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
-        document.getElementById('resultSummary').innerHTML = 
-            '<b>অংশগ্রহণের সময়:</b> ' + data.timestamp + '<br>' +
-            '<b>ব্যয়িত সময়:</b> ' + data.timeSpent + '<br>' +
-            '<b>সঠিক উত্তর:</b> ' + data.correct + ' টি | <b>ভুল:</b> ' + (data.total - data.correct) + ' টি<br>' +
-            '<b>ভুল প্রশ্নের ক্রমিক:</b> ' + data.wrongIndices;
-        
-        let reviewHtml = '<h3>প্রশ্নের বিশ্লেষণ:</h3>';
+        document.getElementById('resultSummary').innerHTML = '<b>সঠিক:</b> ' + data.correct + ' টি';
+        let reviewHtml = '';
         questions.forEach((q, i) => {
-            reviewHtml += '<div class="q-box"><b>' + (i+1) + '. ' + q.ques + '</b>' +
-                ['ক','খ','গ','ঘ'].map((opt, j) => {
-                    let cls = (opt === q.ans) ? 'correct' : (opt === results[i].sel ? 'wrong' : '');
-                    return '<div class="opt ' + cls + '">' + opt + ') ' + q['o' + (j + 1)] + '</div>';
-                }).join('') + '</div>';
+            reviewHtml += '<div class="q-box"><b>' + (i+1) + '. ' + q.ques + '</b></div>';
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
-        setTimeout(exitApp, 120000);
     }
 
-    function exitApp() {
-        Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
-        window.location.replace("index.html");
-    }
+    function exitApp() { window.location.replace("index.html"); }
 <\/script>
 </body>
 </html>\`;
@@ -320,12 +283,9 @@
         saveDraft();
         const fName = document.getElementById('fName').value;
         if(!fName) return alert("ফাইলের নাম দিন!");
+        let token = localStorage.getItem('gh_token') || prompt("GitHub Token দিন:");
+        if(token) localStorage.setItem('gh_token', token);
         
-        let token = localStorage.getItem('gh_token');
-        if(!token) {
-            token = prompt("GitHub Token দিন:");
-            if(token) localStorage.setItem('gh_token', token);
-        }
         document.getElementById('loader').style.display='flex';
         const content = btoa(unescape(encodeURIComponent(generateFullHTML())));
         const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fName}.html`;
@@ -339,7 +299,7 @@
                 body: JSON.stringify({ message: "Pro Quiz Upload", content: content, sha: sha || undefined })
             });
             document.getElementById('loader').style.display='none';
-            if(res.ok) alert("মাস্টার কুইজ সফলভাবে আপলোড হয়েছে!"); 
+            if(res.ok) alert("সফলভাবে আপলোড হয়েছে!"); 
             else alert("আপলোড ব্যর্থ।");
         } catch(e) { 
             document.getElementById('loader').style.display='none'; 
@@ -360,14 +320,8 @@
             document.getElementById('qTime').value = saved.time || '';
             document.getElementById('qMarks').value = saved.marks || '';
             document.getElementById('fName').value = saved.fName || '';
-            if(saved.questions && saved.questions.length > 0) {
-                saved.questions.forEach(q => addQ(q));
-            } else {
-                addQ();
-            }
-        } else { 
-            addQ(); 
-        }
+            if(saved.questions) saved.questions.forEach(q => addQ(q));
+        } else { addQ(); }
     };
 </script>
 </body>
