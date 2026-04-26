@@ -21,15 +21,18 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
+
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro Version)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
+
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -107,13 +110,13 @@
     function generateFullHTML() {
         const d = JSON.parse(localStorage.getItem('draft_quiz'));
         if(!d) return "";
-        
+
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${d.title}</title>
+    <title>\${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -138,15 +141,14 @@
 </head>
 <body oncontextmenu="return false">
     <div id="page1" class="card page active-page">
-        <h2 style="text-align:center;">${d.title}</h2>
+        <h2 style="text-align:center;">\${d.title}</h2>
         <div class="info-box">
             <b>শিক্ষার্থী:</b> <span id="stName">...</span> (ID: <span id="stID">...</span>)<br>
-            <b>বিষয়:</b> ${d.sub} | <b>সময়:</b> ${d.time} মিনিট
+            <b>বিষয়:</b> \${d.sub} | <b>সময়:</b> \${d.time} মিনিট
         </div>
         <button class="btn btn-start" onclick="startExam()">পরীক্ষা শুরু করুন</button>
         <button class="btn" style="background:#888; color:white;" onclick="exitApp()">ব্যাক</button>
     </div>
-
     <div id="page2" class="page">
         <div class="timer" id="timerDisp">সময় বাকি: --:--</div>
         <div class="card" style="margin-top: 50px;">
@@ -154,15 +156,13 @@
             <button class="btn btn-submit" onclick="confirmSubmit()">পরীক্ষা জমা দিন</button>
         </div>
     </div>
-
     <div id="page3" class="card page">
         <h2 style="text-align:center; color:var(--s);">ফলাফল বিবরণী</h2>
         <div id="resultSummary" class="info-box"></div>
         <div id="reviewArea"></div>
         <button class="btn" style="background:var(--a); color:white;" onclick="exitApp()">হোম পেজে ফিরে যান</button>
-        <p style="font-size:12px; color:red; text-align:center;">২ মিনিট পর অটোমেটিক হোম পেজে নিয়ে যাওয়া হবে।</p>
+        <p style="font-size:12px; color:red; text-align:center;">২ মিনিট পর অটোমেটিক হোম পেজে নিয়ে যাওয়া হবে।</p>
     </div>
-
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", projectId: "quiz-storage-d8707" };
     firebase.initializeApp(firebaseConfig);
@@ -171,17 +171,22 @@
     const urlParams = new URLSearchParams(window.location.search);
     const uID = urlParams.get('id');
     const uName = urlParams.get('name');
-    const fName = "${d.fName}";
-
+    const fName = "\${d.fName}";
     document.getElementById('stName').innerText = uName;
     document.getElementById('stID').innerText = uID;
 
-    const questions = ${JSON.stringify(d.questions)};
+    const questions = \${JSON.stringify(d.questions)};
     let timerInt, endTime;
 
-    // ব্যাক বাটন প্রোটেকশন
+    // ব্যাক বাটন প্রোটেকশন ও নেভিগেশন ফিক্স
     window.history.pushState(null, null, window.location.href);
-    window.onpopstate = function() { window.history.go(1); };
+    window.onpopstate = function() { 
+        if(document.getElementById('page3').classList.contains('active-page')) {
+            exitApp();
+        } else {
+            window.history.go(1); 
+        }
+    };
 
     window.onload = function() {
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
@@ -192,9 +197,8 @@
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
         renderQuestions();
-
         if(!isResume) {
-            endTime = Date.now() + (${d.time} * 60 * 1000);
+            endTime = Date.now() + (\${d.time} * 60 * 1000);
             localStorage.setItem('end_' + uID + '_' + fName, endTime);
             db.ref('LiveTimers/' + uID + '/' + fName).set(endTime);
         } else {
@@ -233,33 +237,51 @@
 
     function submitQuiz() {
         clearInterval(timerInt);
-        let correct = 0, results = [];
+        let correct = 0, results = [], wrongQ = [];
         questions.forEach((q, i) => {
             const sel = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
-            if(sel === q.ans) correct++;
+            if(sel === q.ans) {
+                correct++;
+            } else {
+                wrongQ.push(i + 1);
+            }
             results.push({ sel, correct: sel === q.ans });
         });
 
-        const timeSpent = Math.floor((${d.time} * 60) - ((endTime - Date.now()) / 1000));
+        const timeSpentRaw = Math.floor((\${d.time} * 60) - ((endTime - Date.now()) / 1000));
         const finalData = {
-            userId: uID, name: uName, quizTitle: "${d.title}",
-            correct: correct, total: questions.length,
-            timeSpent: Math.floor(timeSpent/60) + "m " + (timeSpent%60) + "s",
-            timestamp: new Date().toLocaleString('bn-BD')
+            userId: uID, 
+            name: uName, 
+            quizTitle: "\${d.title}",
+            class: "\${d.cls}",
+            subject: "\${d.sub}",
+            chapter: "\${d.chap}",
+            correct: correct, 
+            total: questions.length,
+            wrongQuestions: wrongQ.join(', '),
+            timeSpent: Math.floor(timeSpentRaw/60) + "m " + (timeSpentRaw%60) + "s",
+            date: new Date().toLocaleDateString('bn-BD'),
+            time: new Date().toLocaleTimeString('bn-BD'),
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         };
 
         db.ref('QuizResults').push(finalData);
         db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
         db.ref('LiveTimers/' + uID + '/' + fName).remove();
-
         showResult(finalData, results);
     }
 
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
-        document.getElementById('resultSummary').innerHTML = \`সময়: \${data.timeSpent} | সঠিক: \${data.correct}/\${data.total}\`;
         
+        // ফলাফল বিবরণীতে তারিখ, সময় এবং ভুল প্রশ্নের ক্রমিক নং প্রদর্শন
+        document.getElementById('resultSummary').innerHTML = \`
+            <b>তারিখ:</b> \${data.date} | <b>সময়:</b> \${data.time}<br>
+            <b>ব্যয়িত সময়:</b> \${data.timeSpent} | <b>সঠিক:</b> \${data.correct}/\${data.total}<br>
+            <b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> \${data.wrongQuestions || 'সব সঠিক'}
+        \`;
+
         let reviewHtml = '';
         questions.forEach((q, i) => {
             reviewHtml += \`<div class="q-box"><b>\${i+1}. \${q.ques}</b>
@@ -269,13 +291,13 @@
                 }).join('')}</div>\`;
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
-
-        // ২ মিনিট পর অটো ব্যাক
+        
+        // ফলাফল পেজে আসার পর ব্যাক বাটন ফিক্স
+        window.history.replaceState(null, null, window.location.href);
         setTimeout(exitApp, 120000);
     }
 
     function exitApp() {
-        // ক্লিনআপ
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
         window.location.replace("index.html");
     }
@@ -294,22 +316,18 @@
             token = prompt("GitHub Token দিন:");
             if(token) localStorage.setItem('gh_token', token);
         }
-
         document.getElementById('loader').style.display='flex';
         const content = btoa(unescape(encodeURIComponent(generateFullHTML())));
         const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fName}.html`;
-
         try {
             const check = await fetch(url, { headers: { "Authorization": `token ${token}` } });
             let sha = "";
             if(check.ok) { const d = await check.json(); sha = d.sha; }
-
             const res = await fetch(url, {
                 method: "PUT",
                 headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ message: "Pro Quiz Upload", content: content, sha: sha || undefined })
             });
-
             document.getElementById('loader').style.display='none';
             if(res.ok) alert("মাস্টার কুইজ সফলভাবে আপলোড হয়েছে!"); 
             else alert("আপলোড ব্যর্থ।");
@@ -327,6 +345,7 @@
             document.getElementById('qTitle').value = saved.title || '';
             document.getElementById('qClass').value = saved.cls || '';
             document.getElementById('qSub').value = saved.sub || '';
+            document.getElementById('qChap').value = saved.chap || '';
             document.getElementById('qTime').value = saved.time || '';
             document.getElementById('qMarks').value = saved.marks || '';
             document.getElementById('fName').value = saved.fName || '';
