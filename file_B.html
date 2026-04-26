@@ -141,6 +141,7 @@
         <h2 style="text-align:center;">${d.title}</h2>
         <div class="info-box">
             <b>শিক্ষার্থী:</b> <span id="stName">...</span> (ID: <span id="stID">...</span>)<br>
+            <b>শ্রেণি:</b> <span id="stCls">...</span> | <b>রোল:</b> <span id="stRoll">...</span><br>
             <b>বিষয়:</b> ${d.sub} | <b>সময়:</b> ${d.time} মিনিট
         </div>
         <button class="btn btn-start" onclick="startExam()">পরীক্ষা শুরু করুন</button>
@@ -160,7 +161,7 @@
         <div id="resultSummary" class="info-box"></div>
         <div id="reviewArea"></div>
         <button class="btn" style="background:var(--a); color:white;" onclick="exitApp()">হোম পেজে ফিরে যান</button>
-        <p style="font-size:12px; color:red; text-align:center;">২ মিনিট পর অটোমেটিক হোম পেজে নিয়ে যাওয়া হবে।</p>
+        <p style="font-size:12px; color:red; text-align:center;">২ মিনিট পর অটোমেটিক হোম পেজে নিয়ে যাওয়া হবে।</p>
     </div>
 
 <script>
@@ -171,10 +172,15 @@
     const urlParams = new URLSearchParams(window.location.search);
     const uID = urlParams.get('id');
     const uName = urlParams.get('name');
+    const uRoll = urlParams.get('roll');
+    const uCls = urlParams.get('cls');
+    const uSec = urlParams.get('sec');
     const fName = "${d.fName}";
 
-    document.getElementById('stName').innerText = uName;
-    document.getElementById('stID').innerText = uID;
+    document.getElementById('stName').innerText = uName || 'N/A';
+    document.getElementById('stID').innerText = uID || 'N/A';
+    document.getElementById('stCls').innerText = uCls || 'N/A';
+    document.getElementById('stRoll').innerText = uRoll || 'N/A';
 
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
@@ -185,7 +191,15 @@
 
     window.onload = function() {
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
-        if(savedTime) startExam(true);
+        if(savedTime) {
+             db.ref('IndividualQuizzes/' + uID + '/' + fName).once('value', snap => {
+                if(snap.exists()) startExam(true);
+                else {
+                    alert("পরীক্ষা ইতিমধ্যে শেষ হয়েছে!");
+                    exitApp();
+                }
+             });
+        }
     };
 
     function startExam(isResume = false) {
@@ -233,19 +247,26 @@
 
     function submitQuiz() {
         clearInterval(timerInt);
-        let correct = 0, results = [];
+        let correct = 0, results = [], wrongIdx = [];
         questions.forEach((q, i) => {
             const sel = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
             if(sel === q.ans) correct++;
+            else wrongIdx.push(i + 1);
             results.push({ sel, correct: sel === q.ans });
         });
 
-        const timeSpent = Math.floor((${d.time} * 60) - ((endTime - Date.now()) / 1000));
+        const timeTakenMs = (${d.time} * 60 * 1000) - (endTime - Date.now());
+        const sec = Math.floor((timeTakenMs / 1000) % 60);
+        const min = Math.floor(timeTakenMs / (1000 * 60));
+        const timestamp = new Date().toLocaleString('bn-BD');
+
         const finalData = {
-            userId: uID, name: uName, quizTitle: "${d.title}",
+            userId: uID, name: uName, roll: uRoll, cls: uCls, sec: uSec,
+            quizTitle: "${d.title}", subject: "${d.sub}",
             correct: correct, total: questions.length,
-            timeSpent: Math.floor(timeSpent/60) + "m " + (timeSpent%60) + "s",
-            timestamp: new Date().toLocaleString('bn-BD')
+            wrongIndices: wrongIdx.join(', ') || 'নেই',
+            timeSpent: min + "m " + sec + "s",
+            timestamp: timestamp
         };
 
         db.ref('QuizResults').push(finalData);
@@ -258,9 +279,15 @@
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
-        document.getElementById('resultSummary').innerHTML = \`সময়: \${data.timeSpent} | সঠিক: \${data.correct}/\${data.total}\`;
         
-        let reviewHtml = '';
+        document.getElementById('resultSummary').innerHTML = \`
+            <b>অংশগ্রহণের সময়:</b> \${data.timestamp}<br>
+            <b>ব্যয়িত সময়:</b> \${data.timeSpent}<br>
+            <b>সঠিক উত্তর:</b> \${data.correct} টি | <b>ভুল:</b> \${data.total - data.correct} টি<br>
+            <b>ভুল প্রশ্নের ক্রমিক:</b> \${data.wrongIndices}
+        \`;
+
+        let reviewHtml = '<h3>প্রশ্নের বিশ্লেষণ:</h3>';
         questions.forEach((q, i) => {
             reviewHtml += \`<div class="q-box"><b>\${i+1}. \${q.ques}</b>
                 \${['ক','খ','গ','ঘ'].map((opt, j) => {
@@ -269,19 +296,16 @@
                 }).join('')}</div>\`;
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
-
-        // ২ মিনিট পর অটো ব্যাক
         setTimeout(exitApp, 120000);
     }
 
     function exitApp() {
-        // ক্লিনআপ
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
         window.location.replace("index.html");
     }
 <\/script>
 </body>
-</html>`;
+</html>\`;
     }
 
     async function uploadToGithub() {
@@ -297,16 +321,16 @@
 
         document.getElementById('loader').style.display='flex';
         const content = btoa(unescape(encodeURIComponent(generateFullHTML())));
-        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${fName}.html`;
+        const url = \`https://api.github.com/repos/\${GITHUB_USER}/\${GITHUB_REPO}/contents/\${fName}.html\`;
 
         try {
-            const check = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+            const check = await fetch(url, { headers: { "Authorization": \`token \${token}\` } });
             let sha = "";
             if(check.ok) { const d = await check.json(); sha = d.sha; }
 
             const res = await fetch(url, {
                 method: "PUT",
-                headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+                headers: { "Authorization": \`token \${token}\`, "Content-Type": "application/json" },
                 body: JSON.stringify({ message: "Pro Quiz Upload", content: content, sha: sha || undefined })
             });
 
