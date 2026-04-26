@@ -107,6 +107,7 @@
         localStorage.setItem('draft_quiz', JSON.stringify(fullData));
     }
 
+    // এই ফাংশনটিই কুইজ ফাইল তৈরি করে, এখানে সংশোধন করা হয়েছে
     function generateFullHTML() {
         const d = JSON.parse(localStorage.getItem('draft_quiz'));
         if(!d) return "";
@@ -116,7 +117,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${d.title}</title>
+    <title>${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -141,10 +142,10 @@
 </head>
 <body oncontextmenu="return false">
     <div id="page1" class="card page active-page">
-        <h2 style="text-align:center;">\${d.title}</h2>
+        <h2 style="text-align:center;">${d.title}</h2>
         <div class="info-box">
             <b>শিক্ষার্থী:</b> <span id="stName">...</span> (ID: <span id="stID">...</span>)<br>
-            <b>বিষয়:</b> \${d.sub} | <b>সময়:</b> \${d.time} মিনিট
+            <b>বিষয়:</b> ${d.sub} | <b>সময়:</b> ${d.time} মিনিট
         </div>
         <button class="btn btn-start" onclick="startExam()">পরীক্ষা শুরু করুন</button>
         <button class="btn" style="background:#888; color:white;" onclick="exitApp()">ব্যাক</button>
@@ -171,14 +172,13 @@
     const urlParams = new URLSearchParams(window.location.search);
     const uID = urlParams.get('id');
     const uName = urlParams.get('name');
-    const fName = "\${d.fName}";
+    const fName = "${d.fName}";
     document.getElementById('stName').innerText = uName;
     document.getElementById('stID').innerText = uID;
 
-    const questions = \${JSON.stringify(d.questions)};
+    const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
 
-    // ব্যাক বাটন প্রোটেকশন ও নেভিগেশন ফিক্স
     window.history.pushState(null, null, window.location.href);
     window.onpopstate = function() { 
         if(document.getElementById('page3').classList.contains('active-page')) {
@@ -198,7 +198,7 @@
         document.getElementById('page2').classList.add('active-page');
         renderQuestions();
         if(!isResume) {
-            endTime = Date.now() + (\${d.time} * 60 * 1000);
+            endTime = Date.now() + (${d.time || 0} * 60 * 1000);
             localStorage.setItem('end_' + uID + '_' + fName, endTime);
             db.ref('LiveTimers/' + uID + '/' + fName).set(endTime);
         } else {
@@ -211,15 +211,16 @@
         let html = '';
         questions.forEach((q, i) => {
             const saved = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
-            html += \`<div class="q-box">
-                <b>\${i+1}. \${q.stim ? q.stim + '<br>' : ''} \${q.ques}</b>
-                \${q.img ? '<img src="'+q.img+'">' : ''}
-                \${['ক','খ','গ','ঘ'].map((opt, j) => \`
-                    <label class="opt">
-                        <input type="radio" name="q\${i}" value="\${opt}" onchange="saveProgress(\${i}, '\${opt}')" \${saved === opt ? 'checked' : ''}> 
-                        \${opt}) \${q['o'+(j+1)]}
-                    </label>\`).join('')}
-            </div>\`;
+            html += '<div class="q-box">' +
+                '<b>' + (i+1) + '. ' + (q.stim ? q.stim + '<br>' : '') + q.ques + '</b>' +
+                (q.img ? '<img src="'+q.img+'">' : '') +
+                ['ক','খ','গ','ঘ'].map((opt, j) => {
+                    return '<label class="opt">' +
+                        '<input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + (saved === opt ? 'checked' : '') + '> ' +
+                        opt + ') ' + q['o'+(j+1)] +
+                    '</label>';
+                }).join('') +
+            '</div>';
         });
         document.getElementById('quizArea').innerHTML = html;
     }
@@ -248,14 +249,14 @@
             results.push({ sel, correct: sel === q.ans });
         });
 
-        const timeSpentRaw = Math.floor((\${d.time} * 60) - ((endTime - Date.now()) / 1000));
+        const timeSpentRaw = Math.floor((${d.time || 0} * 60) - ((endTime - Date.now()) / 1000));
         const finalData = {
             userId: uID, 
             name: uName, 
-            quizTitle: "\${d.title}",
-            class: "\${d.cls}",
-            subject: "\${d.sub}",
-            chapter: "\${d.chap}",
+            quizTitle: "${d.title}",
+            class: "${d.cls}",
+            subject: "${d.sub}",
+            chapter: "${d.chap}",
             correct: correct, 
             total: questions.length,
             wrongQuestions: wrongQ.join(', '),
@@ -275,24 +276,20 @@
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
         
-        // ফলাফল বিবরণীতে তারিখ, সময় এবং ভুল প্রশ্নের ক্রমিক নং প্রদর্শন
-        document.getElementById('resultSummary').innerHTML = \`
-            <b>তারিখ:</b> \${data.date} | <b>সময়:</b> \${data.time}<br>
-            <b>ব্যয়িত সময়:</b> \${data.timeSpent} | <b>সঠিক:</b> \${data.correct}/\${data.total}<br>
-            <b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> \${data.wrongQuestions || 'সব সঠিক'}
-        \`;
+        document.getElementById('resultSummary').innerHTML = '<b>তারিখ:</b> ' + data.date + ' | <b>সময়:</b> ' + data.time + '<br>' +
+            '<b>ব্যয়িত সময়:</b> ' + data.timeSpent + ' | <b>সঠিক:</b> ' + data.correct + '/' + data.total + '<br>' +
+            '<b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> ' + (data.wrongQuestions || 'সব সঠিক');
 
         let reviewHtml = '';
         questions.forEach((q, i) => {
-            reviewHtml += \`<div class="q-box"><b>\${i+1}. \${q.ques}</b>
-                \${['ক','খ','গ','ঘ'].map((opt, j) => {
-                    let cls = (opt === q.ans) ? 'correct' : (opt === results[i].sel ? 'wrong' : '');
-                    return \`<div class="opt \${cls}">\${opt}) \${q['o'+(j+1)]}</div>\`;
-                }).join('')}</div>\`;
+            reviewHtml += '<div class="q-box"><b>' + (i+1) + '. ' + q.ques + '</b>' +
+                ['ক','খ','গ','ঘ'].map((opt, j) => {
+                    let cls = (opt === q.ans) ? 'correct' : (opt === (results[i] ? results[i].sel : '') ? 'wrong' : '');
+                    return '<div class="opt ' + cls + '">' + opt + ') ' + q['o'+(j+1)] + '</div>';
+                }).join('') + '</div>';
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
         
-        // ফলাফল পেজে আসার পর ব্যাক বাটন ফিক্স
         window.history.replaceState(null, null, window.location.href);
         setTimeout(exitApp, 120000);
     }
