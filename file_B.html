@@ -20,13 +20,16 @@
         .btn-gh { background: #24292e; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 9999; align-items: center; justify-content: center; font-size: 20px; flex-direction: column; }
         
-        /* New Styles for Preview and Image */
         .preview-box { background: #eef7ff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--a); font-size: 14px; }
         .preview-label { font-size: 11px; color: var(--a); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
         .img-preview-container { position: relative; display: inline-block; margin: 10px 0; }
         .img-preview-container img { max-width: 150px; border-radius: 8px; display: block; border: 1px solid #ddd; }
         .del-img { position: absolute; top: -5px; right: -5px; background: var(--d); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
         .file-input-wrapper { margin: 10px 0; }
+        
+        /* New Styles for Paste Buttons */
+        .btn-paste { background: #673ab7; margin-top: 10px; width: 100%; }
+        .mini-paste { background: #673ab7; font-size: 10px; padding: 2px 8px; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -57,6 +60,7 @@
             <button class="btn" style="background:var(--s)" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
             <button class="btn btn-gh" onclick="uploadToGithub()"><i class="fab fa-github"></i> মাস্টার কুইজ আপলোড</button>
         </div>
+        <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
 
@@ -77,8 +81,11 @@
         div.id = 'block-' + id;
         
         div.innerHTML = `
-            <div style="display:flex; justify-content:space-between"><b>প্রশ্ন নং: ${qCount}</b> 
-            <button onclick="removeQ('${id}')" style="color:red; border:none; background:none; cursor:pointer"><i class="fas fa-times"></i></button></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span><b>প্রশ্ন নং: <span class="q-num-display">${qCount}</span></b> 
+                <button class="btn mini-paste" onclick="individualPaste('${id}')"><i class="fas fa-paste"></i> পেস্ট</button></span>
+                <button onclick="removeQ('${id}')" style="color:red; border:none; background:none; cursor:pointer"><i class="fas fa-times"></i></button>
+            </div>
             
             <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${data?data.stim:''}</textarea>
             <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${data?data.ques:''}</textarea>
@@ -86,7 +93,7 @@
             <div class="file-input-wrapper">
                 <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
                 <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
-                <div id="img-preview-${id}" class="img-preview-container" style="${data?.img ? '' : 'display:none'}">
+                <div id="img-preview-${id}" class="img-preview-container" style="${data?.img && data.img.startsWith('data:image') ? '' : 'display:none'}">
                     <img src="${data?.img || ''}" id="img-data-${id}">
                     <button class="del-img" onclick="removeImg('${id}')">×</button>
                 </div>
@@ -98,6 +105,7 @@
                 <input type="text" placeholder="গ)" class="o3" oninput="updatePreview('${id}')" value="${data?data.o3:''}">
                 <input type="text" placeholder="ঘ)" class="o4" oninput="updatePreview('${id}')" value="${data?data.o4:''}">
             </div>
+
             <select class="ans">
                 <option value="ক" ${data?.ans=='ক'?'selected':''}>সঠিক উত্তর: ক</option>
                 <option value="খ" ${data?.ans=='খ'?'selected':''}>সঠিক উত্তর: খ</option>
@@ -112,7 +120,97 @@
         `;
         document.getElementById('q-area').appendChild(div);
         updatePreview(id);
+        return id;
     }
+
+    // --- Smart Paste Logic ---
+    async function bulkPaste() {
+        const text = await navigator.clipboard.readText();
+        if(!text) return alert("ক্লিপবোর্ড খালি!");
+        
+        // Split by empty line to separate questions
+        const questionBlocks = text.split(/\n\s*\n/);
+        let lastStimulus = "";
+
+        questionBlocks.forEach(block => {
+            const parsed = parseText(block);
+            if(parsed.ques) {
+                if(parsed.stim) lastStimulus = parsed.stim;
+                else parsed.stim = lastStimulus;
+
+                // Find if question number exists
+                let existingBlock = null;
+                const cards = document.querySelectorAll('.q-card');
+                cards.forEach(card => {
+                    if(card.querySelector('.q-num-display').innerText == parsed.num) {
+                        existingBlock = card;
+                    }
+                });
+
+                if(existingBlock) {
+                    fillDataToBlock(existingBlock, parsed);
+                } else {
+                    const newId = addQ();
+                    const newBlock = document.getElementById('block-' + newId);
+                    newBlock.querySelector('.q-num-display').innerText = parsed.num;
+                    fillDataToBlock(newBlock, parsed);
+                }
+            }
+        });
+        alert("সব প্রশ্ন সফলভাবে যুক্ত/আপডেট হয়েছে!");
+    }
+
+    async function individualPaste(id) {
+        const text = await navigator.clipboard.readText();
+        if(!text) return alert("ক্লিপবোর্ড খালি!");
+        const parsed = parseText(text);
+        const block = document.getElementById('block-' + id);
+        fillDataToBlock(block, parsed);
+    }
+
+    function parseText(text) {
+        const lines = text.trim().split('\n');
+        let data = { num: '', stim: '', ques: '', o1: '', o2: '', o3: '', o4: '' };
+        
+        let questionPart = "";
+        let stimPart = "";
+
+        // Detect Stimulus
+        const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*:\s*([\s\S]*?)(?=\d+৷|[\n\r])/i);
+        if(stimMatch) data.stim = stimMatch[1].trim();
+
+        // Detect Question Number and Text
+        const qMatch = text.match(/(\d+)৷\s*([\s\S]*?)(?=\(ক\)|$)/);
+        if(qMatch) {
+            data.num = qMatch[1];
+            data.ques = qMatch[2].trim();
+        }
+
+        // Detect Options
+        const o1M = text.match(/\(ক\)\s*([\s\S]*?)(?=\(খ\)|$)/);
+        const o2M = text.match(/\(খ\)\s*([\s\S]*?)(?=\(গ\)|$)/);
+        const o3M = text.match(/\(গ\)\s*([\s\S]*?)(?=\(ঘ\)|$)/);
+        const o4M = text.match(/\(ঘ\)\s*([\s\S]*?)(?=$)/);
+
+        if(o1M) data.o1 = o1M[1].trim();
+        if(o2M) data.o2 = o2M[1].trim();
+        if(o3M) data.o3 = o3M[1].trim();
+        if(o4M) data.o4 = o4M[1].trim();
+
+        return data;
+    }
+
+    function fillDataToBlock(block, data) {
+        const id = block.id.replace('block-', '');
+        if(data.stim) block.querySelector('.stim').value = data.stim;
+        if(data.ques) block.querySelector('.ques').value = data.ques;
+        if(data.o1) block.querySelector('.o1').value = data.o1;
+        if(data.o2) block.querySelector('.o2').value = data.o2;
+        if(data.o3) block.querySelector('.o3').value = data.o3;
+        if(data.o4) block.querySelector('.o4').value = data.o4;
+        updatePreview(id);
+    }
+    // --- End Paste Logic ---
 
     function handleImage(input, id) {
         const file = input.files[0];
@@ -139,6 +237,7 @@
 
     function updatePreview(id) {
         const block = document.getElementById('block-' + id);
+        if(!block) return;
         const stim = block.querySelector('.stim').value;
         const ques = block.querySelector('.ques').value;
         const img = document.getElementById('img-data-' + id).src;
@@ -157,8 +256,6 @@
 
         const previewDiv = document.getElementById('preview-content-' + id);
         previewDiv.innerHTML = html;
-        
-        // Render Math
         if (window.MathJax) {
             MathJax.typesetPromise([previewDiv]);
         }
@@ -257,13 +354,10 @@
     const uSec = urlParams.get('sec');
     const uCls = urlParams.get('cls');
     const fName = "${d.fName}";
-
     document.getElementById('stName').innerText = uName;
     document.getElementById('stID').innerText = uID;
-
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
-
     window.onload = function() {
         if(localStorage.getItem('done_' + uID + '_' + fName)) { exitApp(); return; }
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
@@ -272,7 +366,6 @@
             else { alert('সময় শেষ!'); exitApp(); }
         }
     };
-
     function startExam(isResume = false) {
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
@@ -285,7 +378,6 @@
         }
         timerInt = setInterval(updateTimer, 1000);
     }
-
     function renderQuestions() {
         let html = '';
         questions.forEach((q, i) => {
@@ -304,18 +396,14 @@
         document.getElementById('quizArea').innerHTML = html;
         if(window.MathJax) MathJax.typeset();
     }
-
     function saveProgress(idx, val) { localStorage.setItem('ans_' + uID + '_' + fName + '_' + idx, val); }
-    
     function updateTimer() {
         const diff = endTime - Date.now();
         if(diff <= 0) { clearInterval(timerInt); submitQuiz(); return; }
         let m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
         document.getElementById('timerDisp').innerText = "সময় বাকি: " + m + ":" + (s < 10 ? '0' : '') + s;
     }
-
     function confirmSubmit() { if(confirm("জমা দিতে চান?")) submitQuiz(); }
-
     function submitQuiz() {
         clearInterval(timerInt);
         localStorage.setItem('done_' + uID + '_' + fName, 'true');
@@ -339,7 +427,6 @@
         db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
         showResult(finalData, results);
     }
-
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
@@ -358,7 +445,6 @@
         if(window.MathJax) MathJax.typeset();
         setTimeout(() => { exitApp(); }, 120000);
     }
-
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
         window.location.replace("https://palashmahmod.github.io/index.html");
@@ -416,7 +502,9 @@
             document.getElementById('qTime').value = saved.time || '';
             document.getElementById('qMarks').value = saved.marks || '';
             document.getElementById('fName').value = saved.fName || '';
-            if(saved.questions) saved.questions.forEach(q => addQ(q));
+            if(saved.questions && saved.questions.length > 0) {
+                saved.questions.forEach(q => addQ(q));
+            } else { addQ(); }
         } else { addQ(); }
     };
 </script>
