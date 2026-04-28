@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master MCQ Generator - Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         :root { --p: #2c3e50; --a: #3498db; --s: #27ae60; --d: #e74c3c; --bg: #f8f9fa; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-top: 70px; }
@@ -17,6 +19,14 @@
         .btn-add { background: var(--a); width: 100%; font-size: 18px; margin-bottom: 20px; }
         .btn-gh { background: #24292e; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 9999; align-items: center; justify-content: center; font-size: 20px; flex-direction: column; }
+        
+        /* New Styles for Preview and Image */
+        .preview-box { background: #eef7ff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--a); font-size: 14px; }
+        .preview-label { font-size: 11px; color: var(--a); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .img-preview-container { position: relative; display: inline-block; margin: 10px 0; }
+        .img-preview-container img { max-width: 150px; border-radius: 8px; display: block; border: 1px solid #ddd; }
+        .del-img { position: absolute; top: -5px; right: -5px; background: var(--d); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+        .file-input-wrapper { margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -49,6 +59,7 @@
         </div>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
+
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
@@ -64,17 +75,28 @@
         const div = document.createElement('div');
         div.className = 'q-card';
         div.id = 'block-' + id;
+        
         div.innerHTML = `
             <div style="display:flex; justify-content:space-between"><b>প্রশ্ন নং: ${qCount}</b> 
             <button onclick="removeQ('${id}')" style="color:red; border:none; background:none; cursor:pointer"><i class="fas fa-times"></i></button></div>
-            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim">${data?data.stim:''}</textarea>
-            <textarea placeholder="মূল প্রশ্ন" class="ques">${data?data.ques:''}</textarea>
-            <input type="text" placeholder="ছবির লিঙ্ক (যদি থাকে)" class="img" value="${data?data.img:''}">
+            
+            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${data?data.stim:''}</textarea>
+            <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${data?data.ques:''}</textarea>
+            
+            <div class="file-input-wrapper">
+                <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
+                <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
+                <div id="img-preview-${id}" class="img-preview-container" style="${data?.img ? '' : 'display:none'}">
+                    <img src="${data?.img || ''}" id="img-data-${id}">
+                    <button class="del-img" onclick="removeImg('${id}')">×</button>
+                </div>
+            </div>
+
             <div class="grid-2">
-                <input type="text" placeholder="ক)" class="o1" value="${data?data.o1:''}">
-                <input type="text" placeholder="খ)" class="o2" value="${data?data.o2:''}">
-                <input type="text" placeholder="গ)" class="o3" value="${data?data.o3:''}">
-                <input type="text" placeholder="ঘ)" class="o4" value="${data?data.o4:''}">
+                <input type="text" placeholder="ক)" class="o1" oninput="updatePreview('${id}')" value="${data?data.o1:''}">
+                <input type="text" placeholder="খ)" class="o2" oninput="updatePreview('${id}')" value="${data?data.o2:''}">
+                <input type="text" placeholder="গ)" class="o3" oninput="updatePreview('${id}')" value="${data?data.o3:''}">
+                <input type="text" placeholder="ঘ)" class="o4" oninput="updatePreview('${id}')" value="${data?data.o4:''}">
             </div>
             <select class="ans">
                 <option value="ক" ${data?.ans=='ক'?'selected':''}>সঠিক উত্তর: ক</option>
@@ -82,8 +104,64 @@
                 <option value="গ" ${data?.ans=='গ'?'selected':''}>সঠিক উত্তর: গ</option>
                 <option value="ঘ" ${data?.ans=='ঘ'?'selected':''}>সঠিক উত্তর: ঘ</option>
             </select>
+
+            <div class="preview-box">
+                <span class="preview-label">লাইভ প্রিভিউ:</span>
+                <div id="preview-content-${id}"></div>
+            </div>
         `;
         document.getElementById('q-area').appendChild(div);
+        updatePreview(id);
+    }
+
+    function handleImage(input, id) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgTag = document.getElementById('img-data-' + id);
+                const container = document.getElementById('img-preview-' + id);
+                imgTag.src = e.target.result;
+                container.style.display = 'inline-block';
+                updatePreview(id);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeImg(id) {
+        const imgTag = document.getElementById('img-data-' + id);
+        const container = document.getElementById('img-preview-' + id);
+        imgTag.src = '';
+        container.style.display = 'none';
+        updatePreview(id);
+    }
+
+    function updatePreview(id) {
+        const block = document.getElementById('block-' + id);
+        const stim = block.querySelector('.stim').value;
+        const ques = block.querySelector('.ques').value;
+        const img = document.getElementById('img-data-' + id).src;
+        const o1 = block.querySelector('.o1').value;
+        const o2 = block.querySelector('.o2').value;
+        const o3 = block.querySelector('.o3').value;
+        const o4 = block.querySelector('.o4').value;
+
+        let html = `<div>${stim ? stim + '<br>' : ''} <b>${ques || 'প্রশ্ন এখানে দেখাবে'}</b></div>`;
+        if (img && img.startsWith('data:image')) {
+            html += `<img src="${img}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
+        }
+        html += `<div style="font-size:12px; margin-top:5px;">
+            ক) ${o1} &nbsp; খ) ${o2} <br> গ) ${o3} &nbsp; ঘ) ${o4}
+        </div>`;
+
+        const previewDiv = document.getElementById('preview-content-' + id);
+        previewDiv.innerHTML = html;
+        
+        // Render Math
+        if (window.MathJax) {
+            MathJax.typesetPromise([previewDiv]);
+        }
     }
 
     function removeQ(id) { document.getElementById('block-'+id).remove(); }
@@ -91,13 +169,19 @@
     function saveDraft() {
         const qs = [];
         document.querySelectorAll('.q-card').forEach(b => {
+            const id = b.id.replace('block-', '');
             qs.push({
-                stim: b.querySelector('.stim').value, ques: b.querySelector('.ques').value,
-                img: b.querySelector('.img').value, o1: b.querySelector('.o1').value,
-                o2: b.querySelector('.o2').value, o3: b.querySelector('.o3').value,
-                o4: b.querySelector('.o4').value, ans: b.querySelector('.ans').value
+                stim: b.querySelector('.stim').value, 
+                ques: b.querySelector('.ques').value,
+                img: document.getElementById('img-data-' + id).src, 
+                o1: b.querySelector('.o1').value,
+                o2: b.querySelector('.o2').value, 
+                o3: b.querySelector('.o3').value,
+                o4: b.querySelector('.o4').value, 
+                ans: b.querySelector('.ans').value
             });
         });
+
         const fullData = {
             title: document.getElementById('qTitle').value, cls: document.getElementById('qClass').value,
             sub: document.getElementById('qSub').value, chap: document.getElementById('qChap').value,
@@ -118,6 +202,8 @@
     <title>${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"><\/script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --p: #2c3e50; --s: #27ae60; --d: #e74c3c; --a: #3498db; --bg: #f4f7f6; }
@@ -135,7 +221,7 @@
         .correct { background: #d4edda !important; border-color: #28a745 !important; }
         .wrong { background: #f8d7da !important; border-color: #dc3545 !important; }
         input[type="radio"] { transform: scale(1.2); margin-right: 10px; }
-        img { max-width: 100%; border-radius: 8px; }
+        img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -174,16 +260,12 @@
 
     document.getElementById('stName').innerText = uName;
     document.getElementById('stID').innerText = uID;
+
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
 
     window.onload = function() {
-        // ফলাফল আগে সাবমিট হয়ে থাকলে রিফ্রেশে সরাসরি হোম পেইজে যাবে
-        if(localStorage.getItem('done_' + uID + '_' + fName)) {
-            exitApp();
-            return;
-        }
-
+        if(localStorage.getItem('done_' + uID + '_' + fName)) { exitApp(); return; }
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
         if(savedTime) {
             if(Date.now() < savedTime) startExam(true);
@@ -210,20 +292,21 @@
             const saved = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
             html += '<div class="q-box">' +
                 '<b>' + (i+1) + '. ' + (q.stim ? q.stim + '<br>' : '') + q.ques + '</b>' +
-                (q.img ? '<br><img src="'+q.img+'">' : '') +
+                (q.img && q.img.startsWith('data:image') ? '<br><img src="'+q.img+'">' : '') +
                 ['ক','খ','গ','ঘ'].map((opt, j) => {
                     return '<label class="opt">' +
                         '<input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + (saved === opt ? 'checked' : '') + '> ' +
                         opt + ') ' + q['o'+(j+1)] +
-                    '</label>';
+                        '</label>';
                 }).join('') +
             '</div>';
         });
         document.getElementById('quizArea').innerHTML = html;
+        if(window.MathJax) MathJax.typeset();
     }
 
     function saveProgress(idx, val) { localStorage.setItem('ans_' + uID + '_' + fName + '_' + idx, val); }
-
+    
     function updateTimer() {
         const diff = endTime - Date.now();
         if(diff <= 0) { clearInterval(timerInt); submitQuiz(); return; }
@@ -235,9 +318,7 @@
 
     function submitQuiz() {
         clearInterval(timerInt);
-        // সাবমিট ফ্ল্যাগ সেট করা হচ্ছে যেন রিফ্রেশ করলে হোম পেইজে নিয়ে যায়
         localStorage.setItem('done_' + uID + '_' + fName, 'true');
-        
         let correct = 0, results = [], wrongQ = [];
         questions.forEach((q, i) => {
             const sel = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
@@ -246,14 +327,12 @@
         });
         const timeSpentRaw = Math.floor((Number(${d.time || 0}) * 60) - ((endTime - Date.now()) / 1000));
         const finalData = {
-            userId: uID, name: uName, roll: uRoll || "N/A",
-            section: uSec || "N/A", quizTitle: "${d.title}",
-            class: uCls || "${d.cls}", subject: "${d.sub}",
-            chapter: "${d.chap}", correct: correct, 
-            total: questions.length, wrongQuestions: wrongQ.join(', '),
+            userId: uID, name: uName, roll: uRoll || "N/A", section: uSec || "N/A", 
+            quizTitle: "${d.title}", class: uCls || "${d.cls}", subject: "${d.sub}",
+            chapter: "${d.chap}", correct: correct, total: questions.length, 
+            wrongQuestions: wrongQ.join(', '),
             timeSpent: Math.floor(timeSpentRaw/60) + "m " + (timeSpentRaw%60) + "s",
-            date: new Date().toLocaleDateString('bn-BD'),
-            time: new Date().toLocaleTimeString('bn-BD'),
+            date: new Date().toLocaleDateString('bn-BD'), time: new Date().toLocaleTimeString('bn-BD'),
             timestamp: firebase.database.ServerValue.TIMESTAMP
         };
         db.ref('QuizResults').push(finalData);
@@ -276,10 +355,8 @@
                 }).join('') + '</div>';
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
-        
-        setTimeout(() => {
-            exitApp();
-        }, 120000);
+        if(window.MathJax) MathJax.typeset();
+        setTimeout(() => { exitApp(); }, 120000);
     }
 
     function exitApp() {
