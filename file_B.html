@@ -19,32 +19,26 @@
         .btn-add { background: var(--a); width: 100%; font-size: 18px; margin-bottom: 20px; }
         .btn-gh { background: #24292e; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 9999; align-items: center; justify-content: center; font-size: 20px; flex-direction: column; }
-        
         .preview-box { background: #eef7ff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--a); font-size: 14px; }
         .preview-label { font-size: 11px; color: var(--a); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
         .img-preview-container { position: relative; display: inline-block; margin: 10px 0; }
         .img-preview-container img { max-width: 150px; border-radius: 8px; display: block; border: 1px solid #ddd; }
         .del-img { position: absolute; top: -5px; right: -5px; background: var(--d); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
         .file-input-wrapper { margin: 10px 0; }
-        
-        /* New Styles for Paste Buttons */
         .btn-paste { background: #673ab7; margin-top: 10px; width: 100%; }
         .mini-paste { background: #673ab7; font-size: 10px; padding: 2px 8px; margin-left: 10px; }
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
-
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
-
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -63,11 +57,9 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
-
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
@@ -86,10 +78,8 @@
                 <button class="btn mini-paste" onclick="individualPaste('${id}')"><i class="fas fa-paste"></i> পেস্ট</button></span>
                 <button onclick="removeQ('${id}')" style="color:red; border:none; background:none; cursor:pointer"><i class="fas fa-times"></i></button>
             </div>
-            
             <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${data?data.stim:''}</textarea>
             <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${data?data.ques:''}</textarea>
-            
             <div class="file-input-wrapper">
                 <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
                 <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
@@ -98,21 +88,18 @@
                     <button class="del-img" onclick="removeImg('${id}')">×</button>
                 </div>
             </div>
-
             <div class="grid-2">
                 <input type="text" placeholder="ক)" class="o1" oninput="updatePreview('${id}')" value="${data?data.o1:''}">
                 <input type="text" placeholder="খ)" class="o2" oninput="updatePreview('${id}')" value="${data?data.o2:''}">
                 <input type="text" placeholder="গ)" class="o3" oninput="updatePreview('${id}')" value="${data?data.o3:''}">
                 <input type="text" placeholder="ঘ)" class="o4" oninput="updatePreview('${id}')" value="${data?data.o4:''}">
             </div>
-
             <select class="ans">
                 <option value="ক" ${data?.ans=='ক'?'selected':''}>সঠিক উত্তর: ক</option>
                 <option value="খ" ${data?.ans=='খ'?'selected':''}>সঠিক উত্তর: খ</option>
                 <option value="গ" ${data?.ans=='গ'?'selected':''}>সঠিক উত্তর: গ</option>
                 <option value="ঘ" ${data?.ans=='ঘ'?'selected':''}>সঠিক উত্তর: ঘ</option>
             </select>
-
             <div class="preview-box">
                 <span class="preview-label">লাইভ প্রিভিউ:</span>
                 <div id="preview-content-${id}"></div>
@@ -123,22 +110,16 @@
         return id;
     }
 
-    // --- Smart Paste Logic ---
     async function bulkPaste() {
         const text = await navigator.clipboard.readText();
         if(!text) return alert("ক্লিপবোর্ড খালি!");
-        
-        // Split by empty line to separate questions
         const questionBlocks = text.split(/\n\s*\n/);
         let lastStimulus = "";
-
         questionBlocks.forEach(block => {
             const parsed = parseText(block);
             if(parsed.ques) {
                 if(parsed.stim) lastStimulus = parsed.stim;
                 else parsed.stim = lastStimulus;
-
-                // Find if question number exists
                 let existingBlock = null;
                 const cards = document.querySelectorAll('.q-card');
                 cards.forEach(card => {
@@ -146,7 +127,6 @@
                         existingBlock = card;
                     }
                 });
-
                 if(existingBlock) {
                     fillDataToBlock(existingBlock, parsed);
                 } else {
@@ -157,7 +137,7 @@
                 }
             }
         });
-        alert("সব প্রশ্ন সফলভাবে যুক্ত/আপডেট হয়েছে!");
+        alert("সব প্রশ্ন সফলভাবে যুক্ত/আপডেট হয়েছে!");
     }
 
     async function individualPaste(id) {
@@ -169,28 +149,28 @@
     }
 
     function parseText(text) {
-        const lines = text.trim().split('\n');
         let data = { num: '', stim: '', ques: '', o1: '', o2: '', o3: '', o4: '' };
         
-        let questionPart = "";
-        let stimPart = "";
-
-        // Detect Stimulus
-        const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*:\s*([\s\S]*?)(?=\d+৷|[\n\r])/i);
+        // উদ্দীপক ডিটেক্ট করা
+        const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*([\s\S]*?)(?=\d+[\.৷]|[\n\r]|$)/i);
         if(stimMatch) data.stim = stimMatch[1].trim();
 
-        // Detect Question Number and Text
-        const qMatch = text.match(/(\d+)৷\s*([\s\S]*?)(?=\(ক\)|$)/);
+        // প্রশ্ন নম্বর এবং মূল প্রশ্ন ডিটেক্ট করা (ডট অথবা স্পেশাল দাড়ি '৷' সাপোর্ট করবে)
+        const qMatch = text.match(/(\d+)\s*[৷\.]\s*([\s\S]*?)(?=\([কa]\)|$)/);
         if(qMatch) {
             data.num = qMatch[1];
             data.ques = qMatch[2].trim();
+        } else {
+            // যদি নম্বর না পাওয়া যায় তবে পুরো টেক্সটকে প্রশ্ন হিসেবে দেখার চেষ্টা
+            const fallbackQ = text.split(/\([কa]\)/)[0].replace(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*[\s\S]*?(?=\d+[\.৷]|$)/i, '').trim();
+            data.ques = fallbackQ;
         }
 
-        // Detect Options
-        const o1M = text.match(/\(ক\)\s*([\s\S]*?)(?=\(খ\)|$)/);
-        const o2M = text.match(/\(খ\)\s*([\s\S]*?)(?=\(গ\)|$)/);
-        const o3M = text.match(/\(গ\)\s*([\s\S]*?)(?=\(ঘ\)|$)/);
-        const o4M = text.match(/\(ঘ\)\s*([\s\S]*?)(?=$)/);
+        // অপশন ডিটেক্ট করা (ক, খ, গ, ঘ)
+        const o1M = text.match(/\([কa]\)\s*([\s\S]*?)(?=\([খb]\)|$)/);
+        const o2M = text.match(/\([খb]\)\s*([\s\S]*?)(?=\([গc]\)|$)/);
+        const o3M = text.match(/\([গc]\)\s*([\s\S]*?)(?=\([ঘd]\)|$)/);
+        const o4M = text.match(/\([ঘd]\)\s*([\s\S]*?)(?=$)/);
 
         if(o1M) data.o1 = o1M[1].trim();
         if(o2M) data.o2 = o2M[1].trim();
@@ -210,7 +190,6 @@
         if(data.o4) block.querySelector('.o4').value = data.o4;
         updatePreview(id);
     }
-    // --- End Paste Logic ---
 
     function handleImage(input, id) {
         const file = input.files[0];
@@ -245,7 +224,6 @@
         const o2 = block.querySelector('.o2').value;
         const o3 = block.querySelector('.o3').value;
         const o4 = block.querySelector('.o4').value;
-
         let html = `<div>${stim ? stim + '<br>' : ''} <b>${ques || 'প্রশ্ন এখানে দেখাবে'}</b></div>`;
         if (img && img.startsWith('data:image')) {
             html += `<img src="${img}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
@@ -253,7 +231,6 @@
         html += `<div style="font-size:12px; margin-top:5px;">
             ক) ${o1} &nbsp; খ) ${o2} <br> গ) ${o3} &nbsp; ঘ) ${o4}
         </div>`;
-
         const previewDiv = document.getElementById('preview-content-' + id);
         previewDiv.innerHTML = html;
         if (window.MathJax) {
@@ -278,7 +255,6 @@
                 ans: b.querySelector('.ans').value
             });
         });
-
         const fullData = {
             title: document.getElementById('qTitle').value, cls: document.getElementById('qClass').value,
             sub: document.getElementById('qSub').value, chap: document.getElementById('qChap').value,
