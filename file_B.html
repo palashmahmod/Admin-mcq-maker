@@ -30,18 +30,15 @@
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
-
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
-
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -60,11 +57,9 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
-
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
@@ -94,7 +89,6 @@
                     <button class="del-img" onclick="removeImg('${id}')">×</button>
                 </div>
             </div>
-
             <div class="grid-2">
                 <input type="text" placeholder="ক)" class="o1" oninput="updatePreview('${id}')" value="${data?data.o1:''}">
                 <input type="text" placeholder="খ)" class="o2" oninput="updatePreview('${id}')" value="${data?data.o2:''}">
@@ -132,7 +126,6 @@
                         existingBlock = card;
                     }
                 });
-
                 if(existingBlock) {
                     fillDataToBlock(existingBlock, parsed);
                 } else {
@@ -156,10 +149,8 @@
 
     function parseText(text) {
         let data = { num: '', stim: '', ques: '', o1: '', o2: '', o3: '', o4: '', ans: '' };
-        
         const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*([\s\S]*?)(?=\d+[\.৷]|[\n\r]|$)/i);
         if(stimMatch) data.stim = stimMatch[1].trim();
-
         const qMatch = text.match(/(\d+)\s*[৷\.]\s*([\s\S]*?)(?=\([কa]\)|$)/);
         if(qMatch) {
             data.num = qMatch[1];
@@ -168,23 +159,16 @@
             const fallbackQ = text.split(/\([কa]\)/)[0].replace(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*[\s\S]*?(?=\d+[\.৷]|$)/i, '').trim();
             data.ques = fallbackQ;
         }
-
         const o1M = text.match(/\([কa]\)\s*([\s\S]*?)(?=\([খb]\)|$)/);
         const o2M = text.match(/\([খb]\)\s*([\s\S]*?)(?=\([গc]\)|$)/);
         const o3M = text.match(/\([গc]\)\s*([\s\S]*?)(?=\([ঘd]\)|$)/);
         const o4M = text.match(/\([ঘd]\)\s*([\s\S]*?)(?=\n|উত্তর|$)/);
-
         if(o1M) data.o1 = o1M[1].trim();
         if(o2M) data.o2 = o2M[1].trim();
         if(o3M) data.o3 = o3M[1].trim();
         if(o4M) data.o4 = o4M[1].trim();
-
-        // উত্তর শনাক্তকরণ লজিক
         const ansMatch = text.match(/উত্তর\s*[:ঃ]\s*\(?([কখগঘ])\)?/);
-        if(ansMatch) {
-            data.ans = ansMatch[1];
-        }
-
+        if(ansMatch) data.ans = ansMatch[1];
         return data;
     }
 
@@ -196,12 +180,7 @@
         if(data.o2) block.querySelector('.o2').value = data.o2;
         if(data.o3) block.querySelector('.o3').value = data.o3;
         if(data.o4) block.querySelector('.o4').value = data.o4;
-        
-        // উত্তর অটো-সিলেক্ট করা (যদি থাকে)
-        if(data.ans) {
-            block.querySelector('.ans').value = data.ans;
-        }
-
+        if(data.ans) block.querySelector('.ans').value = data.ans;
         updatePreview(id);
     }
 
@@ -233,25 +212,21 @@
         if(!block) return;
         const stim = block.querySelector('.stim').value;
         const ques = block.querySelector('.ques').value;
-        const img = document.getElementById('img-data-' + id).src;
+        const imgData = document.getElementById('img-data-' + id);
+        const img = imgData ? imgData.src : '';
         const o1 = block.querySelector('.o1').value;
         const o2 = block.querySelector('.o2').value;
         const o3 = block.querySelector('.o3').value;
         const o4 = block.querySelector('.o4').value;
         const num = block.querySelector('.q-num-display').innerText;
-
         let html = `<div>${stim ? stim + '<br>' : ''}<b>${num}. ${ques || 'প্রশ্ন এখানে দেখাবে'}</b></div>`;
         if (img && img.startsWith('data:image')) {
             html += `<img src="${img}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
         }
-        html += `<div style="font-size:12px; margin-top:5px;">
-            ক) ${o1} &nbsp; খ) ${o2} <br> গ) ${o3} &nbsp; ঘ) ${o4}
-        </div>`;
+        html += `<div style="font-size:12px; margin-top:5px;">ক) ${o1} &nbsp; খ) ${o2} <br> গ) ${o3} &nbsp; ঘ) ${o4}</div>`;
         const previewDiv = document.getElementById('preview-content-' + id);
         previewDiv.innerHTML = html;
-        if (window.MathJax) {
-            MathJax.typesetPromise([previewDiv]);
-        }
+        if (window.MathJax) MathJax.typesetPromise([previewDiv]);
     }
 
     function removeQ(id) { document.getElementById('block-'+id).remove(); }
@@ -260,10 +235,11 @@
         const qs = [];
         document.querySelectorAll('.q-card').forEach(b => {
             const id = b.id.replace('block-', '');
+            const imgSrc = document.getElementById('img-data-' + id).src;
             qs.push({
                 stim: b.querySelector('.stim').value, 
                 ques: b.querySelector('.ques').value,
-                img: document.getElementById('img-data-' + id).src, 
+                img: (imgSrc.startsWith('data:image')) ? imgSrc : '', 
                 o1: b.querySelector('.o1').value,
                 o2: b.querySelector('.o2').value, 
                 o3: b.querySelector('.o3').value,
@@ -346,8 +322,8 @@
     const uSec = urlParams.get('sec');
     const uCls = urlParams.get('cls');
     const fName = "${d.fName}";
-    document.getElementById('stName').innerText = uName;
-    document.getElementById('stID').innerText = uID;
+    document.getElementById('stName').innerText = uName || '...';
+    document.getElementById('stID').innerText = uID || '...';
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
     window.onload = function() {
@@ -374,16 +350,11 @@
         let html = '';
         questions.forEach((q, i) => {
             const saved = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
-            html += '<div class="q-box">' +
-                '<div>' + (q.stim ? q.stim + '<br>' : '') + '<b>' + (i+1) + '. ' + q.ques + '</b></div>' +
+            html += '<div class="q-box"><div>' + (q.stim ? q.stim + '<br>' : '') + '<b>' + (i+1) + '. ' + q.ques + '</b></div>' +
                 (q.img && q.img.startsWith('data:image') ? '<br><img src="'+q.img+'">' : '') +
                 ['ক','খ','গ','ঘ'].map((opt, j) => {
-                    return '<label class="opt">' +
-                        '<input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + (saved === opt ? 'checked' : '') + '> ' +
-                        opt + ') ' + q['o'+(j+1)] +
-                        '</label>';
-                }).join('') +
-            '</div>';
+                    return '<label class="opt"><input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + (saved === opt ? 'checked' : '') + '> ' + opt + ') ' + q['o'+(j+1)] + '</label>';
+                }).join('') + '</div>';
         });
         document.getElementById('quizArea').innerHTML = html;
         if(window.MathJax) MathJax.typeset();
@@ -422,9 +393,7 @@
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
-        document.getElementById('resultSummary').innerHTML = '<b>তারিখ:</b> ' + data.date + ' | <b>সময়:</b> ' + data.time + '<br>' +
-            '<b>ব্যয়িত সময়:</b> ' + data.timeSpent + ' | <b>সঠিক:</b> ' + data.correct + '/' + data.total + '<br>' +
-            '<b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> ' + (data.wrongQuestions || 'সব সঠিক');
+        document.getElementById('resultSummary').innerHTML = '<b>তারিখ:</b> ' + data.date + ' | <b>সময়:</b> ' + data.time + '<br><b>ব্যয়িত সময়:</b> ' + data.timeSpent + ' | <b>সঠিক:</b> ' + data.correct + '/' + data.total + '<br><b style="color:red;">ভুল প্রশ্নের ক্রমিক:</b> ' + (data.wrongQuestions || 'সব সঠিক');
         let reviewHtml = '';
         questions.forEach((q, i) => {
             reviewHtml += '<div class="q-box"><div>' + (q.stim ? q.stim + '<br>' : '') + '<b>' + (i+1) + '. ' + q.ques + '</b></div>' +
@@ -439,7 +408,7 @@
     }
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
-        window.location.replace("https://palashmahmod.github.io/index.html");
+        window.location.replace("../index.html");
     }
 <\/script>
 </body>
