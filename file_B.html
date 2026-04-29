@@ -30,15 +30,18 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
+
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
+
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -57,9 +60,11 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
+
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
+
 <script>
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
@@ -80,6 +85,7 @@
             </div>
             <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${data?data.stim:''}</textarea>
             <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${data?data.ques:''}</textarea>
+            
             <div class="file-input-wrapper">
                 <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
                 <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
@@ -88,6 +94,7 @@
                     <button class="del-img" onclick="removeImg('${id}')">×</button>
                 </div>
             </div>
+
             <div class="grid-2">
                 <input type="text" placeholder="ক)" class="o1" oninput="updatePreview('${id}')" value="${data?data.o1:''}">
                 <input type="text" placeholder="খ)" class="o2" oninput="updatePreview('${id}')" value="${data?data.o2:''}">
@@ -125,6 +132,7 @@
                         existingBlock = card;
                     }
                 });
+
                 if(existingBlock) {
                     fillDataToBlock(existingBlock, parsed);
                 } else {
@@ -147,13 +155,11 @@
     }
 
     function parseText(text) {
-        let data = { num: '', stim: '', ques: '', o1: '', o2: '', o3: '', o4: '' };
+        let data = { num: '', stim: '', ques: '', o1: '', o2: '', o3: '', o4: '', ans: '' };
         
-        // উদ্দীপক ডিটেক্ট করা (শুধুমাত্র ঐ ব্লকের জন্য)
         const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*([\s\S]*?)(?=\d+[\.৷]|[\n\r]|$)/i);
         if(stimMatch) data.stim = stimMatch[1].trim();
 
-        // প্রশ্ন নম্বর এবং মূল প্রশ্ন ডিটেক্ট করা
         const qMatch = text.match(/(\d+)\s*[৷\.]\s*([\s\S]*?)(?=\([কa]\)|$)/);
         if(qMatch) {
             data.num = qMatch[1];
@@ -166,25 +172,36 @@
         const o1M = text.match(/\([কa]\)\s*([\s\S]*?)(?=\([খb]\)|$)/);
         const o2M = text.match(/\([খb]\)\s*([\s\S]*?)(?=\([গc]\)|$)/);
         const o3M = text.match(/\([গc]\)\s*([\s\S]*?)(?=\([ঘd]\)|$)/);
-        const o4M = text.match(/\([ঘd]\)\s*([\s\S]*?)(?=$)/);
+        const o4M = text.match(/\([ঘd]\)\s*([\s\S]*?)(?=\n|উত্তর|$)/);
 
         if(o1M) data.o1 = o1M[1].trim();
         if(o2M) data.o2 = o2M[1].trim();
         if(o3M) data.o3 = o3M[1].trim();
         if(o4M) data.o4 = o4M[1].trim();
 
+        // উত্তর শনাক্তকরণ লজিক
+        const ansMatch = text.match(/উত্তর\s*[:ঃ]\s*\(?([কখগঘ])\)?/);
+        if(ansMatch) {
+            data.ans = ansMatch[1];
+        }
+
         return data;
     }
 
     function fillDataToBlock(block, data) {
         const id = block.id.replace('block-', '');
-        // উদ্দীপক না থাকলে বক্স খালি করে দিবে
         block.querySelector('.stim').value = data.stim || '';
         if(data.ques) block.querySelector('.ques').value = data.ques;
         if(data.o1) block.querySelector('.o1').value = data.o1;
         if(data.o2) block.querySelector('.o2').value = data.o2;
         if(data.o3) block.querySelector('.o3').value = data.o3;
         if(data.o4) block.querySelector('.o4').value = data.o4;
+        
+        // উত্তর অটো-সিলেক্ট করা (যদি থাকে)
+        if(data.ans) {
+            block.querySelector('.ans').value = data.ans;
+        }
+
         updatePreview(id);
     }
 
@@ -223,7 +240,6 @@
         const o4 = block.querySelector('.o4').value;
         const num = block.querySelector('.q-num-display').innerText;
 
-        // উদ্দীপক আলাদা লাইনে, এবং প্রশ্ন নম্বরের উপরে
         let html = `<div>${stim ? stim + '<br>' : ''}<b>${num}. ${ques || 'প্রশ্ন এখানে দেখাবে'}</b></div>`;
         if (img && img.startsWith('data:image')) {
             html += `<img src="${img}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
