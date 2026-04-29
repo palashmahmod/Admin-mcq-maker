@@ -30,15 +30,18 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
+
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
+
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -60,6 +63,7 @@
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
+
 <script>
     const GITHUB_USER = "palashmahmod";
     const GITHUB_REPO = "quiz-files";
@@ -71,7 +75,6 @@
         const div = document.createElement('div');
         div.className = 'q-card';
         div.id = 'block-' + id;
-        
         div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span><b>প্রশ্ন নং: <span class="q-num-display">${qCount}</span></b> 
@@ -80,7 +83,6 @@
             </div>
             <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${data?data.stim:''}</textarea>
             <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${data?data.ques:''}</textarea>
-            
             <div class="file-input-wrapper">
                 <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
                 <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
@@ -115,7 +117,6 @@
         const text = await navigator.clipboard.readText();
         if(!text) return alert("ক্লিপবোর্ড খালি!");
         const questionBlocks = text.split(/\n\s*\n/);
-        
         questionBlocks.forEach(block => {
             const parsed = parseText(block);
             if(parsed.ques) {
@@ -326,6 +327,7 @@
     document.getElementById('stID').innerText = uID || '...';
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
+
     window.onload = function() {
         if(localStorage.getItem('done_' + uID + '_' + fName)) { exitApp(); return; }
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
@@ -334,6 +336,7 @@
             else { alert('সময় শেষ!'); exitApp(); }
         }
     };
+
     function startExam(isResume = false) {
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
@@ -346,6 +349,7 @@
         }
         timerInt = setInterval(updateTimer, 1000);
     }
+
     function renderQuestions() {
         let html = '';
         questions.forEach((q, i) => {
@@ -359,14 +363,18 @@
         document.getElementById('quizArea').innerHTML = html;
         if(window.MathJax) MathJax.typeset();
     }
+
     function saveProgress(idx, val) { localStorage.setItem('ans_' + uID + '_' + fName + '_' + idx, val); }
+
     function updateTimer() {
         const diff = endTime - Date.now();
         if(diff <= 0) { clearInterval(timerInt); submitQuiz(); return; }
         let m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
         document.getElementById('timerDisp').innerText = "সময় বাকি: " + m + ":" + (s < 10 ? '0' : '') + s;
     }
+
     function confirmSubmit() { if(confirm("জমা দিতে চান?")) submitQuiz(); }
+
     function submitQuiz() {
         clearInterval(timerInt);
         localStorage.setItem('done_' + uID + '_' + fName, 'true');
@@ -390,6 +398,7 @@
         db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
         showResult(finalData, results);
     }
+
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
@@ -406,9 +415,10 @@
         if(window.MathJax) MathJax.typeset();
         setTimeout(() => { exitApp(); }, 120000);
     }
+
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
-        window.location.replace("../index.html");
+        window.location.replace("https://palashmahmod.github.io/User-mcq-test/");
     }
 <\/script>
 </body>
