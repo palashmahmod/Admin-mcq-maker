@@ -60,6 +60,7 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
+
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
@@ -327,7 +328,6 @@
     document.getElementById('stID').innerText = uID || '...';
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
-
     window.onload = function() {
         if(localStorage.getItem('done_' + uID + '_' + fName)) { exitApp(); return; }
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
@@ -336,7 +336,6 @@
             else { alert('সময় শেষ!'); exitApp(); }
         }
     };
-
     function startExam(isResume = false) {
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
@@ -349,7 +348,6 @@
         }
         timerInt = setInterval(updateTimer, 1000);
     }
-
     function renderQuestions() {
         let html = '';
         questions.forEach((q, i) => {
@@ -363,18 +361,14 @@
         document.getElementById('quizArea').innerHTML = html;
         if(window.MathJax) MathJax.typeset();
     }
-
     function saveProgress(idx, val) { localStorage.setItem('ans_' + uID + '_' + fName + '_' + idx, val); }
-
     function updateTimer() {
         const diff = endTime - Date.now();
         if(diff <= 0) { clearInterval(timerInt); submitQuiz(); return; }
         let m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
         document.getElementById('timerDisp').innerText = "সময় বাকি: " + m + ":" + (s < 10 ? '0' : '') + s;
     }
-
     function confirmSubmit() { if(confirm("জমা দিতে চান?")) submitQuiz(); }
-
     function submitQuiz() {
         clearInterval(timerInt);
         localStorage.setItem('done_' + uID + '_' + fName, 'true');
@@ -398,7 +392,6 @@
         db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
         showResult(finalData, results);
     }
-
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
@@ -415,7 +408,6 @@
         if(window.MathJax) MathJax.typeset();
         setTimeout(() => { exitApp(); }, 120000);
     }
-
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
         window.location.replace("https://palashmahmod.github.io/User-mcq-test/");
@@ -463,6 +455,7 @@
 
     function clearAll() { if(confirm("সব মুছতে চান?")) { localStorage.removeItem('draft_quiz'); location.reload(); } }
 
+    // সংশোধিত এবং একত্রিত Onload ফাংশন
     window.onload = () => {
         const saved = JSON.parse(localStorage.getItem('draft_quiz'));
         if(saved) {
@@ -476,7 +469,9 @@
             if(saved.questions && saved.questions.length > 0) {
                 saved.questions.forEach(q => addQ(q));
             } else { addQ(); }
-        } else { addQ(); }
+        } else { 
+            addQ(); 
+        }
     };
 </script>
 </body>
