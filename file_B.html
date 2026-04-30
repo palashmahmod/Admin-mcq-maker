@@ -60,7 +60,6 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
-
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
@@ -121,24 +120,12 @@
         questionBlocks.forEach(block => {
             const parsed = parseText(block);
             if(parsed.ques) {
-                let existingBlock = null;
-                const cards = document.querySelectorAll('.q-card');
-                cards.forEach(card => {
-                    if(card.querySelector('.q-num-display').innerText == parsed.num) {
-                        existingBlock = card;
-                    }
-                });
-                if(existingBlock) {
-                    fillDataToBlock(existingBlock, parsed);
-                } else {
-                    const newId = addQ();
-                    const newBlock = document.getElementById('block-' + newId);
-                    newBlock.querySelector('.q-num-display').innerText = parsed.num || qCount;
-                    fillDataToBlock(newBlock, parsed);
-                }
+                const newId = addQ();
+                const newBlock = document.getElementById('block-' + newId);
+                fillDataToBlock(newBlock, parsed);
             }
         });
-        alert("সব প্রশ্ন সফলভাবে যুক্ত/আপডেট হয়েছে!");
+        alert("সব প্রশ্ন সফলভাবে যুক্ত হয়েছে!");
     }
 
     async function individualPaste(id) {
@@ -154,21 +141,14 @@
         const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*([\s\S]*?)(?=\d+[\.৷]|[\n\r]|$)/i);
         if(stimMatch) data.stim = stimMatch[1].trim();
         const qMatch = text.match(/(\d+)\s*[৷\.]\s*([\s\S]*?)(?=\([কa]\)|$)/);
-        if(qMatch) {
-            data.num = qMatch[1];
-            data.ques = qMatch[2].trim();
-        } else {
-            const fallbackQ = text.split(/\([কa]\)/)[0].replace(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*[\s\S]*?(?=\d+[\.৷]|$)/i, '').trim();
-            data.ques = fallbackQ;
-        }
+        if(qMatch) { data.num = qMatch[1]; data.ques = qMatch[2].trim(); }
+        else { data.ques = text.split(/\([কa]\)/)[0].replace(/(?:উদ্দীপক|উদ্দীপনা)[\s\S]*?(?=\d+[\.৷]|$)/i, '').trim(); }
         const o1M = text.match(/\([কa]\)\s*([\s\S]*?)(?=\([খb]\)|$)/);
         const o2M = text.match(/\([খb]\)\s*([\s\S]*?)(?=\([গc]\)|$)/);
         const o3M = text.match(/\([গc]\)\s*([\s\S]*?)(?=\([ঘd]\)|$)/);
         const o4M = text.match(/\([ঘd]\)\s*([\s\S]*?)(?=\n|উত্তর|$)/);
-        if(o1M) data.o1 = o1M[1].trim();
-        if(o2M) data.o2 = o2M[1].trim();
-        if(o3M) data.o3 = o3M[1].trim();
-        if(o4M) data.o4 = o4M[1].trim();
+        if(o1M) data.o1 = o1M[1].trim(); if(o2M) data.o2 = o2M[1].trim();
+        if(o3M) data.o3 = o3M[1].trim(); if(o4M) data.o4 = o4M[1].trim();
         const ansMatch = text.match(/উত্তর\s*[:ঃ]\s*\(?([কখগঘ])\)?/);
         if(ansMatch) data.ans = ansMatch[1];
         return data;
@@ -313,6 +293,7 @@
         <div id="resultSummary" class="info-box"></div>
         <div id="reviewArea"></div>
     </div>
+
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", projectId: "quiz-storage-d8707" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -324,18 +305,18 @@
     const uSec = urlParams.get('sec');
     const uCls = urlParams.get('cls');
     const fName = "${d.fName}";
+
     document.getElementById('stName').innerText = uName || '...';
     document.getElementById('stID').innerText = uID || '...';
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
+
     window.onload = function() {
         if(localStorage.getItem('done_' + uID + '_' + fName)) { exitApp(); return; }
         const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
-        if(savedTime) {
-            if(Date.now() < savedTime) startExam(true);
-            else { alert('সময় শেষ!'); exitApp(); }
-        }
+        if(savedTime && Date.now() < savedTime) startExam(true);
     };
+
     function startExam(isResume = false) {
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
@@ -348,6 +329,7 @@
         }
         timerInt = setInterval(updateTimer, 1000);
     }
+
     function renderQuestions() {
         let html = '';
         questions.forEach((q, i) => {
@@ -361,14 +343,18 @@
         document.getElementById('quizArea').innerHTML = html;
         if(window.MathJax) MathJax.typeset();
     }
+
     function saveProgress(idx, val) { localStorage.setItem('ans_' + uID + '_' + fName + '_' + idx, val); }
+
     function updateTimer() {
         const diff = endTime - Date.now();
         if(diff <= 0) { clearInterval(timerInt); submitQuiz(); return; }
         let m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
         document.getElementById('timerDisp').innerText = "সময় বাকি: " + m + ":" + (s < 10 ? '0' : '') + s;
     }
+
     function confirmSubmit() { if(confirm("জমা দিতে চান?")) submitQuiz(); }
+
     function submitQuiz() {
         clearInterval(timerInt);
         localStorage.setItem('done_' + uID + '_' + fName, 'true');
@@ -389,9 +375,9 @@
             timestamp: firebase.database.ServerValue.TIMESTAMP
         };
         db.ref('QuizResults').push(finalData);
-        db.ref('IndividualQuizzes/' + uID + '/' + fName).remove();
         showResult(finalData, results);
     }
+
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
@@ -406,8 +392,8 @@
         });
         document.getElementById('reviewArea').innerHTML = reviewHtml;
         if(window.MathJax) MathJax.typeset();
-        setTimeout(() => { exitApp(); }, 120000);
     }
+
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
         window.location.replace("https://palashmahmod.github.io/User-mcq-test/");
@@ -455,7 +441,6 @@
 
     function clearAll() { if(confirm("সব মুছতে চান?")) { localStorage.removeItem('draft_quiz'); location.reload(); } }
 
-    // সংশোধিত এবং একত্রিত Onload ফাংশন
     window.onload = () => {
         const saved = JSON.parse(localStorage.getItem('draft_quiz'));
         if(saved) {
@@ -466,12 +451,9 @@
             document.getElementById('qTime').value = saved.time || '';
             document.getElementById('qMarks').value = saved.marks || '';
             document.getElementById('fName').value = saved.fName || '';
-            if(saved.questions && saved.questions.length > 0) {
-                saved.questions.forEach(q => addQ(q));
-            } else { addQ(); }
-        } else { 
-            addQ(); 
-        }
+            if(saved.questions && saved.questions.length > 0) saved.questions.forEach(q => addQ(q));
+            else addQ();
+        } else { addQ(); }
     };
 </script>
 </body>
