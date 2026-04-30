@@ -30,15 +30,18 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-3x"></i>
     <p style="margin-top: 15px;">মাস্টার কুইজ ফাইল তৈরি ও আপলোড হচ্ছে...</p>
 </div>
+
 <div class="header">
     <button class="btn" onclick="location.href='index.html'" style="background:#555"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <b>মাস্টার কুইজ জেনারেটর (Pro)</b>
     <button class="btn" style="background:var(--d)" onclick="clearAll()"><i class="fas fa-trash"></i> মুছুন</button>
 </div>
+
 <div class="container">
     <div class="config-card">
         <div class="grid-2">
@@ -57,6 +60,7 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
+
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
@@ -262,7 +266,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${d.title}</title>
+    <title>${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"><\/script>
@@ -314,7 +318,11 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const urlParams = new URLSearchParams(window.location.search);
-    const uID = urlParams.get('id'), uName = urlParams.get('name'), uRoll = urlParams.get('roll'), uSec = urlParams.get('sec'), uCls = urlParams.get('cls');
+    const uID = urlParams.get('id');
+    const uName = urlParams.get('name');
+    const uRoll = urlParams.get('roll');
+    const uSec = urlParams.get('sec');
+    const uCls = urlParams.get('cls');
     const fName = "${d.fName}";
     document.getElementById('stName').innerText = uName || '...';
     document.getElementById('stID').innerText = uID || '...';
@@ -447,6 +455,7 @@
 
     function clearAll() { if(confirm("সব মুছতে চান?")) { localStorage.removeItem('draft_quiz'); location.reload(); } }
 
+    // সংশোধিত এবং একত্রিত Onload ফাংশন
     window.onload = () => {
         const saved = JSON.parse(localStorage.getItem('draft_quiz'));
         if(saved) {
