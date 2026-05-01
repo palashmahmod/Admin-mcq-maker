@@ -87,7 +87,7 @@
             <div class="file-input-wrapper">
                 <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
                 <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
-                <div id="img-preview-${id}" class="img-preview-container" style="${data?.img && data.img.startsWith('data:image') ? '' : 'display:none'}">
+                <div id="img-preview-${id}" class="img-preview-container" style="${data?.img ? '' : 'display:none'}">
                     <img src="${data?.img || ''}" id="img-data-${id}">
                     <button class="del-img" onclick="removeImg('${id}')">×</button>
                 </div>
@@ -115,34 +115,38 @@
     }
 
     async function bulkPaste() {
-        const text = await navigator.clipboard.readText();
-        if(!text) return alert("ক্লিপবোর্ড খালি!");
-        const questionBlocks = text.split(/\n\s*\n/);
-        questionBlocks.forEach(block => {
-            const parsed = parseText(block);
-            if(parsed.ques) {
-                const newId = addQ();
-                const newBlock = document.getElementById('block-' + newId);
-                fillDataToBlock(newBlock, parsed);
-            }
-        });
-        alert("সব প্রশ্ন সফলভাবে যুক্ত হয়েছে!");
+        try {
+            const text = await navigator.clipboard.readText();
+            if(!text) return alert("ক্লিপবোর্ড খালি!");
+            const questionBlocks = text.split(/\n\s*\n/);
+            questionBlocks.forEach(block => {
+                const parsed = parseText(block);
+                if(parsed.ques) {
+                    const newId = addQ();
+                    const newBlock = document.getElementById('block-' + newId);
+                    fillDataToBlock(newBlock, parsed);
+                }
+            });
+            alert("সব প্রশ্ন সফলভাবে যুক্ত হয়েছে!");
+        } catch(e) { alert("ক্লিপবোর্ড পারমিশন প্রয়োজন।"); }
     }
 
     async function individualPaste(id) {
-        const text = await navigator.clipboard.readText();
-        if(!text) return alert("ক্লিপবোর্ড খালি!");
-        const parsed = parseText(text);
-        const block = document.getElementById('block-' + id);
-        fillDataToBlock(block, parsed);
+        try {
+            const text = await navigator.clipboard.readText();
+            if(!text) return alert("ক্লিপবোর্ড খালি!");
+            const parsed = parseText(text);
+            const block = document.getElementById('block-' + id);
+            fillDataToBlock(block, parsed);
+        } catch(e) { alert("ক্লিপবোর্ড পারমিশন প্রয়োজন।"); }
     }
 
     function parseText(text) {
-        let data = { num: '', stim: '', ques: '', o1: '', o2: '', o3: '', o4: '', ans: '' };
+        let data = { stim: '', ques: '', o1: '', o2: '', o3: '', o4: '', ans: '' };
         const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*([\s\S]*?)(?=\d+[\.৷]|[\n\r]|$)/i);
         if(stimMatch) data.stim = stimMatch[1].trim();
         const qMatch = text.match(/(\d+)\s*[৷\.]\s*([\s\S]*?)(?=\([কa]\)|$)/);
-        if(qMatch) { data.num = qMatch[1]; data.ques = qMatch[2].trim(); }
+        if(qMatch) { data.ques = qMatch[2].trim(); }
         else { data.ques = text.split(/\([কa]\)/)[0].replace(/(?:উদ্দীপক|উদ্দীপনা)[\s\S]*?(?=\d+[\.৷]|$)/i, '').trim(); }
         const o1M = text.match(/\([কa]\)\s*([\s\S]*?)(?=\([খb]\)|$)/);
         const o2M = text.match(/\([খb]\)\s*([\s\S]*?)(?=\([গc]\)|$)/);
@@ -157,7 +161,7 @@
 
     function fillDataToBlock(block, data) {
         const id = block.id.replace('block-', '');
-        block.querySelector('.stim').value = data.stim || '';
+        if(data.stim) block.querySelector('.stim').value = data.stim;
         if(data.ques) block.querySelector('.ques').value = data.ques;
         if(data.o1) block.querySelector('.o1').value = data.o1;
         if(data.o2) block.querySelector('.o2').value = data.o2;
@@ -202,6 +206,7 @@
         const o3 = block.querySelector('.o3').value;
         const o4 = block.querySelector('.o4').value;
         const num = block.querySelector('.q-num-display').innerText;
+
         let html = `<div>${stim ? stim + '<br>' : ''}<b>${num}. ${ques || 'প্রশ্ন এখানে দেখাবে'}</b></div>`;
         if (img && img.startsWith('data:image')) {
             html += `<img src="${img}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
@@ -212,7 +217,18 @@
         if (window.MathJax) MathJax.typesetPromise([previewDiv]);
     }
 
-    function removeQ(id) { document.getElementById('block-'+id).remove(); }
+    function removeQ(id) { 
+        document.getElementById('block-'+id).remove(); 
+        reIndex();
+    }
+
+    function reIndex() {
+        let count = 1;
+        document.querySelectorAll('.q-num-display').forEach(el => {
+            el.innerText = count++;
+        });
+        qCount = count - 1;
+    }
 
     function saveDraft() {
         const qs = [];
@@ -243,6 +259,7 @@
     function generateFullHTML() {
         const d = JSON.parse(localStorage.getItem('draft_quiz'));
         if(!d) return "";
+        
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -336,9 +353,10 @@
         questions.forEach((q, i) => {
             const saved = localStorage.getItem('ans_' + uID + '_' + fName + '_' + i);
             html += '<div class="q-box"><div>' + (q.stim ? q.stim + '<br>' : '') + '<b>' + (i+1) + '. ' + q.ques + '</b></div>' +
-                (q.img && q.img.startsWith('data:image') ? '<br><img src="'+q.img+'">' : '') +
+                (q.img ? '<br><img src="'+q.img+'">' : '') +
                 ['ক','খ','গ','ঘ'].map((opt, j) => {
-                    return '<label class="opt"><input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + (saved === opt ? 'checked' : '') + '> ' + opt + ') ' + q['o'+(j+1)] + '</label>';
+                    const isChecked = (saved === opt) ? 'checked' : '';
+                    return '<label class="opt"><input type="radio" name="q' + i + '" value="' + opt + '" onchange="saveProgress(' + i + ', \\'' + opt + '\\')" ' + isChecked + '> ' + opt + ') ' + q['o'+(j+1)] + '</label>';
                 }).join('') + '</div>';
         });
         document.getElementById('quizArea').innerHTML = html;
@@ -440,7 +458,12 @@
         }
     }
 
-    function clearAll() { if(confirm("সব মুছতে চান?")) { localStorage.removeItem('draft_quiz'); location.reload(); } }
+    function clearAll() { 
+        if(confirm("সব মুছতে চান?")) { 
+            localStorage.removeItem('draft_quiz'); 
+            location.reload(); 
+        } 
+    }
 
     window.onload = () => {
         try {
@@ -454,8 +477,9 @@
                 document.getElementById('qTime').value = saved.time || '';
                 document.getElementById('qMarks').value = saved.marks || '';
                 document.getElementById('fName').value = saved.fName || '';
-                if(saved.questions && saved.questions.length > 0) saved.questions.forEach(q => addQ(q));
-                else addQ();
+                if(saved.questions && saved.questions.length > 0) {
+                    saved.questions.forEach(q => addQ(q));
+                } else { addQ(); }
             } else { addQ(); }
         } catch (e) {
             console.error("Storage Error", e);
