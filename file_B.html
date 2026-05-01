@@ -60,6 +60,7 @@
         <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
+
     <div id="q-area"></div>
     <button class="btn btn-add" onclick="addQ()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
@@ -217,7 +218,8 @@
         const qs = [];
         document.querySelectorAll('.q-card').forEach(b => {
             const id = b.id.replace('block-', '');
-            const imgSrc = document.getElementById('img-data-' + id).src;
+            const imgDataTag = document.getElementById('img-data-' + id);
+            const imgSrc = imgDataTag ? imgDataTag.src : '';
             qs.push({
                 stim: b.querySelector('.stim').value, 
                 ques: b.querySelector('.ques').value,
@@ -293,7 +295,6 @@
         <div id="resultSummary" class="info-box"></div>
         <div id="reviewArea"></div>
     </div>
-
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", projectId: "quiz-storage-d8707" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -442,18 +443,24 @@
     function clearAll() { if(confirm("সব মুছতে চান?")) { localStorage.removeItem('draft_quiz'); location.reload(); } }
 
     window.onload = () => {
-        const saved = JSON.parse(localStorage.getItem('draft_quiz'));
-        if(saved) {
-            document.getElementById('qTitle').value = saved.title || '';
-            document.getElementById('qClass').value = saved.cls || '';
-            document.getElementById('qSub').value = saved.sub || '';
-            document.getElementById('qChap').value = saved.chap || '';
-            document.getElementById('qTime').value = saved.time || '';
-            document.getElementById('qMarks').value = saved.marks || '';
-            document.getElementById('fName').value = saved.fName || '';
-            if(saved.questions && saved.questions.length > 0) saved.questions.forEach(q => addQ(q));
-            else addQ();
-        } else { addQ(); }
+        try {
+            const savedData = localStorage.getItem('draft_quiz');
+            if(savedData) {
+                const saved = JSON.parse(savedData);
+                document.getElementById('qTitle').value = saved.title || '';
+                document.getElementById('qClass').value = saved.cls || '';
+                document.getElementById('qSub').value = saved.sub || '';
+                document.getElementById('qChap').value = saved.chap || '';
+                document.getElementById('qTime').value = saved.time || '';
+                document.getElementById('qMarks').value = saved.marks || '';
+                document.getElementById('fName').value = saved.fName || '';
+                if(saved.questions && saved.questions.length > 0) saved.questions.forEach(q => addQ(q));
+                else addQ();
+            } else { addQ(); }
+        } catch (e) {
+            console.error("Storage Error", e);
+            addQ();
+        }
     };
 </script>
 </body>
