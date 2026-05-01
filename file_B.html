@@ -21,8 +21,12 @@
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 9999; align-items: center; justify-content: center; font-size: 20px; flex-direction: column; }
         .preview-box { background: #eef7ff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px dashed var(--a); font-size: 14px; }
         .preview-label { font-size: 11px; color: var(--a); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        .img-preview-container { margin: 10px 0; }
+        .img-preview-container { position: relative; display: inline-block; margin: 10px 0; }
         .img-preview-container img { max-width: 150px; border-radius: 8px; display: block; border: 1px solid #ddd; }
+        .del-img { position: absolute; top: -5px; right: -5px; background: var(--d); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+        .file-input-wrapper { margin: 10px 0; }
+        .btn-paste { background: #673ab7; margin-top: 10px; width: 100%; }
+        .mini-paste { background: #673ab7; font-size: 10px; padding: 2px 8px; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -53,6 +57,7 @@
             <button class="btn" style="background:var(--s)" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
             <button class="btn btn-gh" onclick="uploadToGithub()"><i class="fab fa-github"></i> মাস্টার কুইজ আপলোড</button>
         </div>
+        <button class="btn btn-paste" onclick="bulkPaste()"><i class="fas fa-paste"></i> একসাথে অনেক প্রশ্ন পেস্ট করুন</button>
         <button class="btn" style="background:#7f8c8d; width: 100%; margin-top: 10px;" onclick="resetToken()"><i class="fas fa-key"></i> GitHub টুকেন রিসেট</button>
     </div>
 
@@ -73,19 +78,20 @@
         div.id = 'block-' + id;
         div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span><b>প্রশ্ন নং: <span class="q-num-display">${qCount}</span></b></span>
+                <span><b>প্রশ্ন নং: <span class="q-num-display">${qCount}</span></b> 
+                <button class="btn mini-paste" onclick="individualPaste('${id}')"><i class="fas fa-paste"></i> পেস্ট</button></span>
                 <button onclick="removeQ('${id}')" style="color:red; border:none; background:none; cursor:pointer"><i class="fas fa-times"></i></button>
             </div>
             <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${data?data.stim:''}</textarea>
             <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${data?data.ques:''}</textarea>
-            
-            <div class="img-link-wrapper">
-                <input type="text" placeholder="ছবির লিঙ্ক দিন (ঐচ্ছিক)" class="img-link" oninput="updatePreview('${id}')" value="${data?data.img:''}">
+            <div class="file-input-wrapper">
+                <label style="font-size:13px; color:#666;">ছবি যোগ করুন (গ্যালারি):</label>
+                <input type="file" accept="image/*" onchange="handleImage(this, '${id}')">
                 <div id="img-preview-${id}" class="img-preview-container" style="${data?.img ? '' : 'display:none'}">
                     <img src="${data?.img || ''}" id="img-data-${id}">
+                    <button class="del-img" onclick="removeImg('${id}')">×</button>
                 </div>
             </div>
-
             <div class="grid-2">
                 <input type="text" placeholder="ক)" class="o1" oninput="updatePreview('${id}')" value="${data?data.o1:''}">
                 <input type="text" placeholder="খ)" class="o2" oninput="updatePreview('${id}')" value="${data?data.o2:''}">
@@ -108,23 +114,93 @@
         return id;
     }
 
+    async function bulkPaste() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if(!text) return alert("ক্লিপবোর্ড খালি!");
+            const questionBlocks = text.split(/\n\s*\n/);
+            questionBlocks.forEach(block => {
+                const parsed = parseText(block);
+                if(parsed.ques) {
+                    const newId = addQ();
+                    const newBlock = document.getElementById('block-' + newId);
+                    fillDataToBlock(newBlock, parsed);
+                }
+            });
+            alert("সব প্রশ্ন সফলভাবে যুক্ত হয়েছে!");
+        } catch(e) { alert("ক্লিপবোর্ড পারমিশন প্রয়োজন।"); }
+    }
+
+    async function individualPaste(id) {
+        try {
+            const text = await navigator.clipboard.readText();
+            if(!text) return alert("ক্লিপবোর্ড খালি!");
+            const parsed = parseText(text);
+            const block = document.getElementById('block-' + id);
+            fillDataToBlock(block, parsed);
+        } catch(e) { alert("ক্লিপবোর্ড পারমিশন প্রয়োজন।"); }
+    }
+
+    function parseText(text) {
+        let data = { stim: '', ques: '', o1: '', o2: '', o3: '', o4: '', ans: '' };
+        const stimMatch = text.match(/(?:উদ্দীপক|উদ্দীপনা)\s*[:ঃ]?\s*([\s\S]*?)(?=\d+[\.৷]|[\n\r]|$)/i);
+        if(stimMatch) data.stim = stimMatch[1].trim();
+        const qMatch = text.match(/(\d+)\s*[৷\.]\s*([\s\S]*?)(?=\([কa]\)|$)/);
+        if(qMatch) { data.ques = qMatch[2].trim(); }
+        else { data.ques = text.split(/\([কa]\)/)[0].replace(/(?:উদ্দীপক|উদ্দীপনা)[\s\S]*?(?=\d+[\.৷]|$)/i, '').trim(); }
+        const o1M = text.match(/\([কa]\)\s*([\s\S]*?)(?=\([খb]\)|$)/);
+        const o2M = text.match(/\([খb]\)\s*([\s\S]*?)(?=\([গc]\)|$)/);
+        const o3M = text.match(/\([গc]\)\s*([\s\S]*?)(?=\([ঘd]\)|$)/);
+        const o4M = text.match(/\([ঘd]\)\s*([\s\S]*?)(?=\n|উত্তর|$)/);
+        if(o1M) data.o1 = o1M[1].trim(); if(o2M) data.o2 = o2M[1].trim();
+        if(o3M) data.o3 = o3M[1].trim(); if(o4M) data.o4 = o4M[1].trim();
+        const ansMatch = text.match(/উত্তর\s*[:ঃ]\s*\(?([কখগঘ])\)?/);
+        if(ansMatch) data.ans = ansMatch[1];
+        return data;
+    }
+
+    function fillDataToBlock(block, data) {
+        const id = block.id.replace('block-', '');
+        if(data.stim) block.querySelector('.stim').value = data.stim;
+        if(data.ques) block.querySelector('.ques').value = data.ques;
+        if(data.o1) block.querySelector('.o1').value = data.o1;
+        if(data.o2) block.querySelector('.o2').value = data.o2;
+        if(data.o3) block.querySelector('.o3').value = data.o3;
+        if(data.o4) block.querySelector('.o4').value = data.o4;
+        if(data.ans) block.querySelector('.ans').value = data.ans;
+        updatePreview(id);
+    }
+
+    function handleImage(input, id) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgTag = document.getElementById('img-data-' + id);
+                const container = document.getElementById('img-preview-' + id);
+                imgTag.src = e.target.result;
+                container.style.display = 'inline-block';
+                updatePreview(id);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeImg(id) {
+        const imgTag = document.getElementById('img-data-' + id);
+        const container = document.getElementById('img-preview-' + id);
+        imgTag.src = '';
+        container.style.display = 'none';
+        updatePreview(id);
+    }
+
     function updatePreview(id) {
         const block = document.getElementById('block-' + id);
         if(!block) return;
         const stim = block.querySelector('.stim').value;
         const ques = block.querySelector('.ques').value;
-        const imgUrl = block.querySelector('.img-link').value;
-        
-        const imgPreview = document.getElementById('img-preview-' + id);
-        const imgTag = document.getElementById('img-data-' + id);
-        
-        if(imgUrl) {
-            imgTag.src = imgUrl;
-            imgPreview.style.display = 'block';
-        } else {
-            imgPreview.style.display = 'none';
-        }
-
+        const imgData = document.getElementById('img-data-' + id);
+        const img = imgData ? imgData.src : '';
         const o1 = block.querySelector('.o1').value;
         const o2 = block.querySelector('.o2').value;
         const o3 = block.querySelector('.o3').value;
@@ -132,9 +208,10 @@
         const num = block.querySelector('.q-num-display').innerText;
 
         let html = `<div>${stim ? stim + '<br>' : ''}<b>${num}. ${ques || 'প্রশ্ন এখানে দেখাবে'}</b></div>`;
-        if (imgUrl) html += `<img src="${imgUrl}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
+        if (img && img.startsWith('data:image')) {
+            html += `<img src="${img}" style="max-width:100px; margin:5px 0; border-radius:5px;"><br>`;
+        }
         html += `<div style="font-size:12px; margin-top:5px;">ক) ${o1} &nbsp; খ) ${o2} <br> গ) ${o3} &nbsp; ঘ) ${o4}</div>`;
-        
         const previewDiv = document.getElementById('preview-content-' + id);
         previewDiv.innerHTML = html;
         if (window.MathJax) MathJax.typesetPromise([previewDiv]);
@@ -156,10 +233,13 @@
     function saveDraft() {
         const qs = [];
         document.querySelectorAll('.q-card').forEach(b => {
+            const id = b.id.replace('block-', '');
+            const imgDataTag = document.getElementById('img-data-' + id);
+            const imgSrc = imgDataTag ? imgDataTag.src : '';
             qs.push({
                 stim: b.querySelector('.stim').value, 
                 ques: b.querySelector('.ques').value,
-                img: b.querySelector('.img-link').value, 
+                img: (imgSrc.startsWith('data:image')) ? imgSrc : '', 
                 o1: b.querySelector('.o1').value,
                 o2: b.querySelector('.o2').value, 
                 o3: b.querySelector('.o3').value,
@@ -249,6 +329,12 @@
     const questions = ${JSON.stringify(d.questions)};
     let timerInt, endTime;
 
+    window.onload = function() {
+        if(localStorage.getItem('done_' + uID + '_' + fName)) { exitApp(); return; }
+        const savedTime = localStorage.getItem('end_' + uID + '_' + fName);
+        if(savedTime && Date.now() < savedTime) startExam(true);
+    };
+
     function startExam(isResume = false) {
         document.getElementById('page1').classList.remove('active-page');
         document.getElementById('page2').classList.add('active-page');
@@ -261,6 +347,7 @@
         }
         timerInt = setInterval(updateTimer, 1000);
     }
+
     function renderQuestions() {
         let html = '';
         questions.forEach((q, i) => {
@@ -275,14 +362,18 @@
         document.getElementById('quizArea').innerHTML = html;
         if(window.MathJax) MathJax.typeset();
     }
+
     function saveProgress(idx, val) { localStorage.setItem('ans_' + uID + '_' + fName + '_' + idx, val); }
+
     function updateTimer() {
         const diff = endTime - Date.now();
         if(diff <= 0) { clearInterval(timerInt); submitQuiz(); return; }
         let m = Math.floor(diff / 60000), s = Math.floor((diff % 60000) / 1000);
         document.getElementById('timerDisp').innerText = "সময় বাকি: " + m + ":" + (s < 10 ? '0' : '') + s;
     }
+
     function confirmSubmit() { if(confirm("জমা দিতে চান?")) submitQuiz(); }
+
     function submitQuiz() {
         clearInterval(timerInt);
         localStorage.setItem('done_' + uID + '_' + fName, 'true');
@@ -305,6 +396,7 @@
         db.ref('QuizResults').push(finalData);
         showResult(finalData, results);
     }
+
     function showResult(data, results) {
         document.getElementById('page2').classList.remove('active-page');
         document.getElementById('page3').classList.add('active-page');
@@ -312,7 +404,6 @@
         let reviewHtml = '';
         questions.forEach((q, i) => {
             reviewHtml += '<div class="q-box"><div>' + (q.stim ? q.stim + '<br>' : '') + '<b>' + (i+1) + '. ' + q.ques + '</b></div>' +
-                (q.img ? '<br><img src="'+q.img+'">' : '') +
                 ['ক','খ','গ','ঘ'].map((opt, j) => {
                     let cls = (opt === q.ans) ? 'correct' : (opt === (results[i] ? results[i].sel : '') ? 'wrong' : '');
                     return '<div class="opt ' + cls + '">' + opt + ') ' + q['o'+(j+1)] + '</div>';
@@ -321,6 +412,7 @@
         document.getElementById('reviewArea').innerHTML = reviewHtml;
         if(window.MathJax) MathJax.typeset();
     }
+
     function exitApp() {
         Object.keys(localStorage).forEach(key => { if(key.includes(uID) && key.includes(fName)) localStorage.removeItem(key); });
         window.location.replace("https://palashmahmod.github.io/User-mcq-test/");
@@ -390,6 +482,7 @@
                 } else { addQ(); }
             } else { addQ(); }
         } catch (e) {
+            console.error("Storage Error", e);
             addQ();
         }
     };
