@@ -58,16 +58,12 @@
     var GITHUB_USER = "palashmahmod";
     var GITHUB_REPO = "quiz-files";
     var qCount = 0;
-    
-    // Firebase Config Template
+
     var firebaseConfigRaw = `
         var firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
+            apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
             databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com",
-            projectId: "quiz-storage-d8707",
-            storageBucket: "quiz-storage-d8707.appspot.com",
-            messagingSenderId: "YOUR_ID",
-            appId: "YOUR_APP_ID"
+            projectId: "quiz-storage-d8707"
         };
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var db = firebase.database();
@@ -193,22 +189,34 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <style>
-        body{font-family:sans-serif;background:#f4f7f6;padding:15px;margin:0;}
+        body{font-family:sans-serif;background:#f4f7f6;padding:15px;margin:0;user-select:none;}
         .card{background:white;padding:20px;border-radius:12px;max-width:500px;margin:10px auto;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
         .timer{position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;padding:8px;z-index:100;font-weight:bold;}
         .opt{display:block;padding:12px;background:#f0f0f0;margin:8px 0;border-radius:8px;cursor:pointer;border:1px solid #ddd;}
         input[type="radio"]{margin-right:10px;}
         button{width:100%;padding:12px;background:#27ae60;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
-        #login-box{margin-top:50px;}
+        .info-p { margin: 5px 0; font-size: 15px; }
+        #exam-box { display:none; margin-top:50px; }
     </style>
 </head>
 <body>
     <div id="main">
-        <div class="card" id="login-box">
-            <h2 style="text-align:center">${d.title}</h2>
-            <p style="text-align:center">বিষয়: ${d.sub}</p>
-            <input type="number" id="uId" placeholder="আপনার আইডি দিন" style="width:100%;padding:12px;margin-bottom:15px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">
-            <button id="startBtn" onclick="checkUser()">শুরু করুন</button>
+        <div class="card" id="preview-box">
+            <h2 style="text-align:center; color:#2c3e50;">${d.title}</h2>
+            <hr>
+            <p class="info-p"><b>বিষয়:</b> ${d.sub}</p>
+            <p class="info-p"><b>অধ্যায়:</b> ${d.chapter}</p>
+            <p class="info-p"><b>মোট প্রশ্ন:</b> ${d.questions.length}টি</p>
+            <p class="info-p"><b>সময়:</b> ${d.time} মিনিট</p>
+            <p class="info-p"><b>পরীক্ষার্থী:</b> <span id="uName"></span> (ID: <span id="uIdDisplay"></span>)</p>
+            <br>
+            <button onclick="startExam()">পরিক্ষা শুরু করুন</button>
+        </div>
+
+        <div id="exam-box">
+            <div class="timer" id="t">সময় বাকি: --:--</div>
+            <div class="card" id="q-list"></div>
+            <div class="card"><button id="submitBtn" onclick="submitQuiz()">জমা দিন</button></div>
         </div>
     </div>
 
@@ -216,36 +224,41 @@
         ${firebaseConfigRaw}
         var questions = ${qJson};
         var fName = "${d.fName}";
-        var userData = {};
-        var startTime;
+        var timerInterval;
+        
+        var urlParams = new URLSearchParams(window.location.search);
+        var user = {
+            id: urlParams.get('id'),
+            name: urlParams.get('name'),
+            roll: urlParams.get('roll'),
+            cls: urlParams.get('cls'),
+            sec: urlParams.get('sec')
+        };
 
-        function checkUser(){
-            var id = document.getElementById("uId").value;
-            if(!id) return alert("আইডি দিন!");
-            document.getElementById("startBtn").disabled = true;
-
-            db.ref("users/" + id).once("value", function(snap){
-                if(snap.exists()){
-                    userData = snap.val();
-                    // স্ট্যাটাস চেক: এডমিন নতুন ফাইল পাঠালে 'off' নোডটি এডমিন অ্যাপ থেকে ডিলিট হতে হবে
-                    db.ref("QuizStatus/" + id + "/" + fName).once("value", function(stSnap){
-                        if(stSnap.val() === "off"){
-                            alert("এই কুইজটি আপনি শেষ করেছেন। পুনরায় সুযোগ পেতে এডমিনের সাথে যোগাযোগ করুন।");
-                            document.getElementById("startBtn").disabled = false;
-                        } else {
-                            startQuiz();
-                        }
-                    });
-                } else {
-                    alert("ভুল আইডি!");
-                    document.getElementById("startBtn").disabled = false;
-                }
-            });
+        if(user.id){
+            document.getElementById('uName').innerText = user.name;
+            document.getElementById('uIdDisplay').innerText = user.id;
         }
 
-        function startQuiz(){
-            startTime = Date.now();
-            var h = "<div class='timer' id='t'>সময় বাকি: ${d.time}:00</div><div class='card' style='margin-top:50px'>";
+        // রিফ্রেশ হ্যান্ডেলিং: অবশিষ্ট সময় চেক
+        window.onload = function() {
+            var savedTime = localStorage.getItem("timer_" + fName + "_" + user.id);
+            if(savedTime) {
+                var remaining = parseInt(savedTime) - Math.floor(Date.now()/1000);
+                if(remaining > 0) startExam(remaining);
+                else {
+                    alert("সময় শেষ হয়ে গেছে!");
+                    submitQuiz();
+                }
+            }
+        };
+
+        function startExam(existingSec) {
+            document.getElementById('preview-box').style.display = 'none';
+            document.getElementById('exam-box').style.display = 'block';
+            
+            var list = document.getElementById('q-list');
+            var h = "";
             questions.forEach(function(q, i){
                 h += "<div style='margin-bottom:25px;'><p><b>"+(i+1)+". "+q.ques+"</b></p>";
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
@@ -254,61 +267,72 @@
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='গ'> গ) "+q.o3+"</label>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ'> ঘ) "+q.o4+"</label></div>";
             });
-            h += "<button id='submitBtn' onclick='submitQuiz()'>জমা দিন</button></div>";
-            document.getElementById("main").innerHTML = h;
-            startTimer();
+            list.innerHTML = h;
+
+            var totalSec = existingSec || (${d.time} * 60);
+            
+            if(!existingSec) {
+                var expiry = Math.floor(Date.now()/1000) + totalSec;
+                localStorage.setItem("timer_" + fName + "_" + user.id, expiry);
+            }
+
+            runTimer(totalSec);
         }
 
-        function startTimer(){
-            var sec = ${d.time} * 60;
-            var countdown = setInterval(function(){
-                var m=Math.floor(sec/60), s=sec%60;
-                var el = document.getElementById("t");
-                if(!el) { clearInterval(countdown); return; }
-                el.innerText = "সময় বাকি: " + m + ":" + (s < 10 ? "0" : "") + s;
-                if(sec <= 0){ clearInterval(countdown); submitQuiz(); }
+        function runTimer(sec) {
+            timerInterval = setInterval(function(){
+                var m = Math.floor(sec/60), s = sec%60;
+                document.getElementById("t").innerText = "সময় বাকি: " + m + ":" + (s < 10 ? "0" : "") + s;
+                if(sec <= 0){ clearInterval(timerInterval); submitQuiz(); }
                 sec--;
             }, 1000);
         }
 
-        function submitQuiz(){
-            document.getElementById('submitBtn').disabled = true;
-            var correctCount = 0;
+        function submitQuiz() {
+            clearInterval(timerInterval);
+            var btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "জমা হচ্ছে...";
+
+            var correct = 0;
             questions.forEach(function(q, i){
                 var sel = document.querySelector('input[name="q'+i+'"]:checked');
-                if(sel && sel.value === q.ans) correctCount++;
+                if(sel && sel.value === q.ans) correct++;
             });
 
             var now = new Date();
-            var resultKey = fName + "_" + Date.now(); // প্রতিবার ভিন্ন নামে সেভ করার জন্য টাইমস্ট্যাম্প যোগ করা হয়েছে
-            
-            var finalData = {
+            var resData = {
                 quizTitle: "${d.title}",
-                name: userData.name,
-                userId: userData.userId,
-                correct: correctCount,
+                subject: "${d.sub}",
+                name: user.name,
+                userId: user.id,
+                roll: user.roll,
+                class: user.cls,
+                section: user.sec,
+                correct: correct,
                 total: questions.length,
                 date: now.toLocaleDateString('bn-BD'),
                 time: now.toLocaleTimeString(),
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
-            // ১. রেজাল্ট সেভ
-            db.ref("QuizResults/" + userData.userId + "/" + resultKey).set(finalData).then(() => {
-                // ২. কুইজ স্ট্যাটাস অফ করা
-                return db.ref("QuizStatus/" + userData.userId + "/" + fName).set("off");
-            }).then(() => {
-                alert("পরীক্ষা সফলভাবে সম্পন্ন হয়েছে!");
-                
-                // ৩. লোকাল স্টোরেজ ক্লিয়ার
-                localStorage.removeItem('quiz_draft_new');
-                
-                // ৪. এন্ড্রয়েড অ্যাপকে নির্দেশ পাঠানো ফাইল ডিলিট করার জন্য
-                if(window.AndroidInterface){
-                    window.AndroidInterface.deleteFile(fName + ".html");
-                } else {
-                    document.getElementById("main").innerHTML = "<div class='card'><h2>জমা হয়েছে</h2><p>ফাইলটি এখন বন্ধ করুন।</p></div>";
+            var resKey = fName + "_" + Date.now();
+
+            // ১. ফলাফল সেভ করা
+            db.ref("QuizResults/" + resKey).set(resData).then(() => {
+                // ২. IndividualQuizzes থেকে ডিলিট (যাতে বাটন মুছে যায়)
+                return db.ref("IndividualQuizzes/" + user.id).once('value');
+            }).then(snap => {
+                if(snap.exists()){
+                    snap.forEach(child => {
+                        if(child.val().file === fName) child.ref.remove();
+                    });
                 }
+                // ৩. লোকাল স্টোরেজ থেকে টাইমার মোছা
+                localStorage.removeItem("timer_" + fName + "_" + user.id);
+                
+                alert("পরীক্ষা সফলভাবে জমা হয়েছে!");
+                document.getElementById("main").innerHTML = "<div class='card' style='text-align:center'><h2>ধন্যবাদ!</h2><p>আপনার উত্তরপত্র জমা হয়েছে।</p></div>";
             }).catch(e => alert(e.message));
         }
     <\/script>
