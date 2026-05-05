@@ -36,16 +36,15 @@
 
 <div class="container">
     <div class="card">
-        <input type="text" id="qTitle" placeholder="কুইজের টাইটেল (যেমন: মডেল টেস্ট ১)">
+        <input type="text" id="qTitle" placeholder="কুইজের টাইটেল">
         <div class="grid">
-            <input type="text" id="qSub" placeholder="বিষয় (যেমন: বিজ্ঞান)" style="width:48%">
-            <input type="text" id="qChapter" placeholder="অধ্যায় (যেমন: ২য়)" style="width:48%">
+            <input type="text" id="qSub" placeholder="বিষয়" style="width:48%">
+            <input type="text" id="qChapter" placeholder="অধ্যায়" style="width:48%">
         </div>
         <div class="grid">
             <input type="number" id="qTime" placeholder="সময় (মিনিট)" style="width:48%">
             <input type="text" id="fName" placeholder="ফাইলের নাম (যেমন: 101)" style="width:48%">
         </div>
-        
         <div class="grid" style="margin-top:10px;">
             <button class="btn btn-green" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
             <button class="btn btn-black" onclick="uploadToGithub()"><i class="fab fa-github"></i> আপলোড করুন</button>
@@ -59,7 +58,8 @@
     var GITHUB_USER = "palashmahmod";
     var GITHUB_REPO = "quiz-files";
     var qCount = 0;
-
+    
+    // Firebase Config Template
     var firebaseConfigRaw = `
         var firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -69,9 +69,7 @@
             messagingSenderId: "YOUR_ID",
             appId: "YOUR_APP_ID"
         };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var db = firebase.database();
     `;
 
@@ -81,7 +79,6 @@
         var div = document.createElement('div');
         div.className = 'card q-box';
         div.id = id;
-        
         var stim = data ? data.stim : "";
         var ques = data ? data.ques : "";
         var img = data ? data.img : "";
@@ -91,28 +88,28 @@
         var o4 = data ? data.o4 : "";
         var ans = data ? data.ans : "ক";
 
-        div.innerHTML = 
-            '<div style="display:flex; justify-content:space-between">' +
-            '<b>প্রশ্ন নং: <span class="no">' + qCount + '</span></b>' +
-            '<button class="btn btn-red" onclick="removeQuestion(\''+id+'\')">X</button>' +
-            '</div>' +
-            '<textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim">' + stim + '</textarea>' +
-            '<textarea placeholder="মূল প্রশ্ন" class="ques">' + ques + '</textarea>' +
-            '<input type="text" placeholder="ছবির লিঙ্ক (ঐচ্ছিক)" class="img" value="' + img + '">' +
-            '<div class="grid">' +
-            '<input type="text" placeholder="ক)" class="o1" value="' + o1 + '" style="width:48%">' +
-            '<input type="text" placeholder="খ)" class="o2" value="' + o2 + '" style="width:48%">' +
-            '</div>' +
-            '<div class="grid">' +
-            '<input type="text" placeholder="গ)" class="o3" value="' + o3 + '" style="width:48%">' +
-            '<input type="text" placeholder="ঘ)" class="o4" value="' + o4 + '" style="width:48%">' +
-            '</div>' +
-            '<select class="ans">' +
-            '<option value="ক" '+(ans=='ক'?'selected':'')+'>সঠিক উত্তর: ক</option>' +
-            '<option value="খ" '+(ans=='খ'?'selected':'')+'>সঠিক উত্তর: খ</option>' +
-            '<option value="গ" '+(ans=='গ'?'selected':'')+'>সঠিক উত্তর: গ</option>' +
-            '<option value="ঘ" '+(ans=='ঘ'?'selected':'')+'>সঠিক উত্তর: ঘ</option>' +
-            '</select>';
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between">
+            <b>প্রশ্ন নং: <span class="no">${qCount}</span></b>
+            <button class="btn btn-red" onclick="removeQuestion('${id}')">X</button>
+            </div>
+            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim">${stim}</textarea>
+            <textarea placeholder="মূল প্রশ্ন" class="ques">${ques}</textarea>
+            <input type="text" placeholder="ছবির লিঙ্ক (ঐচ্ছিক)" class="img" value="${img}">
+            <div class="grid">
+            <input type="text" placeholder="ক)" class="o1" value="${o1}" style="width:48%">
+            <input type="text" placeholder="খ)" class="o2" value="${o2}" style="width:48%">
+            </div>
+            <div class="grid">
+            <input type="text" placeholder="গ)" class="o3" value="${o3}" style="width:48%">
+            <input type="text" placeholder="ঘ)" class="o4" value="${o4}" style="width:48%">
+            </div>
+            <select class="ans">
+            <option value="ক" ${ans=='ক'?'selected':''}>সঠিক উত্তর: ক</option>
+            <option value="খ" ${ans=='খ'?'selected':''}>সঠিক উত্তর: খ</option>
+            <option value="গ" ${ans=='গ'?'selected':''}>সঠিক উত্তর: গ</option>
+            <option value="ঘ" ${ans=='ঘ'?'selected':''}>সঠিক উত্তর: ঘ</option>
+            </select>`;
         document.getElementById('q-container').appendChild(div);
         reorderNumbers();
     }
@@ -153,7 +150,6 @@
             questions: questions
         };
         localStorage.setItem('quiz_draft_new', JSON.stringify(fullData));
-        alert("ড্রাফট সফলভাবে সেইভ হয়েছে!");
     }
 
     async function uploadToGithub() {
@@ -199,12 +195,11 @@
     <style>
         body{font-family:sans-serif;background:#f4f7f6;padding:15px;margin:0;}
         .card{background:white;padding:20px;border-radius:12px;max-width:500px;margin:10px auto;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-        .timer{position:fixed;top:0;width:100%;background:red;color:white;text-align:center;padding:8px;z-index:100;font-weight:bold;}
+        .timer{position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;padding:8px;z-index:100;font-weight:bold;}
         .opt{display:block;padding:12px;background:#f0f0f0;margin:8px 0;border-radius:8px;cursor:pointer;border:1px solid #ddd;}
         input[type="radio"]{margin-right:10px;}
         button{width:100%;padding:12px;background:#27ae60;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
         #login-box{margin-top:50px;}
-        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -228,27 +223,22 @@
             var id = document.getElementById("uId").value;
             if(!id) return alert("আইডি দিন!");
             document.getElementById("startBtn").disabled = true;
-            document.getElementById("startBtn").innerText = "চেক করা হচ্ছে...";
-            
+
             db.ref("users/" + id).once("value", function(snap){
                 if(snap.exists()){
                     userData = snap.val();
-                    // কুইজ স্ট্যাটাস চেক
-                    db.ref("QuizStatus/" + id + "/" + fName).once("value", function(statusSnap){
-                        var currentStatus = statusSnap.val();
-                        if(currentStatus === "off"){
-                            alert("আপনি এই পরীক্ষাটি ইতিমধ্যে দিয়েছেন।");
+                    // স্ট্যাটাস চেক: এডমিন নতুন ফাইল পাঠালে 'off' নোডটি এডমিন অ্যাপ থেকে ডিলিট হতে হবে
+                    db.ref("QuizStatus/" + id + "/" + fName).once("value", function(stSnap){
+                        if(stSnap.val() === "off"){
+                            alert("এই কুইজটি আপনি শেষ করেছেন। পুনরায় সুযোগ পেতে এডমিনের সাথে যোগাযোগ করুন।");
                             document.getElementById("startBtn").disabled = false;
-                            document.getElementById("startBtn").innerText = "শুরু করুন";
                         } else {
-                            // প্রথমবার পরীক্ষা দিলে বা স্ট্যাটাস on থাকলে
                             startQuiz();
                         }
                     });
                 } else {
                     alert("ভুল আইডি!");
                     document.getElementById("startBtn").disabled = false;
-                    document.getElementById("startBtn").innerText = "শুরু করুন";
                 }
             });
         }
@@ -273,50 +263,53 @@
             var sec = ${d.time} * 60;
             var countdown = setInterval(function(){
                 var m=Math.floor(sec/60), s=sec%60;
-                var timerEl = document.getElementById("t");
-                if(!timerEl) { clearInterval(countdown); return; }
-                timerEl.innerText="সময় বাকি: "+m+":"+(s<10?"0":"")+s;
-                if(sec<=0){ clearInterval(countdown); submitQuiz(); }
+                var el = document.getElementById("t");
+                if(!el) { clearInterval(countdown); return; }
+                el.innerText = "সময় বাকি: " + m + ":" + (s < 10 ? "0" : "") + s;
+                if(sec <= 0){ clearInterval(countdown); submitQuiz(); }
                 sec--;
-            },1000);
+            }, 1000);
         }
 
         function submitQuiz(){
             document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitBtn').innerText = "প্রসেসিং...";
-            
             var correctCount = 0;
-            var wrongCount = 0;
             questions.forEach(function(q, i){
-                var selected = document.querySelector('input[name="q'+i+'"]:checked');
-                if(selected && selected.value === q.ans) correctCount++;
-                else wrongCount++;
+                var sel = document.querySelector('input[name="q'+i+'"]:checked');
+                if(sel && sel.value === q.ans) correctCount++;
             });
 
-            var timeSpentSec = Math.floor((Date.now() - startTime) / 1000);
-            var mSpent = Math.floor(timeSpentSec/60), sSpent = timeSpentSec%60;
             var now = new Date();
-
+            var resultKey = fName + "_" + Date.now(); // প্রতিবার ভিন্ন নামে সেভ করার জন্য টাইমস্ট্যাম্প যোগ করা হয়েছে
+            
             var finalData = {
-                chapter: "${d.chapter}", class: userData.cls || "", correct: correctCount,
-                date: now.toLocaleDateString('bn-BD'), name: userData.name,
-                quizTitle: "${d.title}", roll: userData.roll, section: userData.section,
-                subject: "${d.sub}", time: now.toLocaleTimeString('en-US'),
-                timeSpent: mSpent + "m " + sSpent + "s", timestamp: Date.now(),
-                total: questions.length, userId: userData.userId, wrongQuestions: wrongCount.toString()
+                quizTitle: "${d.title}",
+                name: userData.name,
+                userId: userData.userId,
+                correct: correctCount,
+                total: questions.length,
+                date: now.toLocaleDateString('bn-BD'),
+                time: now.toLocaleTimeString(),
+                timestamp: Date.now()
             };
 
-            // রেজাল্ট সেভ এবং স্ট্যাটাস অফ করা
-            db.ref("QuizResults").push(finalData).then(() => {
+            // ১. রেজাল্ট সেভ
+            db.ref("QuizResults/" + userData.userId + "/" + resultKey).set(finalData).then(() => {
+                // ২. কুইজ স্ট্যাটাস অফ করা
                 return db.ref("QuizStatus/" + userData.userId + "/" + fName).set("off");
             }).then(() => {
-                alert("আপনার পরীক্ষা সফলভাবে জমা হয়েছে!");
-                // পরীক্ষা শেষ হওয়ার পর কন্টেন্ট সরিয়ে ফেলা (ফাইল ডিলিটের বিকল্প)
-                document.getElementById("main").innerHTML = "<div class='card'><h2>ধন্যবাদ!</h2><p>আপনার রেজাল্ট রেকর্ড করা হয়েছে।</p></div>";
-            }).catch(err => {
-                alert("Error: " + err.message);
-                document.getElementById('submitBtn').disabled = false;
-            });
+                alert("পরীক্ষা সফলভাবে সম্পন্ন হয়েছে!");
+                
+                // ৩. লোকাল স্টোরেজ ক্লিয়ার
+                localStorage.removeItem('quiz_draft_new');
+                
+                // ৪. এন্ড্রয়েড অ্যাপকে নির্দেশ পাঠানো ফাইল ডিলিট করার জন্য
+                if(window.AndroidInterface){
+                    window.AndroidInterface.deleteFile(fName + ".html");
+                } else {
+                    document.getElementById("main").innerHTML = "<div class='card'><h2>জমা হয়েছে</h2><p>ফাইলটি এখন বন্ধ করুন।</p></div>";
+                }
+            }).catch(e => alert(e.message));
         }
     <\/script>
 </body>
@@ -332,9 +325,7 @@
             document.getElementById('qChapter').value = d.chapter || "";
             document.getElementById('qTime').value = d.time || "";
             document.getElementById('fName').value = d.fName || "";
-            if(d.questions && d.questions.length > 0) {
-                for(var i=0; i<d.questions.length; i++) { addNewQuestion(d.questions[i]); }
-            } else { addNewQuestion(); }
+            if(d.questions) d.questions.forEach(q => addNewQuestion(q));
         } else { addNewQuestion(); }
     };
 </script>
