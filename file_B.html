@@ -69,7 +69,9 @@
             messagingSenderId: "YOUR_ID",
             appId: "YOUR_APP_ID"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         var db = firebase.database();
     `;
 
@@ -202,6 +204,7 @@
         input[type="radio"]{margin-right:10px;}
         button{width:100%;padding:12px;background:#27ae60;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
         #login-box{margin-top:50px;}
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -210,7 +213,7 @@
             <h2 style="text-align:center">${d.title}</h2>
             <p style="text-align:center">বিষয়: ${d.sub}</p>
             <input type="number" id="uId" placeholder="আপনার আইডি দিন" style="width:100%;padding:12px;margin-bottom:15px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">
-            <button onclick="checkUser()">শুরু করুন</button>
+            <button id="startBtn" onclick="checkUser()">শুরু করুন</button>
         </div>
     </div>
 
@@ -224,20 +227,28 @@
         function checkUser(){
             var id = document.getElementById("uId").value;
             if(!id) return alert("আইডি দিন!");
+            document.getElementById("startBtn").disabled = true;
+            document.getElementById("startBtn").innerText = "চেক করা হচ্ছে...";
             
             db.ref("users/" + id).once("value", function(snap){
                 if(snap.exists()){
                     userData = snap.val();
-                    // কুইজ স্ট্যাটাস চেক (এডমিন কন্ট্রোল)
+                    // কুইজ স্ট্যাটাস চেক
                     db.ref("QuizStatus/" + id + "/" + fName).once("value", function(statusSnap){
-                        if(statusSnap.val() === "off"){
-                            document.getElementById("main").innerHTML = "<div class='card'><h2>দুঃখিত!</h2><p>আপনি এই পরীক্ষাটি ইতিমধ্যে দিয়েছেন।</p></div>";
+                        var currentStatus = statusSnap.val();
+                        if(currentStatus === "off"){
+                            alert("আপনি এই পরীক্ষাটি ইতিমধ্যে দিয়েছেন।");
+                            document.getElementById("startBtn").disabled = false;
+                            document.getElementById("startBtn").innerText = "শুরু করুন";
                         } else {
+                            // প্রথমবার পরীক্ষা দিলে বা স্ট্যাটাস on থাকলে
                             startQuiz();
                         }
                     });
                 } else {
                     alert("ভুল আইডি!");
+                    document.getElementById("startBtn").disabled = false;
+                    document.getElementById("startBtn").innerText = "শুরু করুন";
                 }
             });
         }
@@ -253,7 +264,7 @@
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='গ'> গ) "+q.o3+"</label>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ'> ঘ) "+q.o4+"</label></div>";
             });
-            h += "<button onclick='submitQuiz()'>জমা দিন</button></div>";
+            h += "<button id='submitBtn' onclick='submitQuiz()'>জমা দিন</button></div>";
             document.getElementById("main").innerHTML = h;
             startTimer();
         }
@@ -262,13 +273,18 @@
             var sec = ${d.time} * 60;
             var countdown = setInterval(function(){
                 var m=Math.floor(sec/60), s=sec%60;
-                document.getElementById("t").innerText="সময় বাকি: "+m+":"+(s<10?"0":"")+s;
+                var timerEl = document.getElementById("t");
+                if(!timerEl) { clearInterval(countdown); return; }
+                timerEl.innerText="সময় বাকি: "+m+":"+(s<10?"0":"")+s;
                 if(sec<=0){ clearInterval(countdown); submitQuiz(); }
                 sec--;
             },1000);
         }
 
         function submitQuiz(){
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').innerText = "প্রসেসিং...";
+            
             var correctCount = 0;
             var wrongCount = 0;
             questions.forEach(function(q, i){
@@ -290,13 +306,17 @@
                 total: questions.length, userId: userData.userId, wrongQuestions: wrongCount.toString()
             };
 
-            // রেজাল্ট সেভ করা এবং স্ট্যাটাস 'off' করা
+            // রেজাল্ট সেভ এবং স্ট্যাটাস অফ করা
             db.ref("QuizResults").push(finalData).then(() => {
                 return db.ref("QuizStatus/" + userData.userId + "/" + fName).set("off");
             }).then(() => {
-                alert("সফলভাবে জমা হয়েছে!");
-                location.reload();
-            }).catch(err => alert("Error: " + err.message));
+                alert("আপনার পরীক্ষা সফলভাবে জমা হয়েছে!");
+                // পরীক্ষা শেষ হওয়ার পর কন্টেন্ট সরিয়ে ফেলা (ফাইল ডিলিটের বিকল্প)
+                document.getElementById("main").innerHTML = "<div class='card'><h2>ধন্যবাদ!</h2><p>আপনার রেজাল্ট রেকর্ড করা হয়েছে।</p></div>";
+            }).catch(err => {
+                alert("Error: " + err.message);
+                document.getElementById('submitBtn').disabled = false;
+            });
         }
     <\/script>
 </body>
