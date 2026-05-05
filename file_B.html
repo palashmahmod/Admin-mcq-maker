@@ -60,7 +60,6 @@
     var GITHUB_REPO = "quiz-files";
     var qCount = 0;
 
-    // কুইজ ফাইলের জন্য Firebase Config (এখানে আপনার আসল কনফিগ বসাবেন)
     var firebaseConfigRaw = `
         var firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -210,7 +209,7 @@
         <div class="card" id="login-box">
             <h2 style="text-align:center">${d.title}</h2>
             <p style="text-align:center">বিষয়: ${d.sub}</p>
-            <input type="number" id="uId" placeholder="আপনার আইডি দিন (যেমন: 22001)" style="width:100%;padding:12px;margin-bottom:15px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">
+            <input type="number" id="uId" placeholder="আপনার আইডি দিন" style="width:100%;padding:12px;margin-bottom:15px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">
             <button onclick="checkUser()">শুরু করুন</button>
         </div>
     </div>
@@ -218,13 +217,9 @@
     <script>
         ${firebaseConfigRaw}
         var questions = ${qJson};
+        var fName = "${d.fName}";
         var userData = {};
         var startTime;
-        var quizKey = "quiz_done_" + "${d.fName}";
-
-        if(localStorage.getItem(quizKey)){
-            document.getElementById("main").innerHTML = "<div class='card'><h2>দুঃখিত!</h2><p>আপনি এই পরীক্ষাটি একবার দিয়ে ফেলেছেন।</p></div>";
-        }
 
         function checkUser(){
             var id = document.getElementById("uId").value;
@@ -233,9 +228,16 @@
             db.ref("users/" + id).once("value", function(snap){
                 if(snap.exists()){
                     userData = snap.val();
-                    startQuiz();
+                    // কুইজ স্ট্যাটাস চেক (এডমিন কন্ট্রোল)
+                    db.ref("QuizStatus/" + id + "/" + fName).once("value", function(statusSnap){
+                        if(statusSnap.val() === "off"){
+                            document.getElementById("main").innerHTML = "<div class='card'><h2>দুঃখিত!</h2><p>আপনি এই পরীক্ষাটি ইতিমধ্যে দিয়েছেন।</p></div>";
+                        } else {
+                            startQuiz();
+                        }
+                    });
                 } else {
-                    alert("ভুল আইডি! পুনরায় চেষ্টা করুন।");
+                    alert("ভুল আইডি!");
                 }
             });
         }
@@ -280,30 +282,21 @@
             var now = new Date();
 
             var finalData = {
-                chapter: "${d.chapter}",
-                class: userData.cls || "",
-                correct: correctCount,
-                date: now.toLocaleDateString('bn-BD'),
-                name: userData.name,
-                quizTitle: "${d.title}",
-                roll: userData.roll,
-                section: userData.section,
-                subject: "${d.sub}",
-                time: now.toLocaleTimeString('en-US'),
-                timeSpent: mSpent + "m " + sSpent + "s",
-                timestamp: Date.now(),
-                total: questions.length,
-                userId: userData.userId,
-                wrongQuestions: wrongCount.toString()
+                chapter: "${d.chapter}", class: userData.cls || "", correct: correctCount,
+                date: now.toLocaleDateString('bn-BD'), name: userData.name,
+                quizTitle: "${d.title}", roll: userData.roll, section: userData.section,
+                subject: "${d.sub}", time: now.toLocaleTimeString('en-US'),
+                timeSpent: mSpent + "m " + sSpent + "s", timestamp: Date.now(),
+                total: questions.length, userId: userData.userId, wrongQuestions: wrongCount.toString()
             };
 
-            db.ref("QuizResults").push(finalData, function(err){
-                if(!err){
-                    localStorage.setItem(quizKey, "true");
-                    alert("সফলভাবে জমা হয়েছে!");
-                    location.reload();
-                }
-            });
+            // রেজাল্ট সেভ করা এবং স্ট্যাটাস 'off' করা
+            db.ref("QuizResults").push(finalData).then(() => {
+                return db.ref("QuizStatus/" + userData.userId + "/" + fName).set("off");
+            }).then(() => {
+                alert("সফলভাবে জমা হয়েছে!");
+                location.reload();
+            }).catch(err => alert("Error: " + err.message));
         }
     <\/script>
 </body>
