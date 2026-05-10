@@ -173,7 +173,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${d.title}</title>
+    <title>${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <style>
@@ -190,12 +190,12 @@
 <body>
     <div id="main">
         <div class="card" id="preview-box">
-            <h2 style="text-align:center; color:#2c3e50;">\${d.title}</h2>
+            <h2 style="text-align:center; color:#2c3e50;">${d.title}</h2>
             <hr>
-            <p class="info-p"><b>বিষয়:</b> \${d.sub}</p>
-            <p class="info-p"><b>অধ্যায়:</b> \${d.chapter}</p>
-            <p class="info-p"><b>মোট প্রশ্ন:</b> \${d.questions.length}টি</p>
-            <p class="info-p"><b>সময়:</b> \${d.time} মিনিট</p>
+            <p class="info-p"><b>বিষয়:</b> ${d.sub}</p>
+            <p class="info-p"><b>অধ্যায়:</b> ${d.chapter}</p>
+            <p class="info-p"><b>মোট প্রশ্ন:</b> ${d.questions.length}টি</p>
+            <p class="info-p"><b>সময়:</b> ${d.time} মিনিট</p>
             <p class="info-p"><b>পরীক্ষার্থী:</b> <span id="uName"></span> (ID: <span id="uIdDisplay"></span>)</p>
             <br>
             <button onclick="startExam()">পরিক্ষা শুরু করুন</button>
@@ -208,8 +208,8 @@
     </div>
     <script>
         ${firebaseConfigRaw}
-        var questions = \${qJson};
-        var fName = "\${d.fName}";
+        var questions = ${qJson};
+        var fName = "${d.fName}";
         var timerInterval;
         var examStartTime;
         
@@ -252,7 +252,7 @@
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ'> ঘ) "+q.o4+"</label></div>";
             });
             list.innerHTML = h;
-            var totalSec = existingSec || (\${d.time} * 60);
+            var totalSec = existingSec || (${d.time} * 60);
             
             if(!existingSec) {
                 var expiry = Math.floor(Date.now()/1000) + totalSec;
@@ -288,15 +288,15 @@
             
             var now = new Date();
             var resData = {
-                chapter: "\${d.chapter}",
+                chapter: "${d.chapter}",
                 class: user.cls,
                 correct: correct,
                 date: now.toLocaleDateString('bn-BD'),
                 name: user.name,
-                quizTitle: "\${d.title}",
+                quizTitle: "${d.title}",
                 roll: user.roll,
                 section: user.sec,
-                subject: "\${d.sub}",
+                subject: "${d.sub}",
                 time: now.toLocaleTimeString(),
                 timeSpent: timeSpentStr,
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
