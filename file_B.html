@@ -151,7 +151,6 @@
         var finalHTML = generateQuizFile(data);
         var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
         var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
-        
         try {
             var getFile = await fetch(apiUrl, { headers: { "Authorization": "token " + token } });
             var sha = "";
@@ -211,7 +210,6 @@
         var questions = ${qJson};
         var fName = "${d.fName}";
         var timerInterval;
-        var examStartTime;
         
         var urlParams = new URLSearchParams(window.location.search);
         var user = {
@@ -237,7 +235,11 @@
             }
         };
         function startExam(existingSec) {
-            examStartTime = Date.now();
+            // রিফ্রেশ হ্যান্ডেলিং: শুরুর সময় লোকাল স্টোরেজে সেভ করা
+            if(!localStorage.getItem("start_time_" + fName + "_" + user.id)){
+                localStorage.setItem("start_time_" + fName + "_" + user.id, Date.now());
+            }
+
             document.getElementById('preview-box').style.display = 'none';
             document.getElementById('exam-box').style.display = 'block';
             
@@ -270,8 +272,10 @@
         }
         function submitQuiz() {
             clearInterval(timerInterval);
-            var examEndTime = Date.now();
-            var diff = Math.floor((examEndTime - examStartTime) / 1000);
+            
+            // নির্ভুল ব্যয়িত সময় ক্যালকুলেশন
+            var startTime = localStorage.getItem("start_time_" + fName + "_" + user.id) || Date.now();
+            var diff = Math.floor((Date.now() - startTime) / 1000);
             var mSpent = Math.floor(diff / 60);
             var sSpent = diff % 60;
             var timeSpentStr = mSpent + "m " + sSpent + "s";
@@ -281,9 +285,15 @@
             btn.innerText = "জমা হচ্ছে...";
             
             var correct = 0;
+            var wrongNums = []; // ভুল প্রশ্নের নম্বর সংরক্ষণের জন্য
+            
             questions.forEach(function(q, i){
                 var sel = document.querySelector('input[name="q'+i+'"]:checked');
-                if(sel && sel.value === q.ans) correct++;
+                if(sel && sel.value === q.ans) {
+                    correct++;
+                } else {
+                    wrongNums.push(i + 1); // ভুল হলে প্রশ্নের নম্বর (১ থেকে শুরু) পুশ করা
+                }
             });
             
             var now = new Date();
@@ -302,7 +312,7 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
                 total: questions.length,
                 userId: user.id,
-                wrongQuestions: String(questions.length - correct)
+                wrongQuestions: wrongNums.join(", ") // কমা দিয়ে ভুল প্রশ্নের নম্বরগুলো পাঠানো
             };
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
@@ -314,6 +324,7 @@
                     });
                 }
                 localStorage.removeItem("timer_" + fName + "_" + user.id);
+                localStorage.removeItem("start_time_" + fName + "_" + user.id);
                 alert("পরীক্ষা সফলভাবে জমা হয়েছে!");
                 document.getElementById("main").innerHTML = "<div class='card' style='text-align:center'><h2>ধন্যবাদ!</h2><p>আপনার উত্তরপত্র জমা হয়েছে।</p></div>";
             }).catch(e => alert(e.message));
