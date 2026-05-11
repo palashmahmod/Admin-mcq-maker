@@ -234,8 +234,20 @@
                 }
             }
         };
+
+        function saveAns(qIdx, val) {
+            var saved = JSON.parse(localStorage.getItem("ans_" + fName + "_" + user.id) || "{}");
+            saved[qIdx] = val;
+            localStorage.setItem("ans_" + fName + "_" + user.id, JSON.stringify(saved));
+        }
+
         function startExam(existingSec) {
-            // রিফ্রেশ হ্যান্ডেলিং: শুরুর সময় লোকাল স্টোরেজে সেভ করা
+            // ২য় বার অংশগ্রহণের সময় বা নতুন করে শুরুর সময় আগের সিলেকশন মোছা
+            if(!existingSec) {
+                localStorage.removeItem("ans_" + fName + "_" + user.id);
+                localStorage.removeItem("start_time_" + fName + "_" + user.id);
+            }
+
             if(!localStorage.getItem("start_time_" + fName + "_" + user.id)){
                 localStorage.setItem("start_time_" + fName + "_" + user.id, Date.now());
             }
@@ -244,14 +256,16 @@
             document.getElementById('exam-box').style.display = 'block';
             
             var list = document.getElementById('q-list');
+            var savedAns = JSON.parse(localStorage.getItem("ans_" + fName + "_" + user.id) || "{}");
             var h = "";
             questions.forEach(function(q, i){
+                var s = savedAns["q"+i] || "";
                 h += "<div style='margin-bottom:25px;'><p><b>"+(i+1)+". "+q.ques+"</b></p>";
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক'> ক) "+q.o1+"</label>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='খ'> খ) "+q.o2+"</label>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='গ'> গ) "+q.o3+"</label>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ'> ঘ) "+q.o4+"</label></div>";
+                h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক' onchange='saveAns(\\"q"+i+"\\", \\"ক\\")' "+(s=='ক'?'checked':'')+"> ক) "+q.o1+"</label>";
+                h += "<label class='opt'><input type='radio' name='q"+i+"' value='খ' onchange='saveAns(\\"q"+i+"\\", \\"খ\\")' "+(s=='খ'?'checked':'')+"> খ) "+q.o2+"</label>";
+                h += "<label class='opt'><input type='radio' name='q"+i+"' value='গ' onchange='saveAns(\\"q"+i+"\\", \\"গ\\")' "+(s=='গ'?'checked':'')+"> গ) "+q.o3+"</label>";
+                h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ' onchange='saveAns(\\"q"+i+"\\", \\"ঘ\\")' "+(s=='ঘ'?'checked':'')+"> ঘ) "+q.o4+"</label></div>";
             });
             list.innerHTML = h;
             var totalSec = existingSec || (${d.time} * 60);
@@ -272,8 +286,6 @@
         }
         function submitQuiz() {
             clearInterval(timerInterval);
-            
-            // নির্ভুল ব্যয়িত সময় ক্যালকুলেশন
             var startTime = localStorage.getItem("start_time_" + fName + "_" + user.id) || Date.now();
             var diff = Math.floor((Date.now() - startTime) / 1000);
             var mSpent = Math.floor(diff / 60);
@@ -285,14 +297,14 @@
             btn.innerText = "জমা হচ্ছে...";
             
             var correct = 0;
-            var wrongNums = []; // ভুল প্রশ্নের নম্বর সংরক্ষণের জন্য
+            var wrongNums = [];
             
             questions.forEach(function(q, i){
                 var sel = document.querySelector('input[name="q'+i+'"]:checked');
                 if(sel && sel.value === q.ans) {
                     correct++;
                 } else {
-                    wrongNums.push(i + 1); // ভুল হলে প্রশ্নের নম্বর (১ থেকে শুরু) পুশ করা
+                    wrongNums.push(i + 1);
                 }
             });
             
@@ -312,7 +324,7 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
                 total: questions.length,
                 userId: user.id,
-                wrongQuestions: wrongNums.join(", ") // কমা দিয়ে ভুল প্রশ্নের নম্বরগুলো পাঠানো
+                wrongQuestions: wrongNums.join(", ")
             };
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
@@ -325,6 +337,7 @@
                 }
                 localStorage.removeItem("timer_" + fName + "_" + user.id);
                 localStorage.removeItem("start_time_" + fName + "_" + user.id);
+                localStorage.removeItem("ans_" + fName + "_" + user.id);
                 alert("পরীক্ষা সফলভাবে জমা হয়েছে!");
                 document.getElementById("main").innerHTML = "<div class='card' style='text-align:center'><h2>ধন্যবাদ!</h2><p>আপনার উত্তরপত্র জমা হয়েছে।</p></div>";
             }).catch(e => alert(e.message));
