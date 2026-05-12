@@ -6,15 +6,7 @@
     <title>Master Quiz Generator Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- MathJax Configuration for Single Dollar Support -->
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']]
-            }
-        };
-    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <style>
@@ -32,7 +24,7 @@
         .q-box { border-left: 4px solid var(--a); padding-left: 15px; position: relative; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 10000; align-items: center; justify-content: center; flex-direction: column; }
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-        .live-preview { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px dashed #ffe58f; border-radius: 8px; font-size: 14px; min-height: 50px; }
+        .live-preview { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px dashed #ffe58f; border-radius: 8px; font-size: 14px; }
         .p-stim { background: #f9f9f9; padding: 8px; border-left: 3px solid #3498db; margin-bottom: 8px; font-style: italic; }
         .p-img { width: 100%; border-radius: 6px; margin: 8px 0; display: none; }
         .p-opt { display: block; padding: 5px 10px; background: #eee; margin: 4px 0; border-radius: 4px; font-size: 13px; }
@@ -56,7 +48,7 @@
         </div>
         <div class="grid">
             <input type="number" id="qTime" placeholder="সময় (মিনিট)" style="width:48%">
-            <input type="text" id="fName" placeholder="ফাইলের নাম" style="width:48%">
+            <input type="text" id="fName" placeholder="ফাইলের নাম (যেমন: 101)" style="width:48%">
         </div>
         <div class="grid" style="margin-top:10px;">
             <button class="btn btn-green" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
@@ -94,11 +86,7 @@
         if(o4) html += '<span class="p-opt">ঘ) ' + o4 + '</span>';
         
         pBox.innerHTML = html;
-
-        // Re-render MathJax
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            MathJax.typesetPromise([pBox]).catch(function (err) { console.log(err.message); });
-        }
+        if (window.MathJax) { MathJax.typesetPromise([pBox]); }
     }
 
     function addNewQuestion(data) {
@@ -183,14 +171,15 @@
 
         document.getElementById('loader').style.display = 'flex';
         
-        // Generate final quiz file with MathJax Config
         var quizHtml = '<html><head><meta charset="UTF-8"><title>' + data.title + '</title>' +
-            '<script>window.MathJax={tex:{inlineMath:[["$","$"],["\\\\(","\\\\)"]]}};\x3C/script>' +
-            '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\x2fscript>' +
-            '<style>body{font-family:sans-serif; padding:20px; background:#f4f7f6;}<\/style><\/head>' +
-            '<body><div class="card"><h2>' + data.title + '</h2>' +
-            '<p>বিষয়: ' + data.sub + '</p>' +
-            '<p>সূত্র পরীক্ষা: $x^2 + y^2 = z^2$</p></div><\/body><\/html>';
+            '<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>' +
+            '<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>' +
+            '<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>' +
+            '<style>body{font-family:sans-serif; padding:20px; background:#f4f7f6; user-select:none;}' +
+            '.card{background:#fff; padding:20px; border-radius:10px; margin-bottom:15px; box-shadow:0 2px 4px rgba(0,0,0,0.1);}' +
+            '.opt{display:block; background:#eee; padding:10px; margin:5px 0; border-radius:5px; cursor:pointer;}<\/style><\/head>' +
+            '<body><div class="card"><h2>' + data.title + '</h2><p>বিষয়: ' + data.sub + '</p><p>সময়: ' + data.time + ' মিনিট</p>' +
+            '<button onclick="alert(\'পরীক্ষা সিস্টেম চালু হচ্ছে...\')">শুরু করুন</button></div><\/body><\/html>';
 
         var base64Content = btoa(unescape(encodeURIComponent(quizHtml)));
         var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
@@ -201,7 +190,7 @@
                 headers: { "Authorization": "token " + token, "Content-Type": "application/json" },
                 body: JSON.stringify({ message: "Upload Quiz", content: base64Content })
             });
-            if(res.ok) alert("সফলভাবে আপলোড হয়েছে!"); else alert("আপলোড ব্যর্থ!");
+            if(res.ok) alert("সফলভাবে আপলোড হয়েছে!"); else alert("আপলোড ব্যর্থ! টোকেন চেক করুন।");
         } catch(e) { alert("Error: " + e.message); }
         
         document.getElementById('loader').style.display = 'none';
