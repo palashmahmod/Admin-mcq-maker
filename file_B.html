@@ -137,14 +137,13 @@
             
         document.getElementById('q-container').appendChild(div);
         reorderNumbers();
-        updatePreview(id); // প্রাথমিক ভিউ লোড করার জন্য
+        updatePreview(id); 
     }
 
     function removeQuestion(id) {
         var el = document.getElementById(id);
         el.parentNode.removeChild(el);
         reorderNumbers();
-        // রিনাম্বারিং এর পর সব প্রিভিউ আপডেট করা
         var boxes = document.getElementsByClassName('q-box');
         for(var i=0; i<boxes.length; i++) { updatePreview(boxes[i].id); }
     }
@@ -265,10 +264,12 @@
             cls: urlParams.get('cls'),
             sec: urlParams.get('sec')
         };
+
         if(user.id){
             document.getElementById('uName').innerText = user.name;
             document.getElementById('uIdDisplay').innerText = user.id;
         }
+
         window.onload = function() {
             var savedTime = localStorage.getItem("timer_" + fName + "_" + user.id);
             if(savedTime) {
@@ -320,22 +321,27 @@
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ' onchange='saveAns(\\"q"+i+"\\", \\"ঘ\\")' "+(s=='ঘ'?'checked':'')+"> ঘ) "+q.o4+"</label></div>";
             });
             list.innerHTML = h;
+
             var totalSec = existingSec || (${d.time} * 60);
-            
             if(!existingSec) {
                 var expiry = Math.floor(Date.now()/1000) + totalSec;
                 localStorage.setItem("timer_" + fName + "_" + user.id, expiry);
             }
             runTimer(totalSec);
         }
+
         function runTimer(sec) {
             timerInterval = setInterval(function(){
                 var m = Math.floor(sec/60), s = sec%60;
                 document.getElementById("t").innerText = "সময় বাকি: " + m + ":" + (s < 10 ? "0" : "") + s;
-                if(sec <= 0){ clearInterval(timerInterval); submitQuiz(); }
+                if(sec <= 0){ 
+                    clearInterval(timerInterval); 
+                    submitQuiz(); 
+                }
                 sec--;
             }, 1000);
         }
+
         function submitQuiz() {
             clearInterval(timerInterval);
             var startTime = localStorage.getItem("start_time_" + fName + "_" + user.id) || Date.now();
@@ -376,8 +382,9 @@
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
                 total: questions.length,
                 userId: user.id,
-                wrongQuestions: wrongNums.join(", ")
+                wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই"
             };
+
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
                 return db.ref("IndividualQuizzes/" + user.id).once('value');
@@ -398,6 +405,7 @@
 </body>
 </html>`;
     }
+
     window.onload = function() {
         var saved = localStorage.getItem('quiz_draft_new');
         if(saved) {
