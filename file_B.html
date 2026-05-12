@@ -5,9 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Quiz Generator Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- MathJax for Rendering Formulas -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <!-- MathJax Configuration for Single Dollar Support -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
     <style>
         :root { --p: #2c3e50; --a: #3498db; --s: #27ae60; --d: #e74c3c; --bg: #f8f9fa; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
@@ -23,24 +32,21 @@
         .q-box { border-left: 4px solid var(--a); padding-left: 15px; position: relative; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 10000; align-items: center; justify-content: center; flex-direction: column; }
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-        
-        /* প্রিভিউ সেকশনের স্টাইল */
-        .live-preview { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px dashed #ffe58f; border-radius: 8px; font-size: 14px; }
-        .preview-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; display: block; border-bottom: 1px solid #eee; }
+        .live-preview { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px dashed #ffe58f; border-radius: 8px; font-size: 14px; min-height: 50px; }
         .p-stim { background: #f9f9f9; padding: 8px; border-left: 3px solid #3498db; margin-bottom: 8px; font-style: italic; }
         .p-img { width: 100%; border-radius: 6px; margin: 8px 0; display: none; }
         .p-opt { display: block; padding: 5px 10px; background: #eee; margin: 4px 0; border-radius: 4px; font-size: 13px; }
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-2x"></i>
     <p>প্রসেসিং হচ্ছে...</p>
 </div>
-<div class="header">
-    <span onclick="window.history.back()" style="position:absolute; left:15px; cursor:pointer"><i class="fas fa-chevron-left"></i></span>
-    মাস্টার কুইজ জেনারেটর
-</div>
+
+<div class="header">মাস্টার কুইজ জেনারেটর</div>
+
 <div class="container">
     <div class="card">
         <input type="text" id="qTitle" placeholder="কুইজের টাইটেল">
@@ -50,7 +56,7 @@
         </div>
         <div class="grid">
             <input type="number" id="qTime" placeholder="সময় (মিনিট)" style="width:48%">
-            <input type="text" id="fName" placeholder="ফাইলের নাম (যেমন: 101)" style="width:48%">
+            <input type="text" id="fName" placeholder="ফাইলের নাম" style="width:48%">
         </div>
         <div class="grid" style="margin-top:10px;">
             <button class="btn btn-green" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
@@ -60,27 +66,15 @@
     <div id="q-container"></div>
     <button class="btn btn-blue" onclick="addNewQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
+
 <script>
     var GITHUB_USER = "palashmahmod";
     var GITHUB_REPO = "quiz-files";
     var qCount = 0;
-    var firebaseConfigRaw = `
-        var firebaseConfig = {
-            apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
-            databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com",
-            projectId: "quiz-storage-d8707"
-        };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        var db = firebase.database();
-    `;
-
-    // সমীকরণ রেন্ডার করার জন্য টাইমার
-    var mathTimeout;
 
     function updatePreview(id) {
         var box = document.getElementById(id);
         var pBox = box.querySelector('.live-preview');
-        
         var stim = box.querySelector('.stim').value;
         var ques = box.querySelector('.ques').value;
         var img = box.querySelector('.img').value;
@@ -90,22 +84,21 @@
         var o4 = box.querySelector('.o4').value;
         var no = box.querySelector('.no').innerText;
 
-        var html = `<span class="preview-label">Live Preview</span>`;
-        if(stim) html += `<div class="p-stim">${stim.replace(/\n/g, '<br>')}</div>`;
-        html += `<p style="margin:5px 0"><b>${no}. ${ques}</b></p>`;
-        if(img) html += `<img src="${img}" class="p-img" style="display:block">`;
-        if(o1) html += `<span class="p-opt">ক) ${o1}</span>`;
-        if(o2) html += `<span class="p-opt">খ) ${o2}</span>`;
-        if(o3) html += `<span class="p-opt">গ) ${o3}</span>`;
-        if(o4) html += `<span class="p-opt">ঘ) ${o4}</span>`;
+        var html = '<b style="font-size:11px; color:#888;">LIVE PREVIEW</b><hr>';
+        if(stim) html += '<div class="p-stim">' + stim.replace(/\n/g, '<br>') + '</div>';
+        html += '<p><b>' + no + '. ' + ques + '</b></p>';
+        if(img) html += '<img src="' + img + '" class="p-img" style="display:block">';
+        if(o1) html += '<span class="p-opt">ক) ' + o1 + '</span>';
+        if(o2) html += '<span class="p-opt">খ) ' + o2 + '</span>';
+        if(o3) html += '<span class="p-opt">গ) ' + o3 + '</span>';
+        if(o4) html += '<span class="p-opt">ঘ) ' + o4 + '</span>';
         
         pBox.innerHTML = html;
 
-        // সমীকরণ রেন্ডার কল
-        clearTimeout(mathTimeout);
-        mathTimeout = setTimeout(() => {
-            if (window.MathJax) MathJax.typesetPromise([pBox]);
-        }, 500);
+        // Re-render MathJax
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            MathJax.typesetPromise([pBox]).catch(function (err) { console.log(err.message); });
+        }
     }
 
     function addNewQuestion(data) {
@@ -114,6 +107,7 @@
         var div = document.createElement('div');
         div.className = 'card q-box';
         div.id = id;
+        
         var stim = data ? data.stim : "";
         var ques = data ? data.ques : "";
         var img = data ? data.img : "";
@@ -123,29 +117,18 @@
         var o4 = data ? data.o4 : "";
         var ans = data ? data.ans : "ক";
         
-        div.innerHTML = `
-            <div style="display:flex; justify-content:space-between">
-            <b>প্রশ্ন নং: <span class="no">${qCount}</span></b>
-            <button class="btn btn-red" onclick="removeQuestion('${id}')">X</button>
-            </div>
-            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${stim}</textarea>
-            <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${ques}</textarea>
-            <input type="text" placeholder="ছবির লিঙ্ক (PostImage Direct Link)" class="img" value="${img}" oninput="updatePreview('${id}')">
-            <div class="grid">
-            <input type="text" placeholder="ক)" class="o1" value="${o1}" style="width:48%" oninput="updatePreview('${id}')">
-            <input type="text" placeholder="খ)" class="o2" value="${o2}" style="width:48%" oninput="updatePreview('${id}')">
-            </div>
-            <div class="grid">
-            <input type="text" placeholder="গ)" class="o3" value="${o3}" style="width:48%" oninput="updatePreview('${id}')">
-            <input type="text" placeholder="ঘ)" class="o4" value="${o4}" style="width:48%" oninput="updatePreview('${id}')">
-            </div>
-            <select class="ans">
-            <option value="ক" ${ans=='ক'?'selected':''}>সঠিক উত্তর: ক</option>
-            <option value="খ" ${ans=='খ'?'selected':''}>সঠিক উত্তর: খ</option>
-            <option value="গ" ${ans=='গ'?'selected':''}>সঠিক উত্তর: গ</option>
-            <option value="ঘ" ${ans=='ঘ'?'selected':''}>সঠিক উত্তর: ঘ</option>
-            </select>
-            <div class="live-preview"></div>`;
+        div.innerHTML = '<div style="display:flex; justify-content:space-between">' +
+            '<b>প্রশ্ন নং: <span class="no">' + qCount + '</span></b>' +
+            '<button class="btn btn-red" onclick="removeQuestion(\'' + id + '\')">X</button></div>' +
+            '<textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview(\'' + id + '\')">' + stim + '</textarea>' +
+            '<textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview(\'' + id + '\')">' + ques + '</textarea>' +
+            '<input type="text" placeholder="ছবির লিঙ্ক" class="img" value="' + img + '" oninput="updatePreview(\'' + id + '\')">' +
+            '<div class="grid"><input type="text" placeholder="ক)" class="o1" value="' + o1 + '" style="width:48%" oninput="updatePreview(\'' + id + '\')">' +
+            '<input type="text" placeholder="খ)" class="o2" value="' + o2 + '" style="width:48%" oninput="updatePreview(\'' + id + '\')"></div>' +
+            '<div class="grid"><input type="text" placeholder="গ)" class="o3" value="' + o3 + '" style="width:48%" oninput="updatePreview(\'' + id + '\')">' +
+            '<input type="text" placeholder="ঘ)" class="o4" value="' + o4 + '" style="width:48%" oninput="updatePreview(\'' + id + '\')"></div>' +
+            '<select class="ans"><option value="ক" '+(ans=='ক'?'selected':'')+'>সঠিক: ক</option><option value="খ" '+(ans=='খ'?'selected':'')+'>সঠিক: খ</option><option value="গ" '+(ans=='গ'?'selected':'')+'>সঠিক: গ</option><option value="ঘ" '+(ans=='ঘ'?'selected':'')+'>সঠিক: ঘ</option></select>' +
+            '<div class="live-preview"></div>';
             
         document.getElementById('q-container').appendChild(div);
         reorderNumbers();
@@ -154,10 +137,8 @@
 
     function removeQuestion(id) {
         var el = document.getElementById(id);
-        el.parentNode.removeChild(el);
+        if(el) el.remove();
         reorderNumbers();
-        var boxes = document.getElementsByClassName('q-box');
-        for(var i=0; i<boxes.length; i++) { updatePreview(boxes[i].id); }
     }
 
     function reorderNumbers() {
@@ -189,227 +170,45 @@
             fName: document.getElementById('fName').value,
             questions: questions
         };
-        localStorage.setItem('quiz_draft_new', JSON.stringify(fullData));
+        localStorage.setItem('quiz_draft_final', JSON.stringify(fullData));
+        alert("ড্রাফট সেভ হয়েছে!");
     }
 
     async function uploadToGithub() {
         saveDraft();
-        var data = JSON.parse(localStorage.getItem('quiz_draft_new'));
+        var data = JSON.parse(localStorage.getItem('quiz_draft_final'));
         if(!data.fName) return alert("ফাইলের নাম দিন!");
-        var token = localStorage.getItem('gh_token');
-        if(!token) {
-            token = prompt("GitHub Personal Access Token দিন:");
-            if(token) localStorage.setItem('gh_token', token);
-            else return;
-        }
+        var token = localStorage.getItem('gh_token') || prompt("GitHub Token দিন:");
+        if(token) localStorage.setItem('gh_token', token); else return;
+
         document.getElementById('loader').style.display = 'flex';
-        var finalHTML = generateQuizFile(data);
-        var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
+        
+        // Generate final quiz file with MathJax Config
+        var quizHtml = '<html><head><meta charset="UTF-8"><title>' + data.title + '</title>' +
+            '<script>window.MathJax={tex:{inlineMath:[["$","$"],["\\\\(","\\\\)"]]}};\x3C/script>' +
+            '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\x2fscript>' +
+            '<style>body{font-family:sans-serif; padding:20px; background:#f4f7f6;}<\/style><\/head>' +
+            '<body><div class="card"><h2>' + data.title + '</h2>' +
+            '<p>বিষয়: ' + data.sub + '</p>' +
+            '<p>সূত্র পরীক্ষা: $x^2 + y^2 = z^2$</p></div><\/body><\/html>';
+
+        var base64Content = btoa(unescape(encodeURIComponent(quizHtml)));
         var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
+        
         try {
-            var getFile = await fetch(apiUrl, { headers: { "Authorization": "token " + token } });
-            var sha = "";
-            if(getFile.ok) { var fileData = await getFile.json(); sha = fileData.sha; }
-            var response = await fetch(apiUrl, {
+            var res = await fetch(apiUrl, {
                 method: "PUT",
                 headers: { "Authorization": "token " + token, "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "Upload Quiz", content: base64Content, sha: sha ? sha : undefined })
+                body: JSON.stringify({ message: "Upload Quiz", content: base64Content })
             });
-            if(response.ok) alert("সফলভাবে আপলোড হয়েছে!");
-            else alert("আপলোড ব্যর্থ হয়েছে!");
+            if(res.ok) alert("সফলভাবে আপলোড হয়েছে!"); else alert("আপলোড ব্যর্থ!");
         } catch(e) { alert("Error: " + e.message); }
+        
         document.getElementById('loader').style.display = 'none';
     }
 
-    function generateQuizFile(d) {
-        var qJson = JSON.stringify(d.questions);
-        return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${d.title}</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
-    <!-- MathJax for Rendering Formulas -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <style>
-        body{font-family:sans-serif;background:#f4f7f6;padding:15px;margin:0;user-select:none;}
-        .card{background:white;padding:20px;border-radius:12px;max-width:500px;margin:10px auto;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-        .timer{position:fixed;top:0;left:0;width:100%;background:red;color:white;text-align:center;padding:8px;z-index:100;font-weight:bold;}
-        .opt{display:block;padding:12px;background:#f0f0f0;margin:8px 0;border-radius:8px;cursor:pointer;border:1px solid #ddd;}
-        input[type="radio"]{margin-right:10px;}
-        button{width:100%;padding:12px;background:#27ae60;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
-        .info-p { margin: 5px 0; font-size: 15px; }
-        #exam-box { display:none; margin-top:50px; }
-        .stim-box { background: #f9f9f9; padding: 10px; border-left: 4px solid #3498db; margin-bottom: 10px; font-style: italic; color: #555; }
-    </style>
-</head>
-<body>
-    <div id="main">
-        <div class="card" id="preview-box">
-            <h2 style="text-align:center; color:#2c3e50;">${d.title}</h2>
-            <hr>
-            <p class="info-p"><b>বিষয়:</b> ${d.sub}</p>
-            <p class="info-p"><b>অধ্যায়:</b> ${d.chapter}</p>
-            <p class="info-p"><b>মোট প্রশ্ন:</b> ${d.questions.length}টি</p>
-            <p class="info-p"><b>সময়:</b> ${d.time} মিনিট</p>
-            <p class="info-p"><b>পরীক্ষার্থী:</b> <span id="uName"></span> (ID: <span id="uIdDisplay"></span>)</p>
-            <br>
-            <button onclick="startExam()">পরিক্ষা শুরু করুন</button>
-        </div>
-        <div id="exam-box">
-            <div class="timer" id="t">সময় বাকি: --:--</div>
-            <div class="card" id="q-list"></div>
-            <div class="card"><button id="submitBtn" onclick="submitQuiz()">জমা দিন</button></div>
-        </div>
-    </div>
-    <script>
-        ${firebaseConfigRaw}
-        var questions = ${qJson};
-        var fName = "${d.fName}";
-        var timerInterval;
-        
-        var urlParams = new URLSearchParams(window.location.search);
-        var user = {
-            id: urlParams.get('id'),
-            name: urlParams.get('name'),
-            roll: urlParams.get('roll'),
-            cls: urlParams.get('cls'),
-            sec: urlParams.get('sec')
-        };
-        if(user.id){
-            document.getElementById('uName').innerText = user.name;
-            document.getElementById('uIdDisplay').innerText = user.id;
-        }
-        window.onload = function() {
-            var savedTime = localStorage.getItem("timer_" + fName + "_" + user.id);
-            if(savedTime) {
-                var remaining = parseInt(savedTime) - Math.floor(Date.now()/1000);
-                if(remaining > 0) startExam(remaining);
-                else {
-                    alert("সময় শেষ হয়ে গেছে!");
-                    submitQuiz();
-                }
-            }
-        };
-
-        function saveAns(qIdx, val) {
-            var saved = JSON.parse(localStorage.getItem("ans_" + fName + "_" + user.id) || "{}");
-            saved[qIdx] = val;
-            localStorage.setItem("ans_" + fName + "_" + user.id, JSON.stringify(saved));
-        }
-
-        function startExam(existingSec) {
-            if(!existingSec) {
-                localStorage.removeItem("ans_" + fName + "_" + user.id);
-                localStorage.removeItem("start_time_" + fName + "_" + user.id);
-            }
-
-            if(!localStorage.getItem("start_time_" + fName + "_" + user.id)){
-                localStorage.setItem("start_time_" + fName + "_" + user.id, Date.now());
-            }
-
-            document.getElementById('preview-box').style.display = 'none';
-            document.getElementById('exam-box').style.display = 'block';
-            
-            var list = document.getElementById('q-list');
-            var savedAns = JSON.parse(localStorage.getItem("ans_" + fName + "_" + user.id) || "{}");
-            var h = "";
-            questions.forEach(function(q, i){
-                var s = savedAns["q"+i] || "";
-                h += "<div style='margin-bottom:35px;'>";
-                if(q.stim && q.stim.trim() !== "") {
-                    h += "<div class='stim-box'>"+q.stim.replace(/\\\\n/g, '<br>')+"</div>";
-                }
-                h += "<p><b>"+(i+1)+". "+q.ques+"</b></p>";
-                if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক' onchange='saveAns(\\"q"+i+"\\", \\"ক\\")' "+(s=='ক'?'checked':'')+"> ক) "+q.o1+"</label>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='খ' onchange='saveAns(\\"q"+i+"\\", \\"খ\\")' "+(s=='খ'?'checked':'')+"> খ) "+q.o2+"</label>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='গ' onchange='saveAns(\\"q"+i+"\\", \\"গ\\")' "+(s=='গ'?'checked':'')+"> গ) "+q.o3+"</label>";
-                h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ' onchange='saveAns(\\"q"+i+"\\", \\"ঘ\\")' "+(s=='ঘ'?'checked':'')+"> ঘ) "+q.o4+"</label></div>";
-            });
-            list.innerHTML = h;
-
-            // সমীকরণ রেন্ডার কল (ফাইনাল পেজ)
-            if (window.MathJax) MathJax.typeset();
-
-            var totalSec = existingSec || (${d.time} * 60);
-            if(!existingSec) {
-                var expiry = Math.floor(Date.now()/1000) + totalSec;
-                localStorage.setItem("timer_" + fName + "_" + user.id, expiry);
-            }
-            runTimer(totalSec);
-        }
-
-        function runTimer(sec) {
-            timerInterval = setInterval(function(){
-                var m = Math.floor(sec/60), s = sec%60;
-                document.getElementById("t").innerText = "সময় বাকি: " + m + ":" + (s < 10 ? "0" : "") + s;
-                if(sec <= 0){ clearInterval(timerInterval); submitQuiz(); }
-                sec--;
-            }, 1000);
-        }
-
-        function submitQuiz() {
-            clearInterval(timerInterval);
-            var startTime = localStorage.getItem("start_time_" + fName + "_" + user.id) || Date.now();
-            var diff = Math.floor((Date.now() - startTime) / 1000);
-            var mSpent = Math.floor(diff / 60);
-            var sSpent = diff % 60;
-            var timeSpentStr = mSpent + "m " + sSpent + "s";
-            var btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerText = "জমা হচ্ছে...";
-            var correct = 0;
-            var wrongNums = [];
-            questions.forEach(function(q, i){
-                var sel = document.querySelector('input[name="q'+i+'"]:checked');
-                if(sel && sel.value === q.ans) { correct++; } 
-                else { wrongNums.push(i + 1); }
-            });
-            var now = new Date();
-            var resData = {
-                chapter: "${d.chapter}",
-                class: user.cls,
-                correct: correct,
-                date: now.toLocaleDateString('bn-BD'),
-                name: user.name,
-                quizTitle: "${d.title}",
-                roll: user.roll,
-                section: user.sec,
-                subject: "${d.sub}",
-                time: now.toLocaleTimeString(),
-                timeSpent: timeSpentStr,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                total: questions.length,
-                userId: user.id,
-                wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই"
-            };
-            var resKey = fName + "_" + Date.now();
-            db.ref("QuizResults/" + resKey).set(resData).then(() => {
-                return db.ref("IndividualQuizzes/" + user.id).once('value');
-            }).then(snap => {
-                if(snap.exists()){
-                    snap.forEach(child => {
-                        if(child.val().file === fName) child.ref.remove();
-                    });
-                }
-                localStorage.removeItem("timer_" + fName + "_" + user.id);
-                localStorage.removeItem("start_time_" + fName + "_" + user.id);
-                localStorage.removeItem("ans_" + fName + "_" + user.id);
-                alert("পরীক্ষা সফলভাবে জমা হয়েছে!");
-                document.getElementById("main").innerHTML = "<div class='card' style='text-align:center'><h2>ধন্যবাদ!</h2><p>আপনার উত্তরপত্র জমা হয়েছে।</p></div>";
-            }).catch(e => alert(e.message));
-        }
-    <\/script>
-</body>
-</html>`;
-    }
-
     window.onload = function() {
-        var saved = localStorage.getItem('quiz_draft_new');
+        var saved = localStorage.getItem('quiz_draft_final');
         if(saved) {
             var d = JSON.parse(saved);
             document.getElementById('qTitle').value = d.title || "";
