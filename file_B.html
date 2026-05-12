@@ -20,6 +20,13 @@
         .q-box { border-left: 4px solid var(--a); padding-left: 15px; position: relative; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 10000; align-items: center; justify-content: center; flex-direction: column; }
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        
+        /* প্রিভিউ সেকশনের স্টাইল */
+        .live-preview { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px dashed #ffe58f; border-radius: 8px; font-size: 14px; }
+        .preview-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; display: block; border-bottom: 1px solid #eee; }
+        .p-stim { background: #f9f9f9; padding: 8px; border-left: 3px solid #3498db; margin-bottom: 8px; font-style: italic; }
+        .p-img { width: 100%; border-radius: 6px; margin: 8px 0; display: none; }
+        .p-opt { display: block; padding: 5px 10px; background: #eee; margin: 4px 0; border-radius: 4px; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -63,6 +70,32 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var db = firebase.database();
     `;
+
+    function updatePreview(id) {
+        var box = document.getElementById(id);
+        var pBox = box.querySelector('.live-preview');
+        
+        var stim = box.querySelector('.stim').value;
+        var ques = box.querySelector('.ques').value;
+        var img = box.querySelector('.img').value;
+        var o1 = box.querySelector('.o1').value;
+        var o2 = box.querySelector('.o2').value;
+        var o3 = box.querySelector('.o3').value;
+        var o4 = box.querySelector('.o4').value;
+        var no = box.querySelector('.no').innerText;
+
+        var html = `<span class="preview-label">Live Preview</span>`;
+        if(stim) html += `<div class="p-stim">${stim.replace(/\n/g, '<br>')}</div>`;
+        html += `<p style="margin:5px 0"><b>${no}. ${ques}</b></p>`;
+        if(img) html += `<img src="${img}" class="p-img" style="display:block">`;
+        if(o1) html += `<span class="p-opt">ক) ${o1}</span>`;
+        if(o2) html += `<span class="p-opt">খ) ${o2}</span>`;
+        if(o3) html += `<span class="p-opt">গ) ${o3}</span>`;
+        if(o4) html += `<span class="p-opt">ঘ) ${o4}</span>`;
+        
+        pBox.innerHTML = html;
+    }
+
     function addNewQuestion(data) {
         qCount++;
         var id = "q-" + Date.now();
@@ -77,40 +110,50 @@
         var o3 = data ? data.o3 : "";
         var o4 = data ? data.o4 : "";
         var ans = data ? data.ans : "ক";
+        
         div.innerHTML = `
             <div style="display:flex; justify-content:space-between">
             <b>প্রশ্ন নং: <span class="no">${qCount}</span></b>
             <button class="btn btn-red" onclick="removeQuestion('${id}')">X</button>
             </div>
-            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim">${stim}</textarea>
-            <textarea placeholder="মূল প্রশ্ন" class="ques">${ques}</textarea>
-            <input type="text" placeholder="ছবির লিঙ্ক (ঐচ্ছিক)" class="img" value="${img}">
+            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" oninput="updatePreview('${id}')">${stim}</textarea>
+            <textarea placeholder="মূল প্রশ্ন" class="ques" oninput="updatePreview('${id}')">${ques}</textarea>
+            <input type="text" placeholder="ছবির লিঙ্ক (PostImage Direct Link)" class="img" value="${img}" oninput="updatePreview('${id}')">
             <div class="grid">
-            <input type="text" placeholder="ক)" class="o1" value="${o1}" style="width:48%">
-            <input type="text" placeholder="খ)" class="o2" value="${o2}" style="width:48%">
+            <input type="text" placeholder="ক)" class="o1" value="${o1}" style="width:48%" oninput="updatePreview('${id}')">
+            <input type="text" placeholder="খ)" class="o2" value="${o2}" style="width:48%" oninput="updatePreview('${id}')">
             </div>
             <div class="grid">
-            <input type="text" placeholder="গ)" class="o3" value="${o3}" style="width:48%">
-            <input type="text" placeholder="ঘ)" class="o4" value="${o4}" style="width:48%">
+            <input type="text" placeholder="গ)" class="o3" value="${o3}" style="width:48%" oninput="updatePreview('${id}')">
+            <input type="text" placeholder="ঘ)" class="o4" value="${o4}" style="width:48%" oninput="updatePreview('${id}')">
             </div>
             <select class="ans">
             <option value="ক" ${ans=='ক'?'selected':''}>সঠিক উত্তর: ক</option>
             <option value="খ" ${ans=='খ'?'selected':''}>সঠিক উত্তর: খ</option>
             <option value="গ" ${ans=='গ'?'selected':''}>সঠিক উত্তর: গ</option>
             <option value="ঘ" ${ans=='ঘ'?'selected':''}>সঠিক উত্তর: ঘ</option>
-            </select>`;
+            </select>
+            <div class="live-preview"></div>`;
+            
         document.getElementById('q-container').appendChild(div);
         reorderNumbers();
+        updatePreview(id); // প্রাথমিক ভিউ লোড করার জন্য
     }
+
     function removeQuestion(id) {
         var el = document.getElementById(id);
         el.parentNode.removeChild(el);
         reorderNumbers();
+        // রিনাম্বারিং এর পর সব প্রিভিউ আপডেট করা
+        var boxes = document.getElementsByClassName('q-box');
+        for(var i=0; i<boxes.length; i++) { updatePreview(boxes[i].id); }
     }
+
     function reorderNumbers() {
         var nos = document.getElementsByClassName('no');
         for(var i=0; i<nos.length; i++) { nos[i].innerText = (i+1); }
     }
+
     function saveDraft() {
         var questions = [];
         var cards = document.getElementsByClassName('q-box');
@@ -137,6 +180,7 @@
         };
         localStorage.setItem('quiz_draft_new', JSON.stringify(fullData));
     }
+
     async function uploadToGithub() {
         saveDraft();
         var data = JSON.parse(localStorage.getItem('quiz_draft_new'));
@@ -165,6 +209,7 @@
         } catch(e) { alert("Error: " + e.message); }
         document.getElementById('loader').style.display = 'none';
     }
+
     function generateQuizFile(d) {
         var qJson = JSON.stringify(d.questions);
         return `<!DOCTYPE html>
@@ -262,12 +307,10 @@
                 var s = savedAns["q"+i] || "";
                 h += "<div style='margin-bottom:35px;'>";
                 
-                // উদ্দীপকটি (Stimulus) সবার উপরে বসানো হলো
                 if(q.stim && q.stim.trim() !== "") {
                     h += "<div class='stim-box'>"+q.stim.replace(/\\n/g, '<br>')+"</div>";
                 }
                 
-                // উদ্দীপকের নিচে ক্রমিক নম্বর ও প্রশ্ন
                 h += "<p><b>"+(i+1)+". "+q.ques+"</b></p>";
                 
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
