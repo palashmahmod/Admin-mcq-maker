@@ -22,7 +22,6 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-
     <style>
         :root { 
             --primary: #2c3e50; 
@@ -39,7 +38,6 @@
             padding-top: 70px; 
             color: #333;
         }
-
         /* Fixed Header */
         .header { 
             position: fixed; 
@@ -53,7 +51,6 @@
             font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-
         .container { max-width: 800px; margin: auto; padding: 15px; }
         
         .card { 
@@ -64,7 +61,6 @@
             margin-bottom: 20px; 
             border: 1px solid #eee;
         }
-
         h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         
         input, textarea, select { 
@@ -76,7 +72,6 @@
             box-sizing: border-box; 
             font-size: 15px; 
         }
-
         .btn { 
             padding: 14px; 
             border: none; 
@@ -88,14 +83,12 @@
             display: inline-block; 
             text-align: center;
         }
-
         .btn-blue { background: var(--accent); width: 100%; margin-top: 10px; }
         .btn-green { background: var(--success); width: 48%; }
         .btn-black { background: #24292e; width: 48%; }
         .btn-red { background: var(--danger); padding: 6px 12px; font-size: 13px; }
-
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-
+        
         /* Preview Box Style */
         .live-preview { 
             margin-top: 15px; 
@@ -105,13 +98,39 @@
             border-radius: 10px; 
             min-height: 50px;
         }
-
         .preview-label { font-size: 11px; color: #d4af37; font-weight: bold; display: block; margin-bottom: 8px; }
         .p-stim { background: #f0f4f8; padding: 10px; border-left: 3px solid var(--accent); margin-bottom: 10px; font-style: italic; }
         .p-opt { display: block; padding: 8px 12px; background: white; margin: 5px 0; border-radius: 6px; border: 1px solid #eee; font-size: 14px; }
+
+        /* Loader */
+        .loader { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.85); 
+            color: white; 
+            z-index: 10000; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column; 
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+
+<div id="loader" class="loader">
+    <div class="spinner"></div>
+    <p id="loader-text">প্রসেসিং হচ্ছে...</p>
+</div>
 
 <div class="header">
     <i class="fas fa-edit"></i> মাস্টার কুইজ জেনারেটর প্রো
@@ -132,7 +151,7 @@
         </div>
         <div class="grid" style="margin-top:10px;">
             <button class="btn btn-green" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
-            <button class="btn btn-black" onclick="alert('গিটহাব এপিআই সেট করুন')"><i class="fab fa-github"></i> আপলোড</button>
+            <button class="btn btn-black" onclick="uploadToGithub()"><i class="fab fa-github"></i> আপলোড</button>
         </div>
     </div>
 
@@ -145,6 +164,10 @@
 </div>
 
 <script>
+    // GitHub Configurations (হুবহু আগের কোডের মতো)
+    var GITHUB_USER = "palashmahmod";
+    var GITHUB_REPO = "quiz-files";
+
     let questions = [];
 
     // ১. নতুন প্রশ্ন যোগ করা
@@ -170,7 +193,7 @@
                     <strong>প্রশ্ন নং - ${i + 1}</strong>
                     <button class="btn btn-red" onclick="removeQuestion(${q.id})"><i class="fas fa-trash"></i></button>
                 </div>
-                <textarea placeholder="উদ্দীপক (যেমন: \\( x^2+y^2=r^2 \\))" oninput="updateQuestion(${q.id}, 'stimulus', this.value)">${q.stimulus}</textarea>
+                <textarea placeholder="উদ্দীপক" oninput="updateQuestion(${q.id}, 'stimulus', this.value)">${q.stimulus}</textarea>
                 <textarea placeholder="মূল প্রশ্ন" oninput="updateQuestion(${q.id}, 'stem', this.value)">${q.stem}</textarea>
                 
                 <div class="grid">
@@ -179,12 +202,13 @@
                         oninput="updateQuestion(${q.id}, 'options', this.value, ${oi})">
                     `).join('')}
                 </div>
-
                 <select onchange="updateQuestion(${q.id}, 'correct', parseInt(this.value))">
                     <option value="">সঠিক উত্তর নির্বাচন করুন</option>
-                    ${q.options.map((_, oi) => `<option value="${oi}" ${q.correct === oi ? 'selected' : ''}>অপশন ${oi + 1}</option>`).join('')}
+                    <option value="0" ${q.correct === 0 ? 'selected' : ''}>অপশন 1</option>
+                    <option value="1" ${q.correct === 1 ? 'selected' : ''}>অপশন 2</option>
+                    <option value="2" ${q.correct === 2 ? 'selected' : ''}>অপশন 3</option>
+                    <option value="3" ${q.correct === 3 ? 'selected' : ''}>অপশন 4</option>
                 </select>
-
                 <div id="prev-${q.id}" class="live-preview">
                     <span class="preview-label">Live Preview</span>
                     <div class="preview-content"></div>
@@ -196,7 +220,7 @@
         triggerMathJax();
     }
 
-    // ৩. আপডেট এবং ম্যাথ রেন্ডারিং
+    // ৩. আপডেট এবং প্রিভিউ
     function updateQuestion(id, field, value, optIdx = null) {
         const q = questions.find(q => q.id === id);
         if (optIdx !== null) {
@@ -212,21 +236,20 @@
         const q = questions.find(q => q.id === id);
         const prevDiv = document.querySelector(`#prev-${id} .preview-content`);
         if(!prevDiv) return;
-
         let html = "";
         if(q.stimulus) html += `<div class="p-stim">${q.stimulus}</div>`;
         if(q.stem) html += `<div><strong>${q.stem}</strong></div>`;
         q.options.forEach((opt, i) => {
             if(opt) html += `<div class="p-opt">${i+1}. ${opt}</div>`;
         });
-        prevDiv.innerHTML = html || "প্রশ্ন লিখলে এখানে প্রিভিউ দেখা যাবে...";
+        prevDiv.innerHTML = html || "প্রিভিউ দেখা যাবে...";
     }
 
     let mathTimeout;
     function triggerMathJax() {
         clearTimeout(mathTimeout);
         mathTimeout = setTimeout(() => {
-            if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+            if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise();
             }
         }, 500); 
@@ -248,6 +271,79 @@
         };
         localStorage.setItem('quiz_draft_v3', JSON.stringify(draft));
         alert("ড্রাফট সেইভ হয়েছে!");
+        return draft;
+    }
+
+    // ৪. গিটহাব আপলোড পদ্ধতি (হুবহু আগের কোডের লজিক)
+    async function uploadToGithub() {
+        var data = saveDraft();
+        if(!data.fName) return alert("ফাইলের একটি নাম দিন!");
+        
+        var token = localStorage.getItem('gh_token');
+        if(!token) {
+            token = prompt("GitHub Personal Access Token দিন:");
+            if(token) localStorage.setItem('gh_token', token);
+            else return;
+        }
+
+        document.getElementById('loader').style.display = 'flex';
+        document.getElementById('loader-text').innerText = "ফাইল তৈরি হচ্ছে...";
+
+        var finalHTML = generateQuizHTML(data);
+        var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
+        var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
+
+        try {
+            var getFile = await fetch(apiUrl, { headers: { "Authorization": "token " + token } });
+            var sha = "";
+            if(getFile.ok) { 
+                var fileData = await getFile.json(); 
+                sha = fileData.sha; 
+            }
+
+            document.getElementById('loader-text').innerText = "গিটহাবে আপলোড হচ্ছে...";
+            var response = await fetch(apiUrl, {
+                method: "PUT",
+                headers: { "Authorization": "token " + token, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: "Upload Quiz: " + data.fName,
+                    content: base64Content,
+                    sha: sha ? sha : undefined
+                })
+            });
+
+            if(response.ok) alert("সফলভাবে আপলোড হয়েছে!");
+            else alert("আপলোড ব্যর্থ! টোকেন চেক করুন।");
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    // কুইজ ফাইল জেনারেটর (মিনিমালিস্টিক ভার্সন)
+    function generateQuizHTML(d) {
+        return `<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8"><title>${d.title}</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async><\/script>
+    <style>
+        body{font-family:sans-serif; background:#f4f7f6; padding:20px;}
+        .card{background:white; padding:20px; border-radius:10px; max-width:600px; margin:auto; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:15px;}
+        .stim{background:#eef4f9; padding:10px; border-left:4px solid #3498db; font-style:italic;}
+    </style>
+</head>
+<body>
+    <div class="card" style="text-align:center"><h2>${d.title}</h2><p>${d.sub} - ${d.chapter}</p></div>
+    ${d.questions.map((q, i) => `
+        <div class="card">
+            ${q.stimulus ? `<div class="stim">${q.stimulus}</div>` : ''}
+            <p><strong>${i+1}. ${q.stem}</strong></p>
+            ${q.options.map((opt, oi) => `<p>${oi+1}. ${opt}</p>`).join('')}
+        </div>
+    `).join('')}
+</body>
+</html>`;
     }
 
     window.onload = function() {
@@ -261,14 +357,11 @@
                 document.getElementById('qTime').value = d.time || "";
                 document.getElementById('fName').value = d.fName || "";
                 questions = d.questions || [];
-            } catch(e) {
-                console.log("Error loading draft");
-            }
+            } catch(e) { console.log("Error loading draft"); }
         }
         if(questions.length === 0) addNewQuestion();
         else renderQuestions();
     };
 </script>
-
 </body>
 </html>
