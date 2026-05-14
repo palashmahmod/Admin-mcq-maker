@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Quiz Generator Pro</title>
     
-    <!-- External Libraries -->
+    <!-- External Libraries (FontAwesome for Icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- MathJax Setup: \( formula \) ফরম্যাট সাপোর্ট করার জন্য -->
+    <!-- MathJax Setup for Math Formulas -->
     <script>
         window.MathJax = {
             tex: {
@@ -16,8 +16,8 @@
                 displayMath: [['\\[', '\\]'], ['$$', '$$']],
                 processEscapes: true
             },
-            options: {
-                enableMenu: false
+            options: { 
+                enableMenu: false 
             }
         };
     </script>
@@ -40,7 +40,7 @@
             color: #333;
         }
 
-        /* WebIntoApp Friendly Header */
+        /* Fixed Header */
         .header { 
             position: fixed; 
             top: 0; 
@@ -54,19 +54,8 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .back-btn { 
-            position: absolute; 
-            left: 15px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            cursor: pointer; 
-            font-size: 20px;
-            color: white;
-            text-decoration: none;
-        }
-
         .container { max-width: 800px; margin: auto; padding: 15px; }
-
+        
         .card { 
             background: white; 
             padding: 20px; 
@@ -77,7 +66,7 @@
         }
 
         h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-
+        
         input, textarea, select { 
             width: 100%; 
             padding: 12px; 
@@ -86,10 +75,7 @@
             border-radius: 8px; 
             box-sizing: border-box; 
             font-size: 15px; 
-            transition: border 0.3s;
         }
-
-        input:focus, textarea:focus { border-color: var(--accent); outline: none; }
 
         .btn { 
             padding: 14px; 
@@ -101,7 +87,6 @@
             transition: 0.3s; 
             display: inline-block; 
             text-align: center;
-            font-size: 15px;
         }
 
         .btn-blue { background: var(--accent); width: 100%; margin-top: 10px; }
@@ -111,96 +96,32 @@
 
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
-        /* Question Box Style */
-        .q-box { 
-            border-left: 5px solid var(--accent); 
-            position: relative; 
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Preview Area */
+        /* Preview Box Style */
         .live-preview { 
             margin-top: 15px; 
             padding: 15px; 
             background: #fffdf2; 
             border: 1px dashed #d4af37; 
             border-radius: 10px; 
-            font-size: 14px;
+            min-height: 50px;
         }
 
-        .preview-label { 
-            font-size: 11px; 
-            color: #d4af37; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            font-weight: bold; 
-            display: block; 
-            margin-bottom: 8px;
-        }
-
-        .p-stim { 
-            background: #f0f4f8; 
-            padding: 10px; 
-            border-left: 3px solid var(--accent); 
-            margin-bottom: 10px; 
-            font-style: italic; 
-            line-height: 1.6;
-        }
-
-        .p-opt { 
-            display: block; 
-            padding: 8px 12px; 
-            background: white; 
-            margin: 5px 0; 
-            border-radius: 6px; 
-            border: 1px solid #eee;
-            font-size: 14px;
-        }
-
-        .loader { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.85); 
-            color: white; 
-            z-index: 10000; 
-            align-items: center; 
-            justify-content: center; 
-            flex-direction: column; 
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .preview-label { font-size: 11px; color: #d4af37; font-weight: bold; display: block; margin-bottom: 8px; }
+        .p-stim { background: #f0f4f8; padding: 10px; border-left: 3px solid var(--accent); margin-bottom: 10px; font-style: italic; }
+        .p-opt { display: block; padding: 8px 12px; background: white; margin: 5px 0; border-radius: 6px; border: 1px solid #eee; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loader">
-    <div class="spinner"></div>
-    <p id="loader-text">প্রসেসিং হচ্ছে...</p>
-</div>
-
 <div class="header">
-    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-    মাস্টার কুইজ জেনারেটর প্রো
+    <i class="fas fa-edit"></i> মাস্টার কুইজ জেনারেটর প্রো
 </div>
 
 <div class="container">
-    <!-- Meta Info Card -->
+    <!-- Quiz Info -->
     <div class="card">
         <h3><i class="fas fa-cog"></i> কুইজ কনফিগারেশন</h3>
-        <input type="text" id="qTitle" placeholder="কুইজের টাইটেল (যেমন: পদার্থবিজ্ঞান ১ম পত্র)">
+        <input type="text" id="qTitle" placeholder="কুইজের টাইটেল">
         <div class="grid">
             <input type="text" id="qSub" placeholder="বিষয়" style="width:48%">
             <input type="text" id="qChapter" placeholder="অধ্যায়" style="width:48%">
@@ -211,140 +132,113 @@
         </div>
         <div class="grid" style="margin-top:10px;">
             <button class="btn btn-green" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
-            <button class="btn btn-black" onclick="uploadToGithub()"><i class="fab fa-github"></i> আপলোড করুন</button>
+            <button class="btn btn-black" onclick="alert('গিটহাব এপিআই সেট করুন')"><i class="fab fa-github"></i> আপলোড</button>
         </div>
     </div>
 
     <!-- Questions Container -->
     <div id="q-container"></div>
-    
+
     <button class="btn btn-blue" onclick="addNewQuestion()">
         <i class="fas fa-plus-circle"></i> নতুন প্রশ্ন যোগ করুন
     </button>
-    <div style="height: 50px;"></div>
 </div>
+
 <script>
-    // GitHub & Firebase Configurations
-    var GITHUB_USER = "palashmahmod";
-    var GITHUB_REPO = "quiz-files";
-    var FIREBASE_CONFIG = { 
-        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
-        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com", 
-        projectId: "quiz-storage-d8707" 
-    };
+    let questions = [];
 
-    var qCount = 0;
+    // ১. নতুন প্রশ্ন যোগ করা
+    function addNewQuestion(data = null) {
+        const id = data ? data.id : Date.now();
+        const newQ = data ? data : {
+            id: id,
+            stimulus: "",
+            stem: "",
+            options: ["", "", "", ""],
+            correct: 0
+        };
+        questions.push(newQ);
+        renderQuestions();
+    }
 
-    // ১. লাইভ প্রিভিউ আপডেট সিস্টেম
-    function updatePreview(id) {
-        var box = document.getElementById(id);
-        if(!box) return;
-        var pBox = box.querySelector('.live-preview');
-        var stim = box.querySelector('.stim').value;
-        var ques = box.querySelector('.ques').value;
-        var img = box.querySelector('.img').value;
-        var o1 = box.querySelector('.o1').value;
-        var o2 = box.querySelector('.o2').value;
-        var o3 = box.querySelector('.o3').value;
-        var o4 = box.querySelector('.o4').value;
-        var no = box.querySelector('.no').innerText;
+    // ২. প্রশ্ন রেন্ডার করা
+    function renderQuestions() {
+        const container = document.getElementById('q-container');
+        container.innerHTML = questions.map((q, i) => `
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <strong>প্রশ্ন নং - ${i + 1}</strong>
+                    <button class="btn btn-red" onclick="removeQuestion(${q.id})"><i class="fas fa-trash"></i></button>
+                </div>
+                <textarea placeholder="উদ্দীপক (যেমন: \\( x^2+y^2=r^2 \\))" oninput="updateQuestion(${q.id}, 'stimulus', this.value)">${q.stimulus}</textarea>
+                <textarea placeholder="মূল প্রশ্ন" oninput="updateQuestion(${q.id}, 'stem', this.value)">${q.stem}</textarea>
+                
+                <div class="grid">
+                    ${q.options.map((opt, oi) => `
+                        <input type="text" placeholder="অপশন ${oi + 1}" value="${opt}" style="width:48%" 
+                        oninput="updateQuestion(${q.id}, 'options', this.value, ${oi})">
+                    `).join('')}
+                </div>
 
-        var html = `<span class="preview-label">Live Preview</span>`;
-        if(stim) html += `<div class="p-stim">${stim.replace(/\n/g, '<br>')}</div>`;
-        html += `<p style="margin:5px 0"><b>${no}. ${ques}</b></p>`;
+                <select onchange="updateQuestion(${q.id}, 'correct', parseInt(this.value))">
+                    <option value="">সঠিক উত্তর নির্বাচন করুন</option>
+                    ${q.options.map((_, oi) => `<option value="${oi}" ${q.correct === oi ? 'selected' : ''}>অপশন ${oi + 1}</option>`).join('')}
+                </select>
+
+                <div id="prev-${q.id}" class="live-preview">
+                    <span class="preview-label">Live Preview</span>
+                    <div class="preview-content"></div>
+                </div>
+            </div>
+        `).join('');
         
-        if(img) html += `<img src="${img}" style="width:100%; border-radius:8px; margin:10px 0; display:block;">`;
-        
-        if(o1) html += `<span class="p-opt">ক) ${o1}</span>`;
-        if(o2) html += `<span class="p-opt">খ) ${o2}</span>`;
-        if(o3) html += `<span class="p-opt">গ) ${o3}</span>`;
-        if(o4) html += `<span class="p-opt">ঘ) ${o4}</span>`;
-        
-        pBox.innerHTML = html;
+        questions.forEach(q => renderPreview(q.id));
+        triggerMathJax();
+    }
 
-        // MathJax রেন্ডারিং সাপোর্ট
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            MathJax.typesetPromise([pBox]).catch(function (err) { console.log(err.message); });
+    // ৩. আপডেট এবং ম্যাথ রেন্ডারিং
+    function updateQuestion(id, field, value, optIdx = null) {
+        const q = questions.find(q => q.id === id);
+        if (optIdx !== null) {
+            q.options[optIdx] = value;
+        } else {
+            q[field] = value;
         }
+        renderPreview(id);
+        triggerMathJax(); 
     }
 
-    // ২. নতুন প্রশ্ন যোগ করার ফাংশন
-    function addNewQuestion(data) {
-        qCount++;
-        var id = "q-" + Date.now() + "-" + qCount;
-        var div = document.createElement('div');
-        div.className = 'card q-box';
-        div.id = id;
-        
-        var d = data || { stim:"", ques:"", img:"", o1:"", o2:"", o3:"", o4:"", ans:"ক" };
-        
-        div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <b>প্রশ্ন নম্বর: <span class="no">${qCount}</span></b>
-                <button class="btn btn-red" onclick="removeQuestion('${id}')"><i class="fas fa-trash"></i></button>
-            </div>
-            <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" class="stim" rows="2" oninput="updatePreview('${id}')">${d.stim}</textarea>
-            <textarea placeholder="মূল প্রশ্ন লিখুন..." class="ques" rows="2" oninput="updatePreview('${id}')">${d.ques}</textarea>
-            <input type="text" placeholder="ছবির লিঙ্ক (ঐচ্ছিক)" class="img" value="${d.img}" oninput="updatePreview('${id}')">
-            
-            <div class="grid">
-                <input type="text" placeholder="ক)" class="o1" value="${d.o1}" style="width:48%" oninput="updatePreview('${id}')">
-                <input type="text" placeholder="খ)" class="o2" value="${d.o2}" style="width:48%" oninput="updatePreview('${id}')">
-            </div>
-            <div class="grid">
-                <input type="text" placeholder="গ)" class="o3" value="${d.o3}" style="width:48%" oninput="updatePreview('${id}')">
-                <input type="text" placeholder="ঘ)" class="o4" value="${d.o4}" style="width:48%" oninput="updatePreview('${id}')">
-            </div>
-            
-            <p style="margin:10px 0 5px; font-weight:bold; font-size:13px; color:var(--primary);">সঠিক উত্তর:</p>
-            <select class="ans">
-                <option value="ক" ${d.ans=='ক'?'selected':''}>ক</option>
-                <option value="খ" ${d.ans=='খ'?'selected':''}>খ</option>
-                <option value="গ" ${d.ans=='গ'?'selected':''}>গ</option>
-                <option value="ঘ" ${d.ans=='ঘ'?'selected':''}>ঘ</option>
-            </select>
-            
-            <div class="live-preview"></div>
-        `;
-        
-        document.getElementById('q-container').appendChild(div);
-        reorderNumbers();
-        updatePreview(id);
+    function renderPreview(id) {
+        const q = questions.find(q => q.id === id);
+        const prevDiv = document.querySelector(`#prev-${id} .preview-content`);
+        if(!prevDiv) return;
+
+        let html = "";
+        if(q.stimulus) html += `<div class="p-stim">${q.stimulus}</div>`;
+        if(q.stem) html += `<div><strong>${q.stem}</strong></div>`;
+        q.options.forEach((opt, i) => {
+            if(opt) html += `<div class="p-opt">${i+1}. ${opt}</div>`;
+        });
+        prevDiv.innerHTML = html || "প্রশ্ন লিখলে এখানে প্রিভিউ দেখা যাবে...";
     }
 
-    // ৩. রিমুভ ও সিরিয়াল ঠিক করা
+    let mathTimeout;
+    function triggerMathJax() {
+        clearTimeout(mathTimeout);
+        mathTimeout = setTimeout(() => {
+            if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+                window.MathJax.typesetPromise();
+            }
+        }, 500); 
+    }
+
     function removeQuestion(id) {
-        var el = document.getElementById(id);
-        if(el) {
-            el.remove();
-            reorderNumbers();
-        }
-    }
-
-    function reorderNumbers() {
-        var nos = document.getElementsByClassName('no');
-        for(var i=0; i<nos.length; i++) {
-            nos[i].innerText = (i+1);
-        }
+        questions = questions.filter(q => q.id !== id);
+        renderQuestions();
     }
 
     function saveDraft() {
-        var questions = [];
-        var cards = document.getElementsByClassName('q-box');
-        for(var i=0; i<cards.length; i++) {
-            var c = cards[i];
-            questions.push({
-                stim: c.querySelector('.stim').value,
-                ques: c.querySelector('.ques').value,
-                img: c.querySelector('.img').value,
-                o1: c.querySelector('.o1').value,
-                o2: c.querySelector('.o2').value,
-                o3: c.querySelector('.o3').value,
-                o4: c.querySelector('.o4').value,
-                ans: c.querySelector('.ans').value
-            });
-        }
-        var fullData = {
+        const draft = {
             title: document.getElementById('qTitle').value,
             sub: document.getElementById('qSub').value,
             chapter: document.getElementById('qChapter').value,
@@ -352,181 +246,29 @@
             fName: document.getElementById('fName').value,
             questions: questions
         };
-        localStorage.setItem('quiz_draft_new', JSON.stringify(fullData));
-        alert("ড্রাফট সফলভাবে সেইভ হয়েছে!");
-    }
-    async function uploadToGithub() {
-        saveDraft();
-        var data = JSON.parse(localStorage.getItem('quiz_draft_new'));
-        if(!data.fName) return alert("ফাইলের একটি নাম দিন!");
-        
-        var token = localStorage.getItem('gh_token');
-        if(!token) {
-            token = prompt("GitHub Personal Access Token দিন:");
-            if(token) localStorage.setItem('gh_token', token);
-            else return;
-        }
-
-        document.getElementById('loader').style.display = 'flex';
-        document.getElementById('loader-text').innerText = "ফাইল তৈরি হচ্ছে...";
-
-        var finalHTML = generateQuizFile(data);
-        var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
-        var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
-
-        try {
-            var getFile = await fetch(apiUrl, { 
-                headers: { "Authorization": "token " + token } 
-            });
-            
-            var sha = "";
-            if(getFile.ok) { 
-                var fileData = await getFile.json(); 
-                sha = fileData.sha; 
-            }
-
-            document.getElementById('loader-text').innerText = "গিটহাবে আপলোড হচ্ছে...";
-            var response = await fetch(apiUrl, {
-                method: "PUT",
-                headers: { 
-                    "Authorization": "token " + token, 
-                    "Content-Type": "application/json" 
-                },
-                body: JSON.stringify({ 
-                    message: "Upload Quiz: " + data.fName, 
-                    content: base64Content, 
-                    sha: sha ? sha : undefined 
-                })
-            });
-
-            if(response.ok) alert("অভিনন্দন! কুইজ ফাইলটি সফলভাবে আপলোড হয়েছে।");
-            else alert("আপলোড ব্যর্থ হয়েছে! টোকেন চেক করুন।");
-        } catch(e) { 
-            alert("Error: " + e.message); 
-        }
-        document.getElementById('loader').style.display = 'none';
+        localStorage.setItem('quiz_draft_v3', JSON.stringify(draft));
+        alert("ড্রাফট সেইভ হয়েছে!");
     }
 
-    function generateQuizFile(d) {
-        var qJson = JSON.stringify(d.questions);
-        return `<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${d.title}</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
-    <script>
-        window.MathJax = { tex: { inlineMath: [['\\\\(', '\\\\)'], ['$', '$']] } };
-    <\/script>
-    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
-    <style>
-        body{font-family:sans-serif; background:#f4f7f6; padding:15px; margin:0; -webkit-user-select:none;}
-        .card{background:white; padding:20px; border-radius:12px; max-width:600px; margin:10px auto; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-        .timer{position:fixed; top:0; left:0; width:100%; background:red; color:white; text-align:center; padding:10px; z-index:100; font-weight:bold; font-size:18px;}
-        .opt{display:block; padding:12px; background:#f9f9f9; margin:10px 0; border-radius:8px; border:1px solid #ddd; cursor:pointer; transition:0.2s;}
-        .opt:hover{background:#eef; border-color:#3498db;}
-        input[type="radio"]{margin-right:10px; transform:scale(1.2);}
-        button{width:100%; padding:15px; background:#27ae60; color:white; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;}
-        .stim-box { background: #f0f4f8; padding: 15px; border-left: 5px solid #3498db; margin-bottom: 15px; font-style: italic; line-height:1.6; }
-        #result{display:none; text-align:center; padding:20px;}
-    </style>
-</head>
-<body>
-    <div id="main">
-        <div class="card" id="preview-box" style="text-align:center;">
-            <h2>${d.title}</h2>
-            <p><b>বিষয়:</b> ${d.sub} | <b>অধ্যায়:</b> ${d.chapter}</p>
-            <p><b>সময়:</b> ${d.time} মিনিট</p>
-            <button onclick="startExam()">পরীক্ষা শুরু করুন</button>
-        </div>
-        <div id="exam-box" style="display:none; margin-top:60px;">
-            <div class="timer" id="t">সময় বাকি: ${d.time}:00</div>
-            <div id="q-list"></div>
-            <div class="card"><button onclick="submitQuiz()">পরীক্ষা জমা দিন</button></div>
-        </div>
-        <div class="card" id="result"></div>
-    </div>
-
-    <script>
-        var config = ${JSON.stringify(FIREBASE_CONFIG)};
-        if (!firebase.apps.length) firebase.initializeApp(config);
-        var db = firebase.database();
-        var questions = ${qJson};
-        var timeLeft = ${d.time} * 60;
-        var timerInterval;
-
-        function startExam() {
-            document.getElementById('preview-box').style.display='none';
-            document.getElementById('exam-box').style.display='block';
-            var h = "";
-            questions.forEach((q, i) => {
-                h += "<div class='card'>";
-                if(q.stim) h += "<div class='stim-box'>"+q.stim.replace(/\\n/g, '<br>')+"</div>";
-                h += "<p><b>"+(i+1)+". "+q.ques+"</b></p>";
-                if(q.img) h += "<img src='"+q.img+"' style='width:100%; border-radius:8px; margin-bottom:10px;'>";
-                ['ক','খ','গ','ঘ'].forEach((opt, idx) => {
-                    var val = q['o'+(idx+1)];
-                    h += "<label class='opt'><input type='radio' name='q"+i+"' value='"+opt+"'> "+opt+") "+val+"</label>";
-                });
-                h += "</div>";
-            });
-            document.getElementById('q-list').innerHTML = h;
-            if(window.MathJax) MathJax.typesetPromise();
-            startTimer();
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                var m = Math.floor(timeLeft / 60);
-                var s = timeLeft % 60;
-                document.getElementById('t').innerText = "সময় বাকি: " + m + ":" + (s < 10 ? '0' : '') + s;
-                if(timeLeft <= 0) { clearInterval(timerInterval); submitQuiz(); }
-                timeLeft--;
-            }, 1000);
-        }
-
-        function submitQuiz() {
-            clearInterval(timerInterval);
-            var score = 0;
-            questions.forEach((q, i) => {
-                var sel = document.querySelector('input[name="q"+i]:checked');
-                if(sel && sel.value === q.ans) score++;
-            });
-            var resBox = document.getElementById('result');
-            document.getElementById('exam-box').style.display='none';
-            resBox.style.display='block';
-            resBox.innerHTML = "<h3>পরীক্ষা সম্পন্ন!</h3><h1>আপনার স্কোর: "+score+"/"+questions.length+"</h1>";
-            
-            // Firebase-এ ডাটা পাঠানো (ঐচ্ছিক)
-            db.ref('results').push({ 
-                quiz: "${d.title}", 
-                score: score, 
-                total: questions.length,
-                time: new Date().toLocaleString()
-            });
-        }
-    <\/script>
-</body>
-</html>`;
-    }
-
-    // ড্রাফট থেকে ডাটা লোড করা
     window.onload = function() {
-        var saved = localStorage.getItem('quiz_draft_new');
+        const saved = localStorage.getItem('quiz_draft_v3');
         if(saved) {
-            var d = JSON.parse(saved);
-            document.getElementById('qTitle').value = d.title || "";
-            document.getElementById('qSub').value = d.sub || "";
-            document.getElementById('qChapter').value = d.chapter || "";
-            document.getElementById('qTime').value = d.time || "";
-            document.getElementById('fName').value = d.fName || "";
-            if(d.questions && d.questions.length > 0) {
-                d.questions.forEach(q => addNewQuestion(q));
-            } else { addNewQuestion(); }
-        } else { addNewQuestion(); }
+            try {
+                const d = JSON.parse(saved);
+                document.getElementById('qTitle').value = d.title || "";
+                document.getElementById('qSub').value = d.sub || "";
+                document.getElementById('qChapter').value = d.chapter || "";
+                document.getElementById('qTime').value = d.time || "";
+                document.getElementById('fName').value = d.fName || "";
+                questions = d.questions || [];
+            } catch(e) {
+                console.log("Error loading draft");
+            }
+        }
+        if(questions.length === 0) addNewQuestion();
+        else renderQuestions();
     };
 </script>
+
 </body>
 </html>
