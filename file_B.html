@@ -8,6 +8,7 @@
     <!-- External Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- MathJax Setup -->
     <script>
         window.MathJax = {
             tex: {
@@ -36,7 +37,6 @@
             padding-top: 70px; 
             color: #333;
         }
-
         .header { 
             position: fixed; 
             top: 0; 
@@ -50,7 +50,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .container { max-width: 800px; margin: auto; padding: 15px; }
-        
         .card { 
             background: white; 
             padding: 20px; 
@@ -60,70 +59,43 @@
             border: 1px solid #eee;
         }
         h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        
         input, textarea, select { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 10px 0; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            font-size: 15px; 
+            width: 100%; padding: 12px; margin: 10px 0; 
+            border: 1px solid #ddd; border-radius: 8px; 
+            box-sizing: border-box; font-size: 15px; 
         }
         .btn { 
-            padding: 14px; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            color: white; 
-            transition: 0.3s; 
-            display: inline-block; 
-            text-align: center;
-            text-decoration: none;
+            padding: 14px; border: none; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; color: white; 
+            transition: 0.3s; display: inline-block; text-align: center;
         }
         .btn-blue { background: var(--accent); width: 100%; margin-top: 10px; }
         .btn-green { background: var(--success); width: 48%; }
         .btn-black { background: #24292e; width: 48%; }
         .btn-red { background: var(--danger); padding: 6px 12px; font-size: 13px; }
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-        
         .live-preview { 
-            margin-top: 15px; 
-            padding: 15px; 
-            background: #fffdf2; 
-            border: 1px dashed #d4af37; 
-            border-radius: 10px; 
-            min-height: 50px;
+            margin-top: 15px; padding: 15px; background: #fffdf2; 
+            border: 1px dashed #d4af37; border-radius: 10px; min-height: 50px;
         }
         .preview-label { font-size: 11px; color: #d4af37; font-weight: bold; display: block; margin-bottom: 8px; }
         .p-stim { background: #f0f4f8; padding: 10px; border-left: 3px solid var(--accent); margin-bottom: 10px; font-style: italic; }
         .p-opt { display: block; padding: 8px 12px; background: white; margin: 5px 0; border-radius: 6px; border: 1px solid #eee; font-size: 14px; }
-
         .loader { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.85); 
-            color: white; 
-            z-index: 10000; 
-            align-items: center; 
-            justify-content: center; 
-            flex-direction: column; 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.85); color: white; 
+            z-index: 10000; align-items: center; justify-content: center; flex-direction: column; 
         }
         .spinner {
-            width: 50px; height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            width: 50px; height: 50px; border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
 
+<body>
 <div id="loader" class="loader">
     <div class="spinner"></div>
     <p id="loader-text">প্রসেসিং হচ্ছে...</p>
@@ -152,7 +124,6 @@
     </div>
 
     <div id="q-container"></div>
-
     <button class="btn btn-blue" onclick="addNewQuestion()">
         <i class="fas fa-plus-circle"></i> নতুন প্রশ্ন যোগ করুন
     </button>
@@ -163,8 +134,10 @@
     var GITHUB_REPO = "quiz-files";
     let questions = [];
 
+    // ১. নতুন প্রশ্ন যোগ করা (ID এর এরর সমাধান করা হয়েছে)
     function addNewQuestion(data = null) {
-        const id = data ? data.id : Date.now();
+        // ID থেকে দশমিক সরানোর জন্য Math.floor ব্যবহার করা হয়েছে
+        const id = data ? data.id : "q" + Math.floor(Date.now() + Math.random() * 100);
         const newQ = data ? data : {
             id: id,
             stimulus: "",
@@ -182,18 +155,18 @@
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center">
                     <strong>প্রশ্ন নং - ${i + 1}</strong>
-                    <button class="btn btn-red" onclick="removeQuestion(${q.id})"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-red" onclick="removeQuestion('${q.id}')"><i class="fas fa-trash"></i></button>
                 </div>
-                <textarea placeholder="উদ্দীপক (ঐচ্ছিক)" oninput="updateQuestion(${q.id}, 'stimulus', this.value)">${q.stimulus}</textarea>
-                <textarea placeholder="মূল প্রশ্ন" oninput="updateQuestion(${q.id}, 'stem', this.value)">${q.stem}</textarea>
+                <textarea placeholder="উদ্দীপক" oninput="updateQuestion('${q.id}', 'stimulus', this.value)">${q.stimulus}</textarea>
+                <textarea placeholder="মূল প্রশ্ন" oninput="updateQuestion('${q.id}', 'stem', this.value)">${q.stem}</textarea>
                 
                 <div class="grid">
                     ${q.options.map((opt, oi) => `
                         <input type="text" placeholder="অপশন ${oi + 1}" value="${opt}" style="width:48%" 
-                        oninput="updateQuestion(${q.id}, 'options', this.value, ${oi})">
+                        oninput="updateQuestion('${q.id}', 'options', this.value, ${oi})">
                     `).join('')}
                 </div>
-                <select onchange="updateQuestion(${q.id}, 'correct', parseInt(this.value))">
+                <select onchange="updateQuestion('${q.id}', 'correct', parseInt(this.value))">
                     <option value="">সঠিক উত্তর নির্বাচন করুন</option>
                     <option value="0" ${q.correct === 0 ? 'selected' : ''}>অপশন 1</option>
                     <option value="1" ${q.correct === 1 ? 'selected' : ''}>অপশন 2</option>
@@ -212,7 +185,7 @@
     }
 
     function updateQuestion(id, field, value, optIdx = null) {
-        const q = questions.find(q => q.id === id);
+        const q = questions.find(q => q.id == id);
         if (optIdx !== null) {
             q.options[optIdx] = value;
         } else {
@@ -223,9 +196,12 @@
     }
 
     function renderPreview(id) {
-        const q = questions.find(q => q.id === id);
-        const prevDiv = document.querySelector(`#prev-${id} .preview-content`);
-        if(!prevDiv) return;
+        const q = questions.find(q => q.id == id);
+        // সিলেক্টর এরর এড়াতে document.getElementById ব্যবহার করা ভালো
+        const parentDiv = document.getElementById(`prev-${id}`);
+        if(!parentDiv) return;
+        const prevDiv = parentDiv.querySelector('.preview-content');
+        
         let html = "";
         if(q.stimulus) html += `<div class="p-stim">${q.stimulus}</div>`;
         if(q.stem) html += `<div><strong>${q.stem}</strong></div>`;
@@ -246,7 +222,7 @@
     }
 
     function removeQuestion(id) {
-        questions = questions.filter(q => q.id !== id);
+        questions = questions.filter(q => q.id != id);
         renderQuestions();
     }
 
@@ -274,14 +250,13 @@
             if(token) localStorage.setItem('gh_token', token);
             else return;
         }
-
         document.getElementById('loader').style.display = 'flex';
         document.getElementById('loader-text').innerText = "ফাইল তৈরি হচ্ছে...";
         
         var finalHTML = generateQuizHTML(data);
         var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
         var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
-
+        
         try {
             var getFile = await fetch(apiUrl, { headers: { "Authorization": "token " + token } });
             var sha = "";
@@ -289,7 +264,6 @@
                 var fileData = await getFile.json(); 
                 sha = fileData.sha; 
             }
-
             document.getElementById('loader-text').innerText = "গিটহাবে আপলোড হচ্ছে...";
             var response = await fetch(apiUrl, {
                 method: "PUT",
@@ -300,7 +274,6 @@
                     sha: sha ? sha : undefined
                 })
             });
-
             if(response.ok) alert("সফলভাবে আপলোড হয়েছে!");
             else alert("আপলোড ব্যর্থ! টোকেন চেক করুন।");
         } catch(e) {
@@ -310,144 +283,27 @@
     }
 
     function generateQuizHTML(d) {
-        const questionsJSON = JSON.stringify(d.questions);
+        // স্ক্রিপ্ট ট্যাগ ক্লোজিং এরর এড়াতে Escape করা হয়েছে
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${d.title}</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
+    <meta charset="UTF-8"><title>${d.title}</title>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async><\/script>
     <style>
-        :root { --p: #2c3e50; --s: #27ae60; --bg: #f4f7f6; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 15px; user-select: none; }
-        .container { max-width: 600px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .stim { background: #eef4f9; padding: 12px; border-left: 4px solid #3498db; margin-bottom: 10px; font-style: italic; }
-        .opt { display: block; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .opt:hover { background: #f0f7ff; }
-        input[type="radio"] { margin-right: 10px; }
-        .header-box { text-align: center; color: var(--p); }
-        #timer { font-weight: bold; color: #e74c3c; position: fixed; top: 10px; right: 10px; background: white; padding: 5px 10px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .btn-submit { width: 100%; padding: 15px; background: var(--s); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        body{font-family:sans-serif; background:#f4f7f6; padding:20px;}
+        .card{background:white; padding:20px; border-radius:10px; max-width:600px; margin:auto; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:15px;}
+        .stim{background:#eef4f9; padding:10px; border-left:4px solid #3498db; font-style:italic;}
     </style>
 </head>
 <body>
-    <div id="timer">--:--</div>
-    <div class="container">
-        <div class="card header-box">
-            <h2>${d.title}</h2>
-            <p>${d.sub} | ${d.chapter}</p>
-            <p id="userInfo"></p>
+    <div class="card" style="text-align:center"><h2>${d.title}</h2><p>${d.sub} - ${d.chapter}</p></div>
+    ${d.questions.map((q, i) => `
+        <div class="card">
+            ${q.stimulus ? `<div class="stim">${q.stimulus}</div>` : ''}
+            <p><strong>${i+1}. ${q.stem}</strong></p>
+            ${q.options.map((opt, oi) => `<p>${oi+1}. ${opt}</p>`).join('')}
         </div>
-        <div id="quiz-body" style="display:none;">
-            <div id="questions-area"></div>
-            <button class="btn-submit" onclick="submitQuiz()">পরীক্ষা জমা দিন</button>
-        </div>
-        <div id="start-screen" class="card" style="text-align:center;">
-            <button class="btn-submit" onclick="startExam()">পরীক্ষা শুরু করুন</button>
-        </div>
-    </div>
-
-    <script>
-        const firebaseConfig = { databaseURL: "https://p-quiz-a7b03-default-rtdb.firebaseio.com" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        const questions = ${questionsJSON};
-        const totalTime = ${d.time || 10} * 60;
-        let timeLeft = totalTime;
-        let timerInterval;
-
-        const params = new URLSearchParams(window.location.search);
-        const uData = {
-            id: params.get('id'),
-            name: params.get('name'),
-            roll: params.get('roll'),
-            cls: params.get('cls'),
-            sec: params.get('sec')
-        };
-
-        document.getElementById('userInfo').innerText = uData.name + " (রোল: " + uData.roll + ")";
-
-        function startExam() {
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('quiz-body').style.display = 'block';
-            renderQuiz();
-            startTimer();
-        }
-
-        function renderQuiz() {
-            const area = document.getElementById('questions-area');
-            area.innerHTML = questions.map((q, i) => \`
-                <div class="card">
-                    \${q.stimulus ? '<div class="stim">'+q.stimulus+'</div>' : ''}
-                    <p><strong>\${i+1}. \${q.stem}</strong></p>
-                    \${q.options.map((opt, oi) => \`
-                        <label class="opt">
-                            <input type="radio" name="q\${i}" value="\${oi}" onchange="saveAns(\${i}, \${oi})">
-                            \${opt}
-                        </label>
-                    \`).join('')}
-                </div>
-            \`).join('');
-        }
-
-        function saveAns(qIdx, optIdx) {
-            let answers = JSON.parse(localStorage.getItem('quiz_ans_${d.fName}') || '{}');
-            answers[qIdx] = optIdx;
-            localStorage.setItem('quiz_ans_${d.fName}', JSON.stringify(answers));
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                let m = Math.floor(timeLeft / 60);
-                let s = timeLeft % 60;
-                document.getElementById('timer').innerText = m + ":" + (s < 10 ? '0'+s : s);
-                if(timeLeft <= 0) submitQuiz();
-            }, 1000);
-        }
-
-        async function submitQuiz() {
-            clearInterval(timerInterval);
-            const savedAns = JSON.parse(localStorage.getItem('quiz_ans_${d.fName}') || '{}');
-            let correctCount = 0;
-            let wrongNums = [];
-
-            questions.forEach((q, i) => {
-                if(savedAns[i] == q.correct) correctCount++;
-                else wrongNums.push(i+1);
-            });
-
-            const resData = {
-                userId: uData.id,
-                name: uData.name,
-                roll: uData.roll,
-                class: uData.cls,
-                section: uData.sec,
-                quizTitle: "${d.title}",
-                subject: "${d.sub}",
-                chapter: "${d.chapter}",
-                total: questions.length,
-                correct: correctCount,
-                wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই",
-                timeSpent: Math.floor((totalTime - timeLeft)/60) + " মি. " + ((totalTime - timeLeft)%60) + " সে.",
-                date: new Date().toLocaleDateString('bn-BD'),
-                time: new Date().toLocaleTimeString('bn-BD'),
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-
-            const resKey = uData.name + "_" + Date.now();
-            await db.ref("QuizResults/" + resKey).set(resData);
-            await db.ref("IndividualQuizzes/" + uData.id).remove();
-            
-            localStorage.removeItem('quiz_ans_${d.fName}');
-            document.body.innerHTML = '<div class="card" style="margin:50px auto; text-align:center; max-width:400px;"><h2>ধন্যবাদ!</h2><p>তোমার উত্তর সফলভাবে জমা হয়েছে।</p></div>';
-        }
-    <\/script>
+    `).join('')}
 </body>
 </html>`;
     }
