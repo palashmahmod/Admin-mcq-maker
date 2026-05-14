@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Quiz Generator Pro</title>
     
-    <!-- External Libraries -->
+    <!-- External Libraries (FontAwesome for Icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- MathJax Setup -->
+    <!-- MathJax Setup for Math Formulas -->
     <script>
         window.MathJax = {
             tex: {
@@ -16,11 +16,12 @@
                 displayMath: [['\\[', '\\]'], ['$$', '$$']],
                 processEscapes: true
             },
-            options: { enableMenu: false }
+            options: { 
+                enableMenu: false 
+            }
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-    
     <style>
         :root { 
             --primary: #2c3e50; 
@@ -37,6 +38,7 @@
             padding-top: 70px; 
             color: #333;
         }
+        /* Fixed Header */
         .header { 
             position: fixed; 
             top: 0; 
@@ -50,6 +52,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .container { max-width: 800px; margin: auto; padding: 15px; }
+        
         .card { 
             background: white; 
             padding: 20px; 
@@ -59,43 +62,71 @@
             border: 1px solid #eee;
         }
         h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
         input, textarea, select { 
-            width: 100%; padding: 12px; margin: 10px 0; 
-            border: 1px solid #ddd; border-radius: 8px; 
-            box-sizing: border-box; font-size: 15px; 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 15px; 
         }
         .btn { 
-            padding: 14px; border: none; border-radius: 8px; 
-            cursor: pointer; font-weight: bold; color: white; 
-            transition: 0.3s; display: inline-block; text-align: center;
+            padding: 14px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            color: white; 
+            transition: 0.3s; 
+            display: inline-block; 
+            text-align: center;
         }
         .btn-blue { background: var(--accent); width: 100%; margin-top: 10px; }
         .btn-green { background: var(--success); width: 48%; }
         .btn-black { background: #24292e; width: 48%; }
         .btn-red { background: var(--danger); padding: 6px 12px; font-size: 13px; }
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        
+        /* Preview Box Style */
         .live-preview { 
-            margin-top: 15px; padding: 15px; background: #fffdf2; 
-            border: 1px dashed #d4af37; border-radius: 10px; min-height: 50px;
+            margin-top: 15px; 
+            padding: 15px; 
+            background: #fffdf2; 
+            border: 1px dashed #d4af37; 
+            border-radius: 10px; 
+            min-height: 50px;
         }
         .preview-label { font-size: 11px; color: #d4af37; font-weight: bold; display: block; margin-bottom: 8px; }
         .p-stim { background: #f0f4f8; padding: 10px; border-left: 3px solid var(--accent); margin-bottom: 10px; font-style: italic; }
         .p-opt { display: block; padding: 8px 12px; background: white; margin: 5px 0; border-radius: 6px; border: 1px solid #eee; font-size: 14px; }
+
+        /* Loader */
         .loader { 
-            display: none; position: fixed; inset: 0; 
-            background: rgba(0,0,0,0.85); color: white; 
-            z-index: 10000; align-items: center; justify-content: center; flex-direction: column; 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.85); 
+            color: white; 
+            z-index: 10000; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column; 
         }
         .spinner {
-            width: 50px; height: 50px; border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--accent); border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
+            width: 50px; height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
+
 <div id="loader" class="loader">
     <div class="spinner"></div>
     <p id="loader-text">প্রসেসিং হচ্ছে...</p>
@@ -106,6 +137,7 @@
 </div>
 
 <div class="container">
+    <!-- Quiz Info -->
     <div class="card">
         <h3><i class="fas fa-cog"></i> কুইজ কনফিগারেশন</h3>
         <input type="text" id="qTitle" placeholder="কুইজের টাইটেল">
@@ -123,21 +155,24 @@
         </div>
     </div>
 
+    <!-- Questions Container -->
     <div id="q-container"></div>
+
     <button class="btn btn-blue" onclick="addNewQuestion()">
         <i class="fas fa-plus-circle"></i> নতুন প্রশ্ন যোগ করুন
     </button>
 </div>
 
 <script>
+    // GitHub Configurations (হুবহু আগের কোডের মতো)
     var GITHUB_USER = "palashmahmod";
     var GITHUB_REPO = "quiz-files";
+
     let questions = [];
 
-    // ১. নতুন প্রশ্ন যোগ করা (ID এর এরর সমাধান করা হয়েছে)
+    // ১. নতুন প্রশ্ন যোগ করা
     function addNewQuestion(data = null) {
-        // ID থেকে দশমিক সরানোর জন্য Math.floor ব্যবহার করা হয়েছে
-        const id = data ? data.id : "q" + Math.floor(Date.now() + Math.random() * 100);
+        const id = data ? data.id : Date.now();
         const newQ = data ? data : {
             id: id,
             stimulus: "",
@@ -149,24 +184,25 @@
         renderQuestions();
     }
 
+    // ২. প্রশ্ন রেন্ডার করা
     function renderQuestions() {
         const container = document.getElementById('q-container');
         container.innerHTML = questions.map((q, i) => `
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center">
                     <strong>প্রশ্ন নং - ${i + 1}</strong>
-                    <button class="btn btn-red" onclick="removeQuestion('${q.id}')"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-red" onclick="removeQuestion(${q.id})"><i class="fas fa-trash"></i></button>
                 </div>
-                <textarea placeholder="উদ্দীপক" oninput="updateQuestion('${q.id}', 'stimulus', this.value)">${q.stimulus}</textarea>
-                <textarea placeholder="মূল প্রশ্ন" oninput="updateQuestion('${q.id}', 'stem', this.value)">${q.stem}</textarea>
+                <textarea placeholder="উদ্দীপক" oninput="updateQuestion(${q.id}, 'stimulus', this.value)">${q.stimulus}</textarea>
+                <textarea placeholder="মূল প্রশ্ন" oninput="updateQuestion(${q.id}, 'stem', this.value)">${q.stem}</textarea>
                 
                 <div class="grid">
                     ${q.options.map((opt, oi) => `
                         <input type="text" placeholder="অপশন ${oi + 1}" value="${opt}" style="width:48%" 
-                        oninput="updateQuestion('${q.id}', 'options', this.value, ${oi})">
+                        oninput="updateQuestion(${q.id}, 'options', this.value, ${oi})">
                     `).join('')}
                 </div>
-                <select onchange="updateQuestion('${q.id}', 'correct', parseInt(this.value))">
+                <select onchange="updateQuestion(${q.id}, 'correct', parseInt(this.value))">
                     <option value="">সঠিক উত্তর নির্বাচন করুন</option>
                     <option value="0" ${q.correct === 0 ? 'selected' : ''}>অপশন 1</option>
                     <option value="1" ${q.correct === 1 ? 'selected' : ''}>অপশন 2</option>
@@ -184,8 +220,9 @@
         triggerMathJax();
     }
 
+    // ৩. আপডেট এবং প্রিভিউ
     function updateQuestion(id, field, value, optIdx = null) {
-        const q = questions.find(q => q.id == id);
+        const q = questions.find(q => q.id === id);
         if (optIdx !== null) {
             q.options[optIdx] = value;
         } else {
@@ -196,12 +233,9 @@
     }
 
     function renderPreview(id) {
-        const q = questions.find(q => q.id == id);
-        // সিলেক্টর এরর এড়াতে document.getElementById ব্যবহার করা ভালো
-        const parentDiv = document.getElementById(`prev-${id}`);
-        if(!parentDiv) return;
-        const prevDiv = parentDiv.querySelector('.preview-content');
-        
+        const q = questions.find(q => q.id === id);
+        const prevDiv = document.querySelector(`#prev-${id} .preview-content`);
+        if(!prevDiv) return;
         let html = "";
         if(q.stimulus) html += `<div class="p-stim">${q.stimulus}</div>`;
         if(q.stem) html += `<div><strong>${q.stem}</strong></div>`;
@@ -222,7 +256,7 @@
     }
 
     function removeQuestion(id) {
-        questions = questions.filter(q => q.id != id);
+        questions = questions.filter(q => q.id !== id);
         renderQuestions();
     }
 
@@ -240,6 +274,7 @@
         return draft;
     }
 
+    // ৪. গিটহাব আপলোড পদ্ধতি (হুবহু আগের কোডের লজিক)
     async function uploadToGithub() {
         var data = saveDraft();
         if(!data.fName) return alert("ফাইলের একটি নাম দিন!");
@@ -250,13 +285,14 @@
             if(token) localStorage.setItem('gh_token', token);
             else return;
         }
+
         document.getElementById('loader').style.display = 'flex';
         document.getElementById('loader-text').innerText = "ফাইল তৈরি হচ্ছে...";
-        
+
         var finalHTML = generateQuizHTML(data);
         var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
         var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
-        
+
         try {
             var getFile = await fetch(apiUrl, { headers: { "Authorization": "token " + token } });
             var sha = "";
@@ -264,6 +300,7 @@
                 var fileData = await getFile.json(); 
                 sha = fileData.sha; 
             }
+
             document.getElementById('loader-text').innerText = "গিটহাবে আপলোড হচ্ছে...";
             var response = await fetch(apiUrl, {
                 method: "PUT",
@@ -274,6 +311,7 @@
                     sha: sha ? sha : undefined
                 })
             });
+
             if(response.ok) alert("সফলভাবে আপলোড হয়েছে!");
             else alert("আপলোড ব্যর্থ! টোকেন চেক করুন।");
         } catch(e) {
@@ -282,8 +320,8 @@
         document.getElementById('loader').style.display = 'none';
     }
 
+    // কুইজ ফাইল জেনারেটর (মিনিমালিস্টিক ভার্সন)
     function generateQuizHTML(d) {
-        // স্ক্রিপ্ট ট্যাগ ক্লোজিং এরর এড়াতে Escape করা হয়েছে
         return `<!DOCTYPE html>
 <html lang="bn">
 <head>
