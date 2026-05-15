@@ -33,10 +33,9 @@
         .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
         .live-preview { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px dashed #ffe58f; border-radius: 8px; font-size: 14px; }
         .preview-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; display: block; border-bottom: 1px solid #eee; }
-        .p-stim { background: #f9f9f9; padding: 8px; border-left: 3px solid #3498db; margin-bottom: 8px; font-style: italic; white-space: pre-wrap; }
+        .p-stim { background: #f9f9f9; padding: 8px; border-left: 3px solid #3498db; margin-bottom: 8px; font-style: italic; }
         .p-img { width: 100%; border-radius: 6px; margin: 8px 0; display: none; }
         .p-opt { display: block; padding: 5px 10px; background: #eee; margin: 4px 0; border-radius: 4px; font-size: 13px; }
-        .p-ques { white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -98,7 +97,7 @@
         var no = box.querySelector('.no').innerText;
         var html = `<span class="preview-label">Live Preview</span>`;
         if(stim) html += `<div class="p-stim">${stim.replace(/\n/g, '<br>')}</div>`;
-        html += `<p class="p-ques" style="margin:5px 0"><b>${no}. ${ques.replace(/\n/g, '<br>')}</b></p>`;
+        html += `<p style="margin:5px 0"><b>${no}. ${ques.replace(/\n/g, '<br>')}</b></p>`;
         if(img) html += `<img src="${img}" class="p-img" style="display:block">`;
         if(o1) html += `<span class="p-opt">ক) ${o1}</span>`;
         if(o2) html += `<span class="p-opt">খ) ${o2}</span>`;
@@ -220,7 +219,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>\${d.title}</title>
+    <title>${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <script>
@@ -236,8 +235,7 @@
         button{width:100%;padding:12px;background:#27ae60;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
         .info-p { margin: 5px 0; font-size: 15px; }
         #exam-box { display:none; margin-top:50px; }
-        .stim-box { background: #f9f9f9; padding: 10px; border-left: 4px solid #3498db; margin-bottom: 10px; font-style: italic; color: #555; white-space: pre-wrap; }
-        .q-text { white-space: pre-wrap; }
+        .stim-box { background: #f9f9f9; padding: 10px; border-left: 4px solid #3498db; margin-bottom: 10px; font-style: italic; color: #555; }
     </style>
 </head>
 <body>
@@ -304,11 +302,11 @@
             var h = "";
             questions.forEach(function(q, i){
                 var s = savedAns["q"+i] || "";
-                h += "<div style='margin-bottom:35px;'>";
+                h += "<div class='card'>";
                 if(q.stim && q.stim.trim() !== "") {
-                    h += "<div class='stim-box'>"+q.stim.replace(/\\\\n/g, '<br>')+"</div>";
+                    h += "<div class='stim-box'>"+q.stim.replace(/\\n/g, '<br>')+"</div>";
                 }
-                h += "<p class='q-text'><b>"+(i+1)+". "+q.ques.replace(/\\\\n/g, '<br>')+"</b></p>";
+                h += "<p><b>"+(i+1)+". "+q.ques.replace(/\\n/g, '<br>')+"</b></p>";
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক' onchange='saveAns(\\"q"+i+"\\", \\"ক\\")' "+(s=='ক'?'checked':'')+"> ক) "+q.o1+"</label>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='খ' onchange='saveAns(\\"q"+i+"\\", \\"খ\\")' "+(s=='খ'?'checked':'')+"> খ) "+q.o2+"</label>";
