@@ -97,7 +97,6 @@
         var no = box.querySelector('.no').innerText;
         var html = `<span class="preview-label">Live Preview</span>`;
         if(stim) html += `<div class="p-stim">${stim.replace(/\n/g, '<br>')}</div>`;
-        // এখানে ques এর নিউলাইন হ্যান্ডেল করা হয়েছে
         html += `<p style="margin:5px 0"><b>${no}. ${ques.replace(/\n/g, '<br>')}</b></p>`;
         if(img) html += `<img src="${img}" class="p-img" style="display:block">`;
         if(o1) html += `<span class="p-opt">ক) ${o1}</span>`;
@@ -254,7 +253,7 @@
         </div>
         <div id="exam-box">
             <div class="timer" id="t">সময় বাকি: --:--</div>
-            <div class="card" id="q-list"></div>
+            <div id="q-list"></div>
             <div class="card"><button id="submitBtn" onclick="submitQuiz()">জমা দিন</button></div>
         </div>
     </div>
@@ -303,11 +302,11 @@
             var h = "";
             questions.forEach(function(q, i){
                 var s = savedAns["q"+i] || "";
-                h += "<div style='margin-bottom:35px;'>";
+                h += "<div class='card'>";
                 if(q.stim && q.stim.trim() !== "") {
                     h += "<div class='stim-box'>"+q.stim.replace(/\\\\n/g, '<br>')+"</div>";
                 }
-                // এখানে আউটপুট ফাইলে ques এর নিউলাইন হ্যান্ডেল করা হয়েছে
+                // প্রশ্নপত্রের (generated file) জন্য এখানে নিউলাইন হ্যান্ডেল করা হয়েছে
                 h += "<p><b>"+(i+1)+". "+q.ques.replace(/\\\\n/g, '<br>')+"</b></p>";
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক' onchange='saveAns(\\"q"+i+"\\", \\"ক\\")' "+(s=='ক'?'checked':'')+"> ক) "+q.o1+"</label>";
