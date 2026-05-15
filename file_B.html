@@ -6,7 +6,6 @@
     <title>Master Quiz Generator Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- MathJax for Math Formula Support -->
     <script>
         window.MathJax = {
             tex: { 
@@ -17,7 +16,6 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-
     <style>
         :root { --p: #2c3e50; --a: #3498db; --s: #27ae60; --d: #e74c3c; --bg: #f8f9fa; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
@@ -41,17 +39,14 @@
     </style>
 </head>
 <body>
-
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-2x"></i>
     <p>প্রসেসিং হচ্ছে...</p>
 </div>
-
 <div class="header">
     <span onclick="window.history.back()" style="position:absolute; left:15px; cursor:pointer"><i class="fas fa-chevron-left"></i></span>
     মাস্টার কুইজ জেনারেটর
 </div>
-
 <div class="container">
     <div class="card">
         <input type="text" id="qTitle" placeholder="কুইজের টাইটেল">
@@ -71,7 +66,6 @@
     <div id="q-container"></div>
     <button class="btn btn-blue" onclick="addNewQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
-
 <script>
     var GITHUB_USER = "palashmahmod";
     var GITHUB_REPO = "quiz-files";
@@ -85,18 +79,14 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var db = firebase.database();
     `;
-
-    // Math Refresh Logic for Live Preview
     function refreshMath() {
         if (window.MathJax && window.MathJax.typeset) {
             window.MathJax.typeset();
         }
     }
-
     function updatePreview(id) {
         var box = document.getElementById(id);
         var pBox = box.querySelector('.live-preview');
-        
         var stim = box.querySelector('.stim').value;
         var ques = box.querySelector('.ques').value;
         var img = box.querySelector('.img').value;
@@ -105,20 +95,18 @@
         var o3 = box.querySelector('.o3').value;
         var o4 = box.querySelector('.o4').value;
         var no = box.querySelector('.no').innerText;
-
         var html = `<span class="preview-label">Live Preview</span>`;
         if(stim) html += `<div class="p-stim">${stim.replace(/\n/g, '<br>')}</div>`;
-        html += `<p style="margin:5px 0"><b>${no}. ${ques}</b></p>`;
+        // এখানে ques এর নিউলাইন হ্যান্ডেল করা হয়েছে
+        html += `<p style="margin:5px 0"><b>${no}. ${ques.replace(/\n/g, '<br>')}</b></p>`;
         if(img) html += `<img src="${img}" class="p-img" style="display:block">`;
         if(o1) html += `<span class="p-opt">ক) ${o1}</span>`;
         if(o2) html += `<span class="p-opt">খ) ${o2}</span>`;
         if(o3) html += `<span class="p-opt">গ) ${o3}</span>`;
         if(o4) html += `<span class="p-opt">ঘ) ${o4}</span>`;
-        
         pBox.innerHTML = html;
         refreshMath(); 
     }
-
     function addNewQuestion(data) {
         qCount++;
         var id = "q-" + Date.now();
@@ -133,7 +121,6 @@
         var o3 = data ? data.o3 : "";
         var o4 = data ? data.o4 : "";
         var ans = data ? data.ans : "ক";
-        
         div.innerHTML = `
             <div style="display:flex; justify-content:space-between">
             <b>প্রশ্ন নং: <span class="no">${qCount}</span></b>
@@ -157,12 +144,10 @@
             <option value="ঘ" ${ans=='ঘ'?'selected':''}>সঠিক উত্তর: ঘ</option>
             </select>
             <div class="live-preview"></div>`;
-            
         document.getElementById('q-container').appendChild(div);
         reorderNumbers();
         updatePreview(id); 
     }
-
     function removeQuestion(id) {
         var el = document.getElementById(id);
         el.parentNode.removeChild(el);
@@ -170,12 +155,10 @@
         var boxes = document.getElementsByClassName('q-box');
         for(var i=0; i<boxes.length; i++) { updatePreview(boxes[i].id); }
     }
-
     function reorderNumbers() {
         var nos = document.getElementsByClassName('no');
         for(var i=0; i<nos.length; i++) { nos[i].innerText = (i+1); }
     }
-
     function saveDraft() {
         var questions = [];
         var cards = document.getElementsByClassName('q-box');
@@ -202,7 +185,6 @@
         };
         localStorage.setItem('quiz_draft_new', JSON.stringify(fullData));
     }
-
     async function uploadToGithub() {
         saveDraft();
         var data = JSON.parse(localStorage.getItem('quiz_draft_new'));
@@ -231,7 +213,6 @@
         } catch(e) { alert("Error: " + e.message); }
         document.getElementById('loader').style.display = 'none';
     }
-
     function generateQuizFile(d) {
         var qJson = JSON.stringify(d.questions);
         return `<!DOCTYPE html>
@@ -242,15 +223,10 @@
     <title>${d.title}</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
-    
-    <!-- Added MathJax for Formula Support in Final Quiz File -->
     <script>
-        window.MathJax = { 
-            tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] } 
-        };
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] } };
     <\/script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async><\/script>
-
     <style>
         body{font-family:sans-serif;background:#f4f7f6;padding:15px;margin:0;user-select:none;}
         .card{background:white;padding:20px;border-radius:12px;max-width:500px;margin:10px auto;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
@@ -287,7 +263,6 @@
         var questions = ${qJson};
         var fName = "${d.fName}";
         var timerInterval;
-        
         var urlParams = new URLSearchParams(window.location.search);
         var user = {
             id: urlParams.get('id'),
@@ -305,10 +280,7 @@
             if(savedTime) {
                 var remaining = parseInt(savedTime) - Math.floor(Date.now()/1000);
                 if(remaining > 0) startExam(remaining);
-                else {
-                    alert("সময় শেষ হয়ে গেছে!");
-                    submitQuiz();
-                }
+                else { alert("সময় শেষ হয়ে গেছে!"); submitQuiz(); }
             }
         };
         function saveAns(qIdx, val) {
@@ -326,20 +298,17 @@
             }
             document.getElementById('preview-box').style.display = 'none';
             document.getElementById('exam-box').style.display = 'block';
-            
             var list = document.getElementById('q-list');
             var savedAns = JSON.parse(localStorage.getItem("ans_" + fName + "_" + user.id) || "{}");
             var h = "";
             questions.forEach(function(q, i){
                 var s = savedAns["q"+i] || "";
                 h += "<div style='margin-bottom:35px;'>";
-                
                 if(q.stim && q.stim.trim() !== "") {
                     h += "<div class='stim-box'>"+q.stim.replace(/\\\\n/g, '<br>')+"</div>";
                 }
-                
-                h += "<p><b>"+(i+1)+". "+q.ques+"</b></p>";
-                
+                // এখানে আউটপুট ফাইলে ques এর নিউলাইন হ্যান্ডেল করা হয়েছে
+                h += "<p><b>"+(i+1)+". "+q.ques.replace(/\\\\n/g, '<br>')+"</b></p>";
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক' onchange='saveAns(\\"q"+i+"\\", \\"ক\\")' "+(s=='ক'?'checked':'')+"> ক) "+q.o1+"</label>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='খ' onchange='saveAns(\\"q"+i+"\\", \\"খ\\")' "+(s=='খ'?'checked':'')+"> খ) "+q.o2+"</label>";
@@ -347,9 +316,7 @@
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ঘ' onchange='saveAns(\\"q"+i+"\\", \\"ঘ\\")' "+(s=='ঘ'?'checked':'')+"> ঘ) "+q.o4+"</label></div>";
             });
             list.innerHTML = h;
-            
             if(window.MathJax) window.MathJax.typeset();
-
             var totalSec = existingSec || (${d.time} * 60);
             if(!existingSec) {
                 var expiry = Math.floor(Date.now()/1000) + totalSec;
@@ -361,10 +328,7 @@
             timerInterval = setInterval(function(){
                 var m = Math.floor(sec/60), s = sec%60;
                 document.getElementById("t").innerText = "সময় বাকি: " + m + ":" + (s < 10 ? "0" : "") + s;
-                if(sec <= 0){ 
-                    clearInterval(timerInterval); 
-                    submitQuiz(); 
-                }
+                if(sec <= 0){ clearInterval(timerInterval); submitQuiz(); }
                 sec--;
             }, 1000);
         }
@@ -378,46 +342,27 @@
             var btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.innerText = "জমা হচ্ছে...";
-            
             var correct = 0;
             var wrongNums = [];
-            
             questions.forEach(function(q, i){
                 var sel = document.querySelector('input[name="q'+i+'"]:checked');
-                if(sel && sel.value === q.ans) {
-                    correct++;
-                } else {
-                    wrongNums.push(i + 1);
-                }
+                if(sel && sel.value === q.ans) { correct++; } else { wrongNums.push(i + 1); }
             });
-            
             var now = new Date();
             var resData = {
-                chapter: "${d.chapter}",
-                class: user.cls,
-                correct: correct,
-                date: now.toLocaleDateString('bn-BD'),
-                name: user.name,
-                quizTitle: "${d.title}",
-                roll: user.roll,
-                section: user.sec,
-                subject: "${d.sub}",
-                time: now.toLocaleTimeString(),
-                timeSpent: timeSpentStr,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                total: questions.length,
-                userId: user.id,
+                chapter: "${d.chapter}", class: user.cls, correct: correct,
+                date: now.toLocaleDateString('bn-BD'), name: user.name,
+                quizTitle: "${d.title}", roll: user.roll, section: user.sec,
+                subject: "${d.sub}", time: now.toLocaleTimeString(),
+                timeSpent: timeSpentStr, timestamp: firebase.database.ServerValue.TIMESTAMP,
+                total: questions.length, userId: user.id,
                 wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই"
             };
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
                 return db.ref("IndividualQuizzes/" + user.id).once('value');
             }).then(snap => {
-                if(snap.exists()){
-                    snap.forEach(child => {
-                        if(child.val().file === fName) child.ref.remove();
-                    });
-                }
+                if(snap.exists()){ snap.forEach(child => { if(child.val().file === fName) child.ref.remove(); }); }
                 localStorage.removeItem("timer_" + fName + "_" + user.id);
                 localStorage.removeItem("start_time_" + fName + "_" + user.id);
                 localStorage.removeItem("ans_" + fName + "_" + user.id);
@@ -429,7 +374,6 @@
 </body>
 </html>`;
     }
-
     window.onload = function() {
         var saved = localStorage.getItem('quiz_draft_new');
         if(saved) {
