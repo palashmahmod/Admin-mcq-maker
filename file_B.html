@@ -64,6 +64,7 @@
             <button class="btn btn-black" onclick="uploadToGithub()"><i class="fab fa-github"></i> আপলোড করুন</button>
         </div>
     </div>
+    <div class="card" style="text-align: center; background: #fffdf2; border: 1px dashed #d4af37;"> <p style="margin: 0 0 10px 0; font-size: 13px; color: #888; font-weight: bold;"><i class="fas fa-paste"></i> এক্সটার্নাল টেক্সট ফরম্যাট কুইজ ইনপুট</p> <button class="btn" style="background: #8e44ad; width: 100%; color: white;" onclick="pasteBulkQuestions()"><i class="fas fa-file-import"></i> বাল্ক পেস্ট করুন</button> </div>
     <div id="q-container"></div>
     <button class="btn btn-blue" onclick="addNewQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
@@ -383,6 +384,86 @@
 </body>
 </html>`;
     }
+    function pasteBulkQuestions() {
+    navigator.clipboard.readText().then(text => {
+        if (!text || text.trim() === "") return alert("ক্লিপবোর্ড ফাঁকা! প্রথমে টেক্সট কপি করুন।");
+        
+        var rawBlocks = text.split(/(?=উদ্দীপক:|^\s*\d+\s*\.)/m);
+        var parsedQuestions = [];
+        var currentStim = "";
+
+        rawBlocks.forEach(block => {
+            var trimmed = block.trim();
+            if (!trimmed) return;
+
+            if (trimmed.startsWith("উদ্দীপক:")) {
+                var lines = trimmed.split('\n');
+                currentStim = lines[0].replace(/^উদ্দীপক:\s*/, "").trim();
+                lines.shift();
+                block = lines.join('\n').trim();
+                if (!block) return;
+            }
+
+            var lines = block.split('\n').map(l => l.trim()).filter(l => l !== "");
+            var qNum = null, quesText = "", imgLink = "", o1 = "", o2 = "", o3 = "", o4 = "", ans = "ক";
+
+            lines.forEach(line => {
+                var qMatch = line.match(/^(\d+)\s*\.\s*(.*)/);
+                if (qMatch) { qNum = parseInt(qMatch[1]); quesText = qMatch[2].trim(); return; }
+                if (line.startsWith("ছবির লিংক:")) { imgLink = line.replace(/^ছবির লিংক:\s*/, "").trim(); return; }
+                if (line.includes("(ক)") || line.includes("(খ)") || line.includes("(গ)") || line.includes("(ঘ)")) {
+                    var optMatch = line.match(/\(ক\)\s*([^\(]*)\s*\(খ\)\s*([^\(]*)\s*\(গ\)\s*([^\(]*)\s*\(ঘ\)\s*(.*)/);
+                    if (optMatch) { o1 = optMatch[1].trim(); o2 = optMatch[2].trim(); o3 = optMatch[3].trim(); o4 = optMatch[4].trim(); }
+                    return;
+                }
+                if (line.startsWith("उत्तर:")) { ans = line.replace(/^উত্তর:\s*/, "").trim(); return; }
+                if (qNum && !o1) { quesText += "\n" + line; }
+            });
+
+            if (qNum !== null) {
+                parsedQuestions.push({ targetIdx: qNum, stim: currentStim, ques: quesText, img: imgLink, o1: o1, o2: o2, o3: o3, o4: o4, ans: ans });
+            }
+        });
+
+        if (parsedQuestions.length === 0) return alert("সঠিক ফরম্যাটে কোনো প্রশ্ন পাওয়া যায়নি!");
+
+        var existingCards = Array.from(document.getElementsByClassName('q-box'));
+        parsedQuestions.forEach(pq => {
+            if (pq.targetIdx <= existingCards.length) {
+                var oldCard = existingCards[pq.targetIdx - 1];
+                if (oldCard) oldCard.remove();
+            }
+        });
+
+        var currentDraftQuestions = [];
+        var freshCards = document.getElementsByClassName('q-box');
+        for(var i=0; i<freshCards.length; i++) {
+            var c = freshCards[i];
+            currentDraftQuestions.push({
+                stim: c.querySelector('.stim').value, ques: c.querySelector('.ques').value, img: c.querySelector('.img').value,
+                o1: c.querySelector('.o1').value, o2: c.querySelector('.o2').value, o3: c.querySelector('.o3').value, o4: c.querySelector('.o4').value,
+                ans: c.querySelector('.ans').value
+            });
+        }
+
+        parsedQuestions.forEach(pq => {
+            var dataObj = { stim: pq.stim, ques: pq.ques, img: pq.img, o1: pq.o1, o2: pq.o2, o3: pq.o3, o4: pq.o4, ans: pq.ans };
+            if (pq.targetIdx - 1 < currentDraftQuestions.length) {
+                currentDraftQuestions.splice(pq.targetIdx - 1, 0, dataObj);
+            } else {
+                while (currentDraftQuestions.length < pq.targetIdx - 1) {
+                    currentDraftQuestions.push({ stim:"", ques:"", img:"", o1:"", o2:"", o3:"", o4:"", ans:"ক" });
+                }
+                currentDraftQuestions.push(dataObj);
+            }
+        });
+
+        document.getElementById('q-container').innerHTML = "";
+        qCount = 0;
+        currentDraftQuestions.forEach(q => { addNewQuestion(q); });
+        alert("ক্লিপবোর্ড থেকে সকল প্রশ্ন সফলভাবে নির্দিষ্ট ক্রমিক নম্বরে যুক্ত হয়েছে।");
+    }).catch(err => { alert("ক্লিপবোর্ড ত্রুটি: " + err.message); });
+}
     window.onload = function() {
         var saved = localStorage.getItem('quiz_draft_new');
         if(saved) {
