@@ -8,14 +8,12 @@
     
     <script>
         window.MathJax = {
-    loader: { load: ['[tex]/textmacros'] },
-    tex: { 
-        inlineMath: [['$', '$'], ['\\(', '\\)']], 
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        packages: { '[+]': ['textmacros'] }
-    },
-    options: { enableMenu: false }
-};
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']], 
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
+            },
+            options: { enableMenu: false }
+        };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
     <style>
@@ -38,7 +36,7 @@
         .p-stim { background: #f9f9f9; padding: 8px; border-left: 3px solid #3498db; margin-bottom: 8px; font-style: italic; }
         .p-img { width: 100%; border-radius: 6px; margin: 8px 0; display: none; }
         .p-opt { display: block; padding: 5px 10px; background: #eee; margin: 4px 0; border-radius: 4px; font-size: 13px; }
-        mjx-utext, .mjx-utext { font-family: sans-serif !important; font-style: normal !important; display: inline-block !important; }
+        mjx-utext { font-family: 'Segoe UI', Tahoma, sans-serif !important; font-style: normal !important; display: inline !important; direction: ltr !important; }
     </style>
 </head>
 <body>
@@ -226,7 +224,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"><\/script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"><\/script>
     <script>
-        window.MathJax = { loader: { load: ['[tex]/textmacros'] }, tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']], packages: { '[+]': ['textmacros'] } } };
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] } };
     <\/script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async><\/script>
     <style>
@@ -239,7 +237,7 @@
         .info-p { margin: 5px 0; font-size: 15px; }
         #exam-box { display:none; margin-top:50px; }
         .stim-box { background: #f9f9f9; padding: 10px; border-left: 4px solid #3498db; margin-bottom: 10px; font-style: italic; color: #555; }
-        mjx-utext, .mjx-utext { font-family: sans-serif !important; font-style: normal !important; display: inline-block !important; }
+        mjx-utext { font-family: 'Segoe UI', Tahoma, sans-serif !important; font-style: normal !important; display: inline !important; direction: ltr !important; }
     </style>
 </head>
 <body>
