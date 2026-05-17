@@ -385,45 +385,45 @@
 </html>`;
     }
     function pasteBulkQuestions() {
-    navigator.clipboard.readText().then(text => {
-        if (!text || text.trim() === "") return alert("ক্লিপবোর্ড ফাঁকা! প্রথমে টেক্সট কপি করুন।");
-        
-        var rawBlocks = text.split(/(?=উদ্দীপক:|^\s*\d+\s*\.)/m);
-        var parsedQuestions = [];
-        var currentStim = "";
+    var text = prompt("আপনার কপি করা সম্পূর্ণ কুইজ টেক্সটটি নিচের বক্সে পেস্ট (Paste) করুন:");
+    if (!text || text.trim() === "") return;
+    
+    var rawBlocks = text.split(/(?=উদ্দীপক:|^\s*\d+\s*\.)/m);
+    var parsedQuestions = [];
+    var currentStim = "";
 
-        rawBlocks.forEach(block => {
-            var trimmed = block.trim();
-            if (!trimmed) return;
+    rawBlocks.forEach(block => {
+        var trimmed = block.trim();
+        if (!trimmed) return;
 
-            if (trimmed.startsWith("উদ্দীপক:")) {
-                var lines = trimmed.split('\n');
-                currentStim = lines[0].replace(/^উদ্দীপক:\s*/, "").trim();
-                lines.shift();
-                block = lines.join('\n').trim();
-                if (!block) return;
+        if (trimmed.startsWith("উদ্দীপক:")) {
+            var lines = trimmed.split('\n');
+            currentStim = lines[0].replace(/^উদ্দীপক:\s*/, "").trim();
+            lines.shift();
+            block = lines.join('\n').trim();
+            if (!block) return;
+        }
+
+        var lines = block.split('\n').map(l => l.trim()).filter(l => l !== "");
+        var qNum = null, quesText = "", imgLink = "", o1 = "", o2 = "", o3 = "", o4 = "", ans = "ক";
+
+        lines.forEach(line => {
+            var qMatch = line.match(/^(\d+)\s*\.\s*(.*)/);
+            if (qMatch) { qNum = parseInt(qMatch[1]); quesText = qMatch[2].trim(); return; }
+            if (line.startsWith("ছবির লিংক:")) { imgLink = line.replace(/^ছবির লিংক:\s*/, "").trim(); return; }
+            if (line.includes("(ক)") || line.includes("(খ)") || line.includes("(গ)") || line.includes("(ঘ)")) {
+                var optMatch = line.match(/\(ক\)\s*([^\(]*)\s*\(খ\)\s*([^\(]*)\s*\(গ\)\s*([^\(]*)\s*\(ঘ\)\s*(.*)/);
+                if (optMatch) { o1 = optMatch[1].trim(); o2 = optMatch[2].trim(); o3 = optMatch[3].trim(); o4 = optMatch[4].trim(); }
+                return;
             }
-
-            var lines = block.split('\n').map(l => l.trim()).filter(l => l !== "");
-            var qNum = null, quesText = "", imgLink = "", o1 = "", o2 = "", o3 = "", o4 = "", ans = "ক";
-
-            lines.forEach(line => {
-                var qMatch = line.match(/^(\d+)\s*\.\s*(.*)/);
-                if (qMatch) { qNum = parseInt(qMatch[1]); quesText = qMatch[2].trim(); return; }
-                if (line.startsWith("ছবির লিংক:")) { imgLink = line.replace(/^ছবির লিংক:\s*/, "").trim(); return; }
-                if (line.includes("(ক)") || line.includes("(খ)") || line.includes("(গ)") || line.includes("(ঘ)")) {
-                    var optMatch = line.match(/\(ক\)\s*([^\(]*)\s*\(খ\)\s*([^\(]*)\s*\(গ\)\s*([^\(]*)\s*\(ঘ\)\s*(.*)/);
-                    if (optMatch) { o1 = optMatch[1].trim(); o2 = optMatch[2].trim(); o3 = optMatch[3].trim(); o4 = optMatch[4].trim(); }
-                    return;
-                }
-                if (line.startsWith("उत्तर:")) { ans = line.replace(/^উত্তর:\s*/, "").trim(); return; }
-                if (qNum && !o1) { quesText += "\n" + line; }
-            });
-
-            if (qNum !== null) {
-                parsedQuestions.push({ targetIdx: qNum, stim: currentStim, ques: quesText, img: imgLink, o1: o1, o2: o2, o3: o3, o4: o4, ans: ans });
-            }
+            if (line.startsWith("উত্তর:")) { ans = line.replace(/^উত্তর:\s*/, "").trim(); return; }
+            if (qNum && !o1) { quesText += "\n" + line; }
         });
+
+        if (qNum !== null) {
+            parsedQuestions.push({ targetIdx: qNum, stim: currentStim, ques: quesText, img: imgLink, o1: o1, o2: o2, o3: o3, o4: o4, ans: ans });
+        }
+    });
 
         if (parsedQuestions.length === 0) return alert("সঠিক ফরম্যাটে কোনো প্রশ্ন পাওয়া যায়নি!");
 
@@ -462,7 +462,6 @@
         qCount = 0;
         currentDraftQuestions.forEach(q => { addNewQuestion(q); });
         alert("ক্লিপবোর্ড থেকে সকল প্রশ্ন সফলভাবে নির্দিষ্ট ক্রমিক নম্বরে যুক্ত হয়েছে।");
-    }).catch(err => { alert("ক্লিপবোর্ড ত্রুটি: " + err.message); });
 }
     window.onload = function() {
         var saved = localStorage.getItem('quiz_draft_new');
