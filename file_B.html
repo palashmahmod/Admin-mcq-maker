@@ -370,17 +370,9 @@
             };
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
-                return db.ref("QuizResults/" + resKey).set(resData).then(() => {
                 return db.ref("IndividualQuizzes/" + user.id).once('value');
             }).then(snap => {
-                if(snap.exists()){ 
-                    snap.forEach(child => { 
-                        if(child.val().file === fName) {
-                            // ডাটা ডিলিট না করে শুধু স্ট্যাটাস আপডেট করা হলো, যাতে লিঙ্কটি আজীবন সচল থাকে
-                            child.ref.update({ status: "completed" }); 
-                        }
-                    }); 
-                }
+                if(snap.exists()){ snap.forEach(child => { if(child.val().file === fName) child.ref.remove(); }); }
                 localStorage.removeItem("timer_" + fName + "_" + user.id);
                 localStorage.removeItem("start_time_" + fName + "_" + user.id);
                 localStorage.removeItem("ans_" + fName + "_" + user.id);
