@@ -10,7 +10,6 @@
     <style>
         :root { --p: #2c3e50; --bg: #f0f2f5; --danger: #e74c3c; --success: #27ae60; --card-bg: #ffffff; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        
         .header-nav { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto 20px; }
         .back-btn { background: #e8eaed; color: #333; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px; border: 1px solid #666; cursor: pointer; }
         .clear-all { background: var(--danger); color: white; padding: 10px 20px; border-radius: 10px; border: 1px solid #666; font-weight: bold; cursor: pointer; }
@@ -18,11 +17,9 @@
         #searchBox { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #666; box-sizing: border-box; outline: none; font-size: 12px; }
         .result-list { max-width: 600px; margin: 0 auto; }
         .result-card { background: var(--card-bg); border-radius: 15px; border: 1px solid #666; padding: 10px; margin-bottom: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; border-left: 5px solid var(--p); }
-        
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1px; }
         .student-info h3 { margin: 0; color: #333; font-size: 1rem; }
         .student-id { color: #666; font-size: 4px; font-weight: normal; }
-        
         .delete-btn { color: var(--danger); background: none; border: none; font-size: 20px; cursor: pointer; }
         .info-row { display: flex; align-items: center; gap: 12px; margin: 1px 0; color: #444; font-size: 0.4px; }
         .info-row i { width: 18px; color: #555; }
@@ -34,16 +31,18 @@
     </style>
 </head>
 <body>
+
 <div class="header-nav">
     <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i> ব্যাক</button>
     <h2 style="margin:0;">ফলাফল তালিকা</h2>
     <button class="clear-all" onclick="clearAllData()">সব মুছুন</button>
 </div>
-<div class="search-container">
-    <input type="text" id="searchBox" placeholder="নাম বা কুইজ দিয়ে খুঁজুন..." onkeyup="filterResults()">
-</div>
-<div id="loading" class="loader"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>
 
+<div class="search-container">
+    <input type="text" id="searchBox" placeholder="নাম, কুইজ বা আইডি দিয়ে খুঁজুন..." onkeyup="filterResults()">
+</div>
+
+<div id="loading" class="loader"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>
 <div id="resultArea" class="result-list"></div>
 
 <script>
@@ -52,6 +51,7 @@
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", 
         projectId: "quiz-storage-d8707" 
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -66,12 +66,19 @@
                 return;
             }
 
+            // ডেটা রিয়েল-টাইম ক্রমানুসারে অ্যারেতে জমা করা
+            const resultsArray = [];
             snapshot.forEach((child) => {
-                const data = child.val();
-                const key = child.key;
+                resultsArray.push({ key: child.key, data: child.val() });
+            });
+
+            // অ্যারেটি উল্টে দেওয়া হলো যাতে সর্বশেষ জমাদানকারী সবার উপরে থাকে
+            resultsArray.reverse().forEach((item) => {
+                const data = item.data;
+                const key = item.key;
 
                 const card = `
-                <div class="result-card" data-search="${data.name} ${data.quizTitle}">
+                <div class="result-card" data-search="${data.name} ${data.quizTitle} ${data.userId || ''}">
                     <div class="card-header">
                         <div class="student-info">
                             <h3>${data.name} <span class="student-id">(ID: ${data.userId || 'N/A'})</span></h3>
@@ -89,7 +96,7 @@
                     </div>
                 </div>
                 `;
-                area.innerHTML = card + area.innerHTML;
+                area.innerHTML += card;
             });
         });
     }
