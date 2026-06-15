@@ -40,14 +40,17 @@
     </style>
 </head>
 <body>
+
 <div id="loader" class="loader">
     <i class="fas fa-spinner fa-spin fa-2x"></i>
     <p>প্রসেসিং হচ্ছে...</p>
 </div>
+
 <div class="header">
     <span onclick="window.history.back()" style="position:absolute; left:15px; cursor:pointer"><i class="fas fa-chevron-left"></i></span>
     মাস্টার কুইজ জেনারেটর
 </div>
+
 <div class="container">
     <div class="card">
         <input type="text" id="qTitle" placeholder="কুইজের টাইটেল">
@@ -64,10 +67,16 @@
             <button class="btn btn-black" onclick="uploadToGithub()"><i class="fab fa-github"></i> আপলোড করুন</button>
         </div>
     </div>
-    <div class="card" style="text-align: center; background: #fffdf2; border: 1px dashed #d4af37;"> <p style="margin: 0 0 10px 0; font-size: 13px; color: #888; font-weight: bold;"><i class="fas fa-paste"></i> এক্সটার্নাল টেক্সট ফরম্যাট কুইজ ইনপুট</p> <button class="btn" style="background: #8e44ad; width: 100%; color: white;" onclick="pasteBulkQuestions()"><i class="fas fa-file-import"></i> বাল্ক পেস্ট করুন</button> </div>
+    
+    <div class="card" style="text-align: center; background: #fffdf2; border: 1px dashed #d4af37;"> 
+        <p style="margin: 0 0 10px 0; font-size: 13px; color: #888; font-weight: bold;"><i class="fas fa-paste"></i> এক্সটার্নাল টেক্সট ফরম্যাট কুইজ ইনপুট</p> 
+        <button class="btn" style="background: #8e44ad; width: 100%; color: white;" onclick="pasteBulkQuestions()"><i class="fas fa-file-import"></i> বাল্ক পেস্ট করুন</button> 
+    </div>
+    
     <div id="q-container"></div>
     <button class="btn btn-blue" onclick="addNewQuestion()">+ নতুন প্রশ্ন যোগ করুন</button>
 </div>
+
 <script>
     var GITHUB_USER = "palashmahmod";
     var GITHUB_REPO = "quiz-files";
@@ -81,11 +90,13 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var db = firebase.database();
     `;
+
     function refreshMath() {
         if (window.MathJax && window.MathJax.typeset) {
             window.MathJax.typeset();
         }
     }
+
     function updatePreview(id) {
         var box = document.getElementById(id);
         var pBox = box.querySelector('.live-preview');
@@ -108,6 +119,7 @@
         pBox.innerHTML = html;
         refreshMath(); 
     }
+
     function addNewQuestion(data) {
         qCount++;
         var id = "q-" + Date.now();
@@ -149,6 +161,7 @@
         reorderNumbers();
         updatePreview(id); 
     }
+
     function removeQuestion(id) {
         var el = document.getElementById(id);
         el.parentNode.removeChild(el);
@@ -156,10 +169,12 @@
         var boxes = document.getElementsByClassName('q-box');
         for(var i=0; i<boxes.length; i++) { updatePreview(boxes[i].id); }
     }
+
     function reorderNumbers() {
         var nos = document.getElementsByClassName('no');
         for(var i=0; i<nos.length; i++) { nos[i].innerText = (i+1); }
     }
+
     function saveDraft() {
         var questions = [];
         var cards = document.getElementsByClassName('q-box');
@@ -186,6 +201,7 @@
         };
         localStorage.setItem('quiz_draft_new', JSON.stringify(fullData));
     }
+
     async function uploadToGithub() {
         saveDraft();
         var data = JSON.parse(localStorage.getItem('quiz_draft_new'));
@@ -214,6 +230,7 @@
         } catch(e) { alert("Error: " + e.message); }
         document.getElementById('loader').style.display = 'none';
     }
+
     function generateQuizFile(d) {
         var qJson = JSON.stringify(d.questions);
         return `<!DOCTYPE html>
@@ -264,35 +281,36 @@
         ${firebaseConfigRaw}
         var questions = ${qJson};
         var fName = "${d.fName}";
-        // পরীক্ষার্থীর মোবাইলের মডেল ও ডিভাইস আইডি বের করার লজিক
-function getDeviceInformation() {
-    var ua = navigator.userAgent;
-    var deviceModel = "Unknown Device";
-    
-    if (/android/i.test(ua)) {
-        var matches = ua.match(/Android\s+([^\s;]+);?\s+([^;?)]+)/);
-        if (matches && matches[2]) {
-            deviceModel = matches[2].trim();
-        } else {
-            deviceModel = "Android Device";
+        
+        // ডাইনামিক ডিভাইস ট্র্যাকিং লজিক (Escaped carefully)
+        function getDeviceInformation() {
+            var ua = navigator.userAgent;
+            var deviceModel = "Unknown Device";
+            
+            if (/android/i.test(ua)) {
+                var matches = ua.match(/Android\\s+([^\\s;]+);?\\s+([^;?)]+)/);
+                if (matches && matches[2]) {
+                    deviceModel = matches[2].trim();
+                } else {
+                    deviceModel = "Android Device";
+                }
+            } else if (/iPhone|iPad|iPod/i.test(ua)) {
+                deviceModel = "Apple iPhone";
+            } else if (/Macintosh/i.test(ua)) {
+                deviceModel = "Mac PC";
+            } else if (/Windows/i.test(ua)) {
+                deviceModel = "Windows PC";
+            }
+
+            var deviceUUID = localStorage.getItem("quiz_device_uuid");
+            if (!deviceUUID) {
+                deviceUUID = 'DEV-' + Math.random().toString(36).substring(2, 11).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                localStorage.setItem("quiz_device_uuid", deviceUUID);
+            }
+            return { model: deviceModel, uuid: deviceUUID };
         }
-    } else if (/iPhone|iPad|iPod/i.test(ua)) {
-        deviceModel = "Apple iPhone";
-    } else if (/Macintosh/i.test(ua)) {
-        deviceModel = "Mac PC";
-    } else if (/Windows/i.test(ua)) {
-        deviceModel = "Windows PC";
-    }
+        var deviceInfo = getDeviceInformation();
 
-    var deviceUUID = localStorage.getItem("quiz_device_uuid");
-    if (!deviceUUID) {
-        deviceUUID = 'DEV-' + Math.random().toString(36).substring(2, 11).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
-        localStorage.setItem("quiz_device_uuid", deviceUUID);
-    }
-
-    return { model: deviceModel, uuid: deviceUUID };
-}
-var deviceInfo = getDeviceInformation();
         var timerInterval;
         var urlParams = new URLSearchParams(window.location.search);
         var user = {
@@ -338,7 +356,6 @@ var deviceInfo = getDeviceInformation();
                 if(q.stim && q.stim.trim() !== "") {
                     h += "<div class='stim-box'>"+q.stim.replace(/\\\\n/g, '<br>')+"</div>";
                 }
-                // প্রশ্নপত্রের (generated file) জন্য এখানে নিউলাইন হ্যান্ডেল করা হয়েছে
                 h += "<p><b>"+(i+1)+". "+q.ques.replace(/\\\\n/g, '<br>')+"</b></p>";
                 if(q.img) h += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
                 h += "<label class='opt'><input type='radio' name='q"+i+"' value='ক' onchange='saveAns(\\"q"+i+"\\", \\"ক\\")' "+(s=='ক'?'checked':'')+"> ক) "+q.o1+"</label>";
@@ -376,17 +393,14 @@ var deviceInfo = getDeviceInformation();
             var correct = 0;
             var wrongNums = [];
             questions.forEach(function(q, i){
-    var sel = document.querySelector('input[name="q'+i+'"]:checked');
-    if(sel && sel.value === q.ans) { 
-        correct++; 
-    } else { 
-        if(sel) {
-            wrongNums.push((i + 1) + "(" + sel.value + ")");
-        } else {
-            wrongNums.push(i + 1);
-        }
-    }
-});
+                var sel = document.querySelector('input[name="q'+i+'"]:checked');
+                if(sel && sel.value === q.ans) { 
+                    correct++; 
+                } else { 
+                    if(sel) { wrongNums.push((i + 1) + "(" + sel.value + ")"); } 
+                    else { wrongNums.push(i + 1); }
+                }
+            });
             var now = new Date();
             var resData = {
                 chapter: "${d.chapter}", class: user.cls, correct: correct,
@@ -395,9 +409,9 @@ var deviceInfo = getDeviceInformation();
                 subject: "${d.sub}", time: now.toLocaleTimeString(),
                 timeSpent: timeSpentStr, timestamp: firebase.database.ServerValue.TIMESTAMP,
                 total: questions.length, userId: user.id,
-                wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই"
+                wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই",
                 deviceModel: deviceInfo.model,
-deviceIMEI: deviceInfo.uuid
+                deviceIMEI: deviceInfo.uuid
             };
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
@@ -409,12 +423,10 @@ deviceIMEI: deviceInfo.uuid
                 localStorage.removeItem("ans_" + fName + "_" + user.id);
                 alert("পরীক্ষা সফলভাবে জমা হয়েছে!");
                 
-                // রিয়েল-টাইম ফলাফল বিশ্লেষণ ও ডাইনামিক রিভিউ পেজ জেনারেশন
                 var reviewHtml = "<div class='card' style='border-top: 5px solid #27ae60;'>";
-                reviewHtml += "<h2 style='text-align:center; color:#27ae60; margin-bottom:5px;'>🎉 পরীক্ষা সম্পন্ন হয়েছে!</h2>";
-                reviewHtml += "<p style='text-align:center; color:#7f8c8d; margin-top:0;'>আপনার উত্তরপত্র সফলভাবে ডাটাবেসে জমা হয়েছে।</p><hr>";
+                reviewHtml += "<h2 style='text-align:center; color:#27ae60; margin-bottom:5px;'>🎉 পরীক্ষা সম্পন্ন হয়েছে!</h2>";
+                reviewHtml += "<p style='text-align:center; color:#7f8c8d; margin-top:0;'>আপনার উত্তরপত্র সফলভাবে ডাটাবেসে জমা হয়েছে।</p><hr>";
                 
-                // ১ ও ২ নং নির্দেশনার তথ্য (পরীক্ষার্থী ও পরীক্ষার বিবরণ)
                 reviewHtml += "<table style='width:100%; border-collapse:collapse; margin-bottom:15px; font-size:14px;'>";
                 reviewHtml += "<tr><td style='padding:5px; color:#555;'><b>পরীক্ষার্থী:</b> "+user.name+"</td><td style='padding:5px; color:#555;'><b>পরীক্ষা:</b> "+document.title+"</td></tr>";
                 reviewHtml += "<tr><td style='padding:5px; color:#555;'><b>শ্রেণী-শাখা:</b> "+user.cls+" ("+user.sec+")</td><td style='padding:5px; color:#555;'><b>বিষয়:</b> ${d.sub}</td></tr>";
@@ -422,7 +434,6 @@ deviceIMEI: deviceInfo.uuid
                 reviewHtml += "<tr><td colspan='2' style='padding:5px; color:#e67e22;'><b>ডিভাইস মডেল:</b> "+deviceInfo.model+" ("+deviceInfo.uuid+")</td></tr>";
                 reviewHtml += "</table><hr>";
                 
-                // ৩ ও ৪ নং নির্দেশনার তথ্য (পরিসংখ্যান ও সময়)
                 reviewHtml += "<div style='background:#f8f9fa; padding:12px; border-radius:8px; margin-bottom:20px; font-size:14px; border-left:4px solid #3498db;'>";
                 reviewHtml += "<p style='margin:4px 0;'>📊 <b>মোট প্রশ্ন:</b> "+questions.length+" টি</p>";
                 reviewHtml += "<p style='margin:4px 0; color:#27ae60;'>✅ <b>সঠি উত্তর:</b> "+correct+" টি</p>";
@@ -433,41 +444,28 @@ deviceIMEI: deviceInfo.uuid
                 
                 reviewHtml += "<h3 style='color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px;'>📝 প্রশ্নপত্র ও উত্তরপত্র পর্যালোচনা (Review):</h3>";
                 
-                // ৫ নং নির্দেশনার তথ্য (অপশনের ব্যাকগ্রাউন্ড কালার সহ সম্পূর্ণ রিভিউ কার্ড)
                 questions.forEach(function(q, idx){
                     var selectedRadio = document.querySelector('input[name="q'+idx+'"]:checked');
                     var selectedVal = selectedRadio ? selectedRadio.value : null;
-                    
                     reviewHtml += "<div style='margin-bottom:25px; padding-bottom:15px; border-bottom:1px dashed #ddd;'>";
-                    
                     if(q.stim && q.stim.trim() !== "") {
                         reviewHtml += "<div class='stim-box'>"+q.stim.replace(/\\n/g, '<br>')+"</div>";
                     }
-                    
                     reviewHtml += "<p><b>"+(idx+1)+". "+q.ques.replace(/\\n/g, '<br>')+"</b></p>";
                     if(q.img) reviewHtml += "<img src='"+q.img+"' style='width:100%;border-radius:8px;margin-bottom:10px;'>";
                     
-                    // ৪টি অপশনের কাস্টম ব্যাকগ্রাউন্ড রেন্ডারিং লজিক
                     var opts = [{k:'ক', v:q.o1}, {k:'খ', v:q.o2}, {k:'গ', v:q.o3}, {k:'ঘ', v:q.o4}];
                     opts.forEach(function(opt) {
                         var bgStyle = "background:#f0f0f0; color:#000;";
                         var tickMark = "";
-                        
                         if (opt.k === q.ans) {
                             tickMark = " <span style='color:#27ae60; font-weight:bold;'>✔ (সঠিক উত্তর)</span>";
-                            if (selectedVal === q.ans) {
-                                bgStyle = "background:#d4edda; color:#155724; font-weight:bold; border-color:#c3e6cb;"; // সঠিক উত্তর দিলে সবুজ
-                            }
-                        } else if (selectedVal === opt.k) {
-                            bgStyle = "background:#f8d7da; color:#721c24; border-color:#f5c6cb;"; // ভুল উত্তর দিলে লাল
-                        }
-                        
+                            if (selectedVal === q.ans) { bgStyle = "background:#d4edda; color:#155724; font-weight:bold; border-color:#c3e6cb;"; }
+                        } else if (selectedVal === opt.k) { bgStyle = "background:#f8d7da; color:#721c24; border-color:#f5c6cb;"; }
                         reviewHtml += "<div style='padding:10px; margin:5px 0; border-radius:6px; border:1px solid #ddd; "+bgStyle+"'>"+opt.k+") "+opt.v+tickMark+"</div>";
                     });
-                    
                     reviewHtml += "</div>";
                 });
-                
                 reviewHtml += "</div>";
                 document.getElementById("main").innerHTML = reviewHtml;
                 if(window.MathJax) window.MathJax.typeset();
@@ -477,49 +475,43 @@ deviceIMEI: deviceInfo.uuid
 </body>
 </html>`;
     }
+
     function pasteBulkQuestions() {
-    var text = prompt("আপনার কপি করা সম্পূর্ণ কুইজ টেক্সটটি নিচের বক্সে পেস্ট (Paste) করুন:");
-    if (!text || text.trim() === "") return;
-    
-    var rawBlocks = text.split(/(?=উদ্দীপক:|^\s*\d+\s*\.)/m);
-    var parsedQuestions = [];
-    var currentStim = "";
-
-    rawBlocks.forEach(block => {
-        var trimmed = block.trim();
-        if (!trimmed) return;
-
-        if (trimmed.startsWith("উদ্দীপক:")) {
-            var lines = trimmed.split('\n');
-            currentStim = lines[0].replace(/^উদ্দীপক:\s*/, "").trim();
-            lines.shift();
-            block = lines.join('\n').trim();
-            if (!block) return;
-        }
-
-        var lines = block.split('\n').map(l => l.trim()).filter(l => l !== "");
-        var qNum = null, quesText = "", imgLink = "", o1 = "", o2 = "", o3 = "", o4 = "", ans = "ক";
-
-        lines.forEach(line => {
-            var qMatch = line.match(/^(\d+)\s*\.\s*(.*)/);
-            if (qMatch) { qNum = parseInt(qMatch[1]); quesText = qMatch[2].trim(); return; }
-            if (line.startsWith("ছবির লিংক:")) { imgLink = line.replace(/^ছবির লিংক:\s*/, "").trim(); return; }
-            if (line.includes("(ক)") || line.includes("(খ)") || line.includes("(গ)") || line.includes("(ঘ)")) {
-                var optMatch = line.match(/\(ক\)\s*([^\(]*)\s*\(খ\)\s*([^\(]*)\s*\(গ\)\s*([^\(]*)\s*\(ঘ\)\s*(.*)/);
-                if (optMatch) { o1 = optMatch[1].trim(); o2 = optMatch[2].trim(); o3 = optMatch[3].trim(); o4 = optMatch[4].trim(); }
-                return;
+        var text = prompt("আপনার কপি করা সম্পূর্ণ কুইজ টেক্সটটি নিচের বক্সে পেস্ট (Paste) করুন:");
+        if (!text || text.trim() === "") return;
+        
+        var rawBlocks = text.split(/(?=উদ্দীপক:|^\s*\d+\s*\.)/m);
+        var parsedQuestions = [];
+        var currentStim = "";
+        rawBlocks.forEach(block => {
+            var trimmed = block.trim();
+            if (!trimmed) return;
+            if (trimmed.startsWith("উদ্দীপক:")) {
+                var lines = trimmed.split('\n');
+                currentStim = lines[0].replace(/^উদ্দীপক:\s*/, "").trim();
+                lines.shift();
+                block = lines.join('\n').trim();
+                if (!block) return;
             }
-            if (line.startsWith("উত্তর:")) { ans = line.replace(/^উত্তর:\s*/, "").trim(); return; }
-            if (qNum && !o1) { quesText += "\n" + line; }
+            var lines = block.split('\n').map(l => l.trim()).filter(l => l !== "");
+            var qNum = null, quesText = "", imgLink = "", o1 = "", o2 = "", o3 = "", o4 = "", ans = "ক";
+            lines.forEach(line => {
+                var qMatch = line.match(/^(\d+)\s*\.\s*(.*)/);
+                if (qMatch) { qNum = parseInt(qMatch[1]); quesText = qMatch[2].trim(); return; }
+                if (line.startsWith("ছবির লিংক:")) { imgLink = line.replace(/^ছবির লিংক:\s*/, "").trim(); return; }
+                if (line.includes("(ক)") || line.includes("(খ)") || line.includes("(গ)") || line.includes("(ঘ)")) {
+                    var optMatch = line.match(/\(ক\)\s*([^\(]*)\s*\(খ\)\s*([^\(]*)\s*\(গ\)\s*([^\(]*)\s*\(ঘ\)\s*(.*)/);
+                    if (optMatch) { o1 = optMatch[1].trim(); o2 = optMatch[2].trim(); o3 = optMatch[3].trim(); o4 = optMatch[4].trim(); }
+                    return;
+                }
+                if (line.startsWith("উত্তর:")) { ans = line.replace(/^উত্তর:\s*/, "").trim(); return; }
+                if (qNum && !o1) { quesText += "\n" + line; }
+            });
+            if (qNum !== null) {
+                parsedQuestions.push({ targetIdx: qNum, stim: currentStim, ques: quesText, img: imgLink, o1: o1, o2: o2, o3: o3, o4: o4, ans: ans });
+            }
         });
-
-        if (qNum !== null) {
-            parsedQuestions.push({ targetIdx: qNum, stim: currentStim, ques: quesText, img: imgLink, o1: o1, o2: o2, o3: o3, o4: o4, ans: ans });
-        }
-    });
-
-        if (parsedQuestions.length === 0) return alert("সঠিক ফরম্যাটে কোনো প্রশ্ন পাওয়া যায়নি!");
-
+        if (parsedQuestions.length === 0) return alert("সঠিক ফরম্যাটে কোনো প্রশ্ন পাওয়া যায়নি!");
         var existingCards = Array.from(document.getElementsByClassName('q-box'));
         parsedQuestions.forEach(pq => {
             if (pq.targetIdx <= existingCards.length) {
@@ -527,7 +519,6 @@ deviceIMEI: deviceInfo.uuid
                 if (oldCard) oldCard.remove();
             }
         });
-
         var currentDraftQuestions = [];
         var freshCards = document.getElementsByClassName('q-box');
         for(var i=0; i<freshCards.length; i++) {
@@ -538,7 +529,6 @@ deviceIMEI: deviceInfo.uuid
                 ans: c.querySelector('.ans').value
             });
         }
-
         parsedQuestions.forEach(pq => {
             var dataObj = { stim: pq.stim, ques: pq.ques, img: pq.img, o1: pq.o1, o2: pq.o2, o3: pq.o3, o4: pq.o4, ans: pq.ans };
             if (pq.targetIdx - 1 < currentDraftQuestions.length) {
@@ -550,12 +540,12 @@ deviceIMEI: deviceInfo.uuid
                 currentDraftQuestions.push(dataObj);
             }
         });
-
         document.getElementById('q-container').innerHTML = "";
         qCount = 0;
         currentDraftQuestions.forEach(q => { addNewQuestion(q); });
-        alert("ক্লিপবোর্ড থেকে সকল প্রশ্ন সফলভাবে নির্দিষ্ট ক্রমিক নম্বরে যুক্ত হয়েছে।");
-}
+        alert("ক্লিপবোর্ড থেকে সকল প্রশ্ন সফলভাবে নির্দিষ্ট ক্রমিক নম্বরে যুক্ত হয়েছে।");
+    }
+
     window.onload = function() {
         var saved = localStorage.getItem('quiz_draft_new');
         if(saved) {
