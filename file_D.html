@@ -27,6 +27,10 @@
         .badge { padding: 2px 5px; border-radius: 8px; font-size: 0.4px; font-weight: bold; display: inline-block; }
         .badge-success { background: #e8f5e9; color: var(--success); }
         .badge-error { background: #ffebee; color: var(--danger); width: 100%; box-sizing: border-box; }
+        
+        /* নতুন ডিভাইসের তথ্যের জন্য স্টাইল ব্যাজ */
+        .badge-device { background: #fff3e0; color: #e65100; width: 100%; box-sizing: border-box; font-size: 11px; padding: 4px 8px; border-radius: 8px; margin-top: 2px; font-weight: bold; }
+        
         .loader { text-align: center; margin-top: 50px; font-size: 20px; color: #666; }
     </style>
 </head>
@@ -54,14 +58,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ইংরেজী সংখ্যাকে বাংলায় রূপান্তর করার ফাংশন (যেমন: 1 -> ১ম, 2 -> ২য়)
+    // ইংরেজী সংখ্যাকে বাংলায় রূপান্তর করার ফাংশন (যেমন: 1 -> ১ম, 2 -> ২য়)
     function getBengaliRank(rank) {
         const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
         let rankStr = rank.toString().split('').map(digit => bengaliDigits[digit] || digit).join('');
         
         if (rank === 1) return rankStr + "ম";
-        if (rank === 2) return rankStr + "য়";
-        if (rank === 3) return rankStr + "য়";
+        if (rank === 2) return rankStr + "য়";
+        if (rank === 3) return rankStr + "য়";
         if (rank === 4) return rankStr + "র্থ";
         if (rank === 5) return rankStr + "ম";
         if (rank === 6) return rankStr + "ষ্ঠ";
@@ -96,13 +100,12 @@
                 return 999999;
             }
 
-            // শ্রেণি এবং কুইজ অনুযায়ী গ্রুপ তৈরি
+            // শ্রেণি এবং কুইজ অনুযায়ী গ্রুপ তৈরি
             const groups = {};
             allResults.forEach(item => {
                 const className = item.data.class || 'N/A';
                 const quizName = item.data.quizTitle || 'N/A';
                 const groupKey = `${className}_${quizName}`;
-
                 if (!groups[groupKey]) {
                     groups[groupKey] = [];
                 }
@@ -113,7 +116,7 @@
             const rankedResultsMap = {};
             Object.keys(groups).forEach(groupKey => {
                 const currentGroup = groups[groupKey];
-                const totalParticipants = currentGroup.length; // মোট কতজন অংশ নিয়েছে তা বের করা হলো
+                const totalParticipants = currentGroup.length; 
 
                 // সর্টিং লজিক
                 currentGroup.sort((a, b) => {
@@ -131,7 +134,7 @@
                 currentGroup.forEach((item, index) => {
                     rankedResultsMap[item.key] = {
                         rank: index + 1,
-                        totalCount: totalParticipants // এখানে মোট সংখ্যা সেভ করা হচ্ছে
+                        totalCount: totalParticipants 
                     };
                 });
             });
@@ -143,9 +146,13 @@
                 const rankInfo = rankedResultsMap[key];
                 const bengaliRank = getBengaliRank(rankInfo.rank);
                 
-                // ইংরেজি সংখ্যাকে বাংলায় কনভার্ট করার ইন্টারনাল লজিক (অংশগ্রহণকারীর জন্য)
+                // ইংরেজি সংখ্যাকে বাংলায় কনভার্ট করার ইন্টারনাল লজিক (অংশগ্রহণকারীর জন্য)
                 const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
                 let totalParticipantsBn = rankInfo.totalCount.toString().split('').map(digit => bengaliDigits[digit] || digit).join('');
+                
+                // ওল্ড ডেটা সেফটি লজিক: ডিভাইস মডেল ও আইডি না থাকলে N/A দেখাবে
+                const dModel = data.deviceModel || 'N/A';
+                const dIMEI = data.deviceIMEI || 'N/A';
 
                 const card = `
                 <div class="result-card" data-search="${data.name} ${data.quizTitle} ${data.userId || ''}">
@@ -158,7 +165,7 @@
                     
                     <div class="info-row"><i class="fas fa-book"></i> <b>কুইজ:</b> ${data.quizTitle} | <b>বিষয়:</b> ${data.subject || 'N/A'}</div>
                     <div class="info-row"><i class="fas fa-graduation-cap"></i> <b>শ্রেণি:</b> ${data.class || 'N/A'} | <b>শাখা:</b> ${data.section || 'N/A'} | <b>রোল:</b> ${data.roll || 'N/A'}</div>
-                    <div class="info-row"><i class="fas fa-clock"></i> <b>সময়:</b> ${data.date || ''}, ${data.time || ''}, (${data.timeSpent || '0m 0s'})</div>
+                    <div class="info-row"><i class="fas fa-clock"></i> <b>সময়:</b> ${data.date || ''}, ${data.time || ''}, (${data.timeSpent || '0m 0s'})</div>
                     
                     <div class="badge-container">
                         <div style="display: flex; gap: 8px; align-items: center;">
@@ -166,6 +173,8 @@
                             <span class="badge" style="background: #e3f2fd; color: #0d47a1;"><i class="fas fa-trophy"></i> মেধা স্থান: ${bengaliRank} (${totalParticipantsBn} জন)</span>
                         </div>
                         <div class="badge badge-error">ভুল প্রশ্ন নং: ${data.wrongQuestions || 'সব সঠিক'}</div>
+                        
+                        <div class="badge-device"><i class="fas fa-mobile-alt"></i> ডিভাইস: ${dModel} | ID: ${dIMEI}</div>
                     </div>
                 </div>
                 `;
