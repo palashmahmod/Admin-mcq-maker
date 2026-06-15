@@ -264,6 +264,35 @@
         ${firebaseConfigRaw}
         var questions = ${qJson};
         var fName = "${d.fName}";
+        // পরীক্ষার্থীর মোবাইলের মডেল ও ডিভাইস আইডি বের করার লজিক
+function getDeviceInformation() {
+    var ua = navigator.userAgent;
+    var deviceModel = "Unknown Device";
+    
+    if (/android/i.test(ua)) {
+        var matches = ua.match(/Android\s+([^\s;]+);?\s+([^;?)]+)/);
+        if (matches && matches[2]) {
+            deviceModel = matches[2].trim();
+        } else {
+            deviceModel = "Android Device";
+        }
+    } else if (/iPhone|iPad|iPod/i.test(ua)) {
+        deviceModel = "Apple iPhone";
+    } else if (/Macintosh/i.test(ua)) {
+        deviceModel = "Mac PC";
+    } else if (/Windows/i.test(ua)) {
+        deviceModel = "Windows PC";
+    }
+
+    var deviceUUID = localStorage.getItem("quiz_device_uuid");
+    if (!deviceUUID) {
+        deviceUUID = 'DEV-' + Math.random().toString(36).substring(2, 11).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+        localStorage.setItem("quiz_device_uuid", deviceUUID);
+    }
+
+    return { model: deviceModel, uuid: deviceUUID };
+}
+var deviceInfo = getDeviceInformation();
         var timerInterval;
         var urlParams = new URLSearchParams(window.location.search);
         var user = {
@@ -367,6 +396,8 @@
                 timeSpent: timeSpentStr, timestamp: firebase.database.ServerValue.TIMESTAMP,
                 total: questions.length, userId: user.id,
                 wrongQuestions: wrongNums.length > 0 ? wrongNums.join(", ") : "নাই"
+                deviceModel: deviceInfo.model,
+deviceIMEI: deviceInfo.uuid
             };
             var resKey = fName + "_" + Date.now();
             db.ref("QuizResults/" + resKey).set(resData).then(() => {
@@ -388,6 +419,7 @@
                 reviewHtml += "<tr><td style='padding:5px; color:#555;'><b>পরীক্ষার্থী:</b> "+user.name+"</td><td style='padding:5px; color:#555;'><b>পরীক্ষা:</b> "+document.title+"</td></tr>";
                 reviewHtml += "<tr><td style='padding:5px; color:#555;'><b>শ্রেণী-শাখা:</b> "+user.cls+" ("+user.sec+")</td><td style='padding:5px; color:#555;'><b>বিষয়:</b> ${d.sub}</td></tr>";
                 reviewHtml += "<tr><td style='padding:5px; color:#555;'><b>রোল নং:</b> "+user.roll+"</td><td style='padding:5px; color:#555;'><b>অধ্যায়:</b> ${d.chapter}</td></tr>";
+                reviewHtml += "<tr><td colspan='2' style='padding:5px; color:#e67e22;'><b>ডিভাইস মডেল:</b> "+deviceInfo.model+" ("+deviceInfo.uuid+")</td></tr>";
                 reviewHtml += "</table><hr>";
                 
                 // ৩ ও ৪ নং নির্দেশনার তথ্য (পরিসংখ্যান ও সময়)
