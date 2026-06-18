@@ -96,7 +96,7 @@
             transition: 0.3s;
         }
         .login-form button:hover { background: #2980b9; }
-
+        
         /* Main Dashboard Container */
         .dashboard {
             width: 95%;
@@ -135,12 +135,18 @@
         .nav-btn i { font-size: 42px; margin-bottom: 15px; }
         .nav-btn:hover { transform: translateY(-6px); }
         .nav-btn:active { transform: translateY(3px); }
-
+        
         .btn-a { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .btn-b { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
         .btn-c { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
         .btn-d { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
-
+        
+        /* নতুন বাটন ই (file_E) এর স্টাইল এবং পজিশন ফিক্স */
+        .btn-e { 
+            background: linear-gradient(135deg, #8a2be2 0%, #ff1493 100%); 
+            grid-column: 1; /* এর মাধ্যমে বাটনটি কোডে সবার শেষে থাকলেও স্ক্রিনে বাম কলামে (file_C এর নিচে) চলে আসবে */
+        }
+        
         .logout-link {
             display: block; text-align: center; margin-top: 35px;
             color: #718096; font-size: 14px; text-decoration: none;
@@ -149,6 +155,7 @@
     </style>
 </head>
 <body>
+
     <div id="login-overlay">
         <div class="login-box">
             <div class="header-profile">
@@ -177,6 +184,7 @@
             </div>
         </div>
         <hr class="divider">
+        
         <div class="nav-menu">
             <a href="file_A.html" class="nav-btn btn-a">
                 <i class="fas fa-user-gear"></i>
@@ -194,19 +202,21 @@
                 <i class="fas fa-square-poll-vertical"></i>
                 <span>রেজাল্ট পর্যবেক্ষণ</span>
             </a>
+            
+            <a href="file_E.html" class="nav-btn btn-e">
+                <i class="fas fa-note-sticky"></i>
+                <span>কুইজ নোট সংরক্ষণ</span>
+            </a>
         </div>
+
         <a class="logout-link" onclick="logout()">লগআউট করুন</a>
     </div>
 
     <script>
         const secret = "cG01NTIy"; // pm5522
-
-        // পেজ লোড হলে চেক করা
         if(localStorage.getItem('isLoggedIn') === 'true') {
             showDashboard();
         }
-
-        // ব্রাউজার ব্যাক বাটন বা হিস্ট্রি নেভিগেশনের জন্য ফিক্স
         window.onpageshow = function(event) {
             if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
                 if(localStorage.getItem('isLoggedIn') === 'true') {
@@ -214,7 +224,6 @@
                 }
             }
         };
-
         function checkLogin() {
             const input = document.getElementById('pass-input').value;
             if(btoa(input) === secret) {
@@ -224,12 +233,10 @@
                 alert("পাসওয়ার্ড সঠিক নয়!");
             }
         }
-
         function showDashboard() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
         }
-
         function logout() {
             localStorage.removeItem('isLoggedIn');
             location.reload();
