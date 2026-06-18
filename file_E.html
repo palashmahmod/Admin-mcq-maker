@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>কুইজ নোট - এডমিন</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --p: #2c3e50;
+            --bg: #f4f6f9;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --accent: #2980b9;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 15px;
+            color: var(--text-main);
+        }
+        /* হেডার ও নেভিগেশন */
+        .top-navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        .back-btn {
+            background: #e8eaed;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #bbb;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: #dcdfe3;
+        }
+        .add-note-btn {
+            background: var(--success);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(39, 174, 96, 0.2);
+        }
+        .add-note-btn:hover {
+            background: #219653;
+        }
+        .page-title {
+            margin: 0;
+            font-size: 18px;
+            color: var(--p);
+            font-weight: bold;
+        }
+        
+        /* এখানে কিবোর্ড সমস্যার সমাধানসহ নতুন মডাল স্টাইল যুক্ত করা হয়েছে */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: flex-start;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s ease;
+            margin-top: 10px;
+            margin-bottom: 280px; /* এই বাড়তি মার্জিনের কারণে কিবোর্ড আসলেও নিচের ইনপুট বক্সটি স্ক্রোল করে উপরে তোলা যাবে */
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: var(--p);
+            font-size: 16px;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #888;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            outline: none;
+            font-size: 13px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent);
+        }
+        .submit-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        /* শ্রেণিভিত্তিক কন্টেইনার এবং টেবিল স্টাইল */
+        .class-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+        .class-header {
+            background: var(--p);
+            color: white;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* অনুভূমিক স্ক্রোলিং সক্রিয় করার জন্য র‍্যাপার */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 750px;
+        }
+        th, td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
+            border-right: 1px solid #f0f0f0;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+        th {
+            background: #f8f9fa;
+            color: #555;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #fdfdfd;
+        }
+        /* কুইজের নামের কলাম বড় রাখার স্টাইল */
+        .col-quiz-name {
+            min-width: 250px; 
+            white-space: normal;
+            max-width: 350px;
+            font-weight: 500;
+        }
+        .col-subject { min-width: 90px; font-weight: bold; color: var(--accent); }
+        .col-chapter { min-width: 90px; }
+        .col-count { min-width: 60px; text-align: center; }
+        .col-file { min-width: 110px; color: #666; font-family: monospace; }
+        .col-action { min-width: 80px; text-align: center; }
+        /* অ্যাকশন বাটনসমূহ */
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 4px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .edit-btn { color: var(--accent); }
+        .edit-btn:hover { background: #e3f2fd; }
+        .delete-btn-table { color: var(--danger); }
+        .delete-btn-table:hover { background: #ffebee; }
+        /* নো ডাটা মেসেজ ও লোডার */
+        .loader { text-align: center; margin-top: 50px; font-size: 18px; color: #666; }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-navbar">
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> ব্যাক</a>
+    <h2 class="page-title">কুইজ তথ্য তালিকা</h2>
+    <button class="add-note-btn" onclick="openModal()"><i class="fas fa-plus"></i> তথ্য যুক্ত করুন</button>
+</div>
+
+<div id="loading" class="loader"><i class="fas fa-spinner fa-spin"></i> তথ্য লোড হচ্ছে...</div>
+<div id="mainContentArea"></div>
+
+<div id="noteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">নতুন কুইজ তথ্য যুক্ত করুন</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="quizForm" onsubmit="saveQuizData(event)">
+            <input type="hidden" id="editKey">
+            <div class="form-group">
+                <label for="quizClass">শ্রেণি নির্বাচন করুন</label>
+                <select id="quizClass" required>
+                    <option value="">বাছাই করুন</option>
+                    <option value="৬ষ্ঠ শ্রেণি">৬ষ্ঠ শ্রেণি</option>
+                    <option value="৭ম শ্রেণি">৭ম শ্রেণি</option>
+                    <option value=" ৮ম শ্রেণি"> ৮ম শ্রেণি</option>
+                    <option value="(৯ম-১০ম) শ্রেণি">(৯ম-১০ম) শ্রেণি</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="quizSubject">বিষয়</label>
+                <input type="text" id="quizSubject" placeholder="উদা: বাংলা, বিজ্ঞান" required>
+            </div>
+            <div class="form-group">
+                <label for="quizChapter">অধ্যায়ের নাম/নম্বর</label>
+                <input type="text" id="quizChapter" placeholder="উদা: 4, 6, 12 (শুধু নম্বর দিলে সিরিয়াল ঠিক থাকবে)" required>
+            </div>
+            <div class="form-group">
+                <label for="quizName">কুইজের নাম</label>
+                <input type="text" id="quizName" placeholder="উদা: ৮ম শ্রেণির বিজ্ঞানের ২য় অধ্যায় টেস্ট: ০১" required>
+            </div>
+            <div class="form-group">
+                <label for="quizCount">প্রশ্নের সংখ্যা</label>
+                <input type="number" id="quizCount" placeholder="উদা: ২০" required>
+            </div>
+            <div class="form-group">
+                <label for="quizFileName">ফাইলের নাম</label>
+                <input type="text" id="quizFileName" placeholder="উদা: test_01.json" required>
+            </div>
+            <button type="submit" class="submit-btn" id="saveBtn">সংরক্ষণ করুন</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco", 
+        databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", 
+        projectId: "quiz-storage-d8707" 
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+
+    function openModal() {
+        document.getElementById('quizForm').reset();
+        document.getElementById('editKey').value = '';
+        document.getElementById('modalTitle').innerText = 'নতুন কুইজ তথ্য যুক্ত করুন';
+        document.getElementById('saveBtn').innerText = 'সংরক্ষণ করুন';
+        document.getElementById('noteModal').style.display = 'flex';
+    }
+    function closeModal() {
+        document.getElementById('noteModal').style.display = 'none';
+    }
+    function saveQuizData(e) {
+        e.preventDefault();
+        const key = document.getElementById('editKey').value;
+        const quizData = {
+            class: document.getElementById('quizClass').value,
+            subject: document.getElementById('quizSubject').value.trim(),
+            chapter: document.getElementById('quizChapter').value.trim(),
+            quizName: document.getElementById('quizName').value.trim(),
+            questionsCount: document.getElementById('quizCount').value,
+            fileName: document.getElementById('quizFileName').value.trim(),
+            timestamp: Date.now()
+        };
+        if (key) {
+            db.ref("quz_note/" + key).update(quizData, (error) => {
+                if (!error) { closeModal(); }
+            });
+        } else {
+            db.ref("quz_note").push().set(quizData, (error) => {
+                if (!error) { closeModal(); }
+            });
+        }
+    }
+
+    function loadQuizNotes() {
+        db.ref("quz_note").on("value", (snapshot) => {
+            document.getElementById('loading').style.display = 'none';
+            const mainContent = document.getElementById('mainContentArea');
+            mainContent.innerHTML = "";
+            if (!snapshot.exists()) {
+                mainContent.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open" style="font-size:40px; color:#ccc; margin-bottom:10px;"></i><br>কোনো কুইজ তথ্য পাওয়া যায়নি। উপরের বাটনে ক্লিক করে যুক্ত করুন।</div>`;
+                return;
+            }
+            const structuredData = {
+                "৬ষ্ঠ শ্রেণি": {},
+                "৭ম শ্রেণি": {},
+                " ৮ম শ্রেণি": {},
+                "(৯ম-১০ম) শ্রেণি": {}
+            };
+            snapshot.forEach((child) => {
+                const id = child.key;
+                const val = child.val();
+                const cls = val.class;
+                const sub = val.subject;
+                if (structuredData[cls]) {
+                    if (!structuredData[cls][sub]) {
+                        structuredData[cls][sub] = [];
+                    }
+                    structuredData[cls][sub].push({ id: id, ...val });
+                }
+            });
+            Object.keys(structuredData).forEach(className => {
+                const subjects = structuredData[className];
+                if (Object.keys(subjects).length === 0) return;
+                const classSection = document.createElement('div');
+                classSection.className = 'class-container';
+                classSection.innerHTML = `<div class="class-header"><i class="fas fa-graduation-cap"></i> ${className}</div>`;
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'table-wrapper';
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th class="col-subject">বিষয়</th>
+                            <th class="col-chapter">অধ্যায়</th>
+                            <th class="col-quiz-name">কুইজের নাম</th>
+                            <th class="col-count">প্রশ্নের সংখ্যা</th>
+                            <th class="col-file">ফাইলের নাম</th>
+                            <th class="col-action">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                const tbody = table.querySelector('tbody');
+                Object.keys(subjects).forEach(subjectName => {
+                    const records = subjects[subjectName];
+                    records.sort((a, b) => {
+                        const numA = parseFloat(a.chapter) || 0;
+                        const numB = parseFloat(b.chapter) || 0;
+                        if(numA !== 0 && numB !== 0) return numA - numB;
+                        return a.chapter.localeCompare(b.chapter, 'bn', {numeric: true});
+                    });
+                    records.forEach((record, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="col-subject">${index === 0 ? `<i class="fas fa-book-open" style="font-size:10px; margin-right:2px;"></i> ` + record.subject : record.subject}</td>
+                            <td class="col-chapter">অধ্যায়: ${record.chapter}</td>
+                            <td class="col-quiz-name">${record.quizName}</td>
+                            <td class="col-count" style="font-weight:bold; color:var(--p);">${record.questionsCount}টি</td>
+                            <td class="col-file"><i class="far fa-file-code"></i> ${record.fileName}</td>
+                            <td class="col-action">
+                                <button class="action-btn edit-btn" onclick="editEntry('${record.id}', '${record.class}', '${escapeHtml(record.subject)}', '${escapeHtml(record.chapter)}', '${escapeHtml(record.quizName)}', '${record.questionsCount}', '${escapeHtml(record.fileName)}')"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn delete-btn-table" onclick="deleteEntry('${record.id}')"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+                tableWrapper.appendChild(table);
+                classSection.appendChild(tableWrapper);
+                mainContent.appendChild(classSection);
+            });
+        });
+    }
+
+    function editEntry(id, cls, sub, chap, name, count, file) {
+        document.getElementById('editKey').value = id;
+        document.getElementById('quizClass').value = cls;
+        document.getElementById('quizSubject').value = sub;
+        document.getElementById('quizChapter').value = chap;
+        document.getElementById('quizName').value = name;
+        document.getElementById('quizCount').value = count;
+        document.getElementById('quizFileName').value = file;
+        document.getElementById('modalTitle').innerText = 'কুইজ তথ্য সংশোধন (Edit)';
+        document.getElementById('saveBtn').innerText = 'আপডেট করুন';
+        document.getElementById('noteModal').style.display = 'flex';
+    }
+    function deleteEntry(key) {
+        if (confirm("আপনি কি নিশ্চিত যে এই কুইজ তথ্যটি ডিলিট করতে চান? ফায়ারবেস থেকে এটি সাথে সাথে মুছে যাবে।")) {
+            db.ref("quz_note/" + key).remove();
+        }
+    }
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    loadQuizNotes();
+</script>
+</body>
+</html>
