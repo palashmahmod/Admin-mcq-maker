@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Study Material Generator - file_F</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        window.MathJax = {
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']], 
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
+            },
+            options: { enableMenu: false }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    
+    <style>
+        :root { --p: #2c3e50; --a: #3498db; --s: #27ae60; --d: #e74c3c; --bg: #f8f9fa; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding-top: 60px; padding-bottom: 50px; }
+        .header { position: fixed; top: 0; width: 100%; background: var(--p); color: white; padding: 12px 0; z-index: 1000; text-align: center; font-weight: bold; }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 100px; resize: vertical; }
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: inline-block; text-decoration: none; text-align: center; }
+        .btn-blue { background: var(--a); width: 48%; }
+        .btn-green { background: var(--s); width: 48%; }
+        .btn-black { background: #24292e; width: 48%; }
+        .btn-red { background: var(--d); padding: 5px 10px; font-size: 12px; border-radius: 4px; }
+        .block-card { border-left: 4px solid #9b59b6; padding-left: 15px; position: relative; margin-bottom: 15px; background: #fff; }
+        .block-card.image-type { border-left-color: #e67e22; }
+        .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); color: white; z-index: 10000; align-items: center; justify-content: center; flex-direction: column; }
+        .grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        
+        /* প্রিভিউ স্টাইল */
+        .preview-title { font-size: 18px; font-weight: bold; color: var(--p); border-bottom: 2px solid #ddd; padding-bottom: 8px; margin-bottom: 15px; text-align: center; }
+        .p-text-block { font-size: 15px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal; }
+        .p-img-block { width: 100%; border-radius: 8px; margin: 10px 0 20px 0; display: block; max-height: 400px; object-fit: contain; }
+        mjx-utext { font-family: 'Segoe UI', Tahoma, sans-serif !important; font-style: normal !important; display: inline !important; direction: ltr !important; }
+    </style>
+</head>
+<body>
+
+<div id="loader" class="loader">
+    <i class="fas fa-spinner fa-spin fa-2x"></i>
+    <p>GitHub-এ আপলোড হচ্ছে...</p>
+</div>
+
+<div class="header">
+    <a href="index.html" style="position:absolute; left:15px; cursor:pointer; color: white; text-decoration: none;"><i class="fas fa-chevron-left"></i></a>
+    MCQ স্টাডি মেটেরিয়াল জেনারেটর
+</div>
+
+<div class="container">
+    <div class="card">
+        <input type="text" id="qTitle" placeholder="কুইজ বা স্টাডি শিটের টাইটেল (উদা: পদার্থবিজ্ঞান অধ্যায় ১ অধ্যায়ন)">
+        <div class="grid">
+            <input type="text" id="qSub" placeholder="বিষয়" style="width:48%">
+            <input type="text" id="qChapter" placeholder="অধ্যায়" style="width:48%">
+        </div>
+        <div class="grid">
+            <input type="text" id="fName" placeholder="ফাইলের নাম (যেমন: study_101)" style="width:100%">
+        </div>
+        <div class="grid" style="margin-top:10px;">
+            <button class="btn btn-green" onclick="saveDraft()"><i class="fas fa-save"></i> ড্রাফট সেইভ</button>
+            <button class="btn btn-black" onclick="uploadToGithub()"><i class="fab fa-github"></i> GitHub-এ আপলোড</button>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 15px; font-weight: bold; color: #555;"><i class="fas fa-cubes"></i> কন্টেন্ট ব্লক তৈরি করুন:</div>
+    <div id="block-container"></div>
+    
+    <div class="grid" style="margin-bottom: 30px;">
+        <button class="btn btn-blue" onclick="addBlock('text')"><i class="fas fa-file-text"></i> + টেক্সট ব্লক যুক্ত করুন</button>
+        <button class="btn" style="background: #e67e22; width: 48%;" onclick="addBlock('image')"><i class="fas fa-image"></i> + ছবির লিংক যুক্ত করুন</button>
+    </div>
+
+    <div class="card" style="background: #ffffff; border: 2px dashed #34495e;">
+        <span style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 10px; display: block; border-bottom: 1px solid #eee; font-weight: bold;"><i class="fas fa-eye"></i> সম্পূর্ণ লাইভ ভিউ (Live Preview)</span>
+        <div id="global-preview-area">
+            <p style="color: #bbb; text-align: center; font-style: italic; padding: 20px;">কোনো কন্টেন্ট যুক্ত করা হয়নি।</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var GITHUB_USER = "palashmahmod";
+    var GITHUB_REPO = "quiz-study-files";
+    var blockCount = 0;
+
+    function refreshMath() {
+        if (window.MathJax && window.MathJax.typeset) {
+            window.MathJax.typeset();
+        }
+    }
+
+    function addBlock(type, value = "") {
+        blockCount++;
+        var id = "block-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+        var div = document.createElement('div');
+        div.className = 'card block-card ' + (type === 'image' ? 'image-type' : 'text-type');
+        div.id = id;
+        div.dataset.type = type;
+
+        var html = '<div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 5px;">' +
+            '<b style="color: ' + (type === 'image' ? '#e67e22' : '#9b59b6') + '; font-size: 13px;">' +
+            '<i class="' + (type === 'image' ? 'fas fa-image' : 'fas fa-file-text') + '"></i> ' +
+            (type === 'image' ? 'ছবির লিংক ব্লক' : 'টেক্সট ব্লক') + ' (#<span class="block-no">' + blockCount + '</span>)' +
+            '</b>' +
+            '<button class="btn btn-red" onclick="removeBlock(\'' + id + '\')"><i class="fas fa-trash"></i> মুছে ফেলুন</button>' +
+            '</div>';
+
+        if (type === 'text') {
+            html += '<textarea placeholder="এখানে MCQ প্রশ্ন, অপশন এবং উত্তর লিখুন (লাইনের ব্রেকের জন্য <br> ব্যবহার করুন)..." class="block-input" oninput="updateGlobalPreview()">' + value + '</textarea>';
+        } else {
+            html += '<input type="text" placeholder="ছবির ডিরেক্ট লিঙ্ক দিন..." class="block-input" value="' + value + '" oninput="updateGlobalPreview()">';
+        }
+
+        div.innerHTML = html;
+        document.getElementById('block-container').appendChild(div);
+        reorderBlocks();
+        updateGlobalPreview();
+    }
+
+    function removeBlock(id) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.parentNode.removeChild(el);
+            reorderBlocks();
+            updateGlobalPreview();
+        }
+    }
+
+    // ব্লকের সিরিয়াল নম্বর ঠিক করা
+    function reorderBlocks() {
+        var nos = document.getElementsByClassName('block-no');
+        for (var i = 0; i < nos.length; i++) {
+            nos[i].innerText = (i + 1);
+        }
+    }
+
+    function updateGlobalPreview() {
+        var previewArea = document.getElementById('global-preview-area');
+        var title = document.getElementById('qTitle').value.trim();
+        var sub = document.getElementById('qSub').value.trim();
+        var chap = document.getElementById('qChapter').value.trim();
+        
+        var html = "";
+        if (title) html += '<div class="preview-title">' + title + '</div>';
+        if (sub || chap) {
+            html += '<p style="font-size:13px; color:#666; text-align:center; margin-top:-10px; margin-bottom:20px;">';
+            if (sub) html += '<b>বিষয়:</b> ' + sub + ' ';
+            if (chap) html += '| <b>অধ্যায়:</b> ' + chap;
+            html += '</p><hr style="border:0; border-top:1px dashed #ccc; margin-bottom:20px;">';
+        }
+
+        var blocks = document.querySelectorAll('#block-container .block-card');
+        if (blocks.length === 0 && !title) {
+            previewArea.innerHTML = '<p style="color: #bbb; text-align: center; font-style: italic; padding: 20px;">কোনো কন্টেন্ট যুক্ত করা হয়নি।</p>';
+            return;
+        }
+
+        blocks.forEach(function(block) {
+            var type = block.dataset.type;
+            var val = block.querySelector('.block-input').value;
+            
+            if (val.trim() !== "") {
+                if (type === 'text') {
+                    var formattedText = val.replace(/\n/g, '<br>');
+                    html += '<div class="p-text-block">' + formattedText + '</div>';
+                } else if (type === 'image') {
+                    html += '<img src="' + val + '" class="p-img-block" alt="Study Image">';
+                }
+            }
+        });
+
+        previewArea.innerHTML = html;
+        refreshMath();
+    }
+
+    function saveDraft() {
+        var blocksData = [];
+        var blocks = document.querySelectorAll('#block-container .block-card');
+        
+        blocks.forEach(function(block) {
+            blocksData.push({
+                type: block.dataset.type,
+                value: block.querySelector('.block-input').value
+            });
+        });
+
+        var fullData = {
+            title: document.getElementById('qTitle').value,
+            sub: document.getElementById('qSub').value,
+            chapter: document.getElementById('qChapter').value,
+            fName: document.getElementById('fName').value,
+            blocks: blocksData
+        };
+
+        localStorage.setItem('study_material_draft', JSON.stringify(fullData));
+    }
+
+    async function uploadToGithub() {
+        saveDraft();
+        var data = JSON.parse(localStorage.getItem('study_material_draft'));
+        if (!data.fName) return alert("ফাইলের নাম দিন!");
+
+        var token = localStorage.getItem('gh_token');
+        if (!token) {
+            token = prompt("GitHub Personal Access Token দিন:");
+            if (token) localStorage.setItem('gh_token', token);
+            else return;
+        }
+
+        document.getElementById('loader').style.display = 'flex';
+
+        var finalHTML = generateStudyFile(data);
+        var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
+        var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
+
+        try {
+            var getFile = await fetch(apiUrl, { headers: { "Authorization": "token " + token } });
+            var sha = "";
+            if (getFile.ok) { 
+                var fileData = await getFile.json(); 
+                sha = fileData.sha; 
+            }
+            
+            var response = await fetch(apiUrl, {
+                method: "PUT",
+                headers: { "Authorization": "token " + token, "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "Upload Study Material", content: base64Content, sha: sha ? sha : undefined })
+            });
+
+            if (response.ok) alert("সফলভাবে নতুন রিপোজিটরিতে আপলোড হয়েছে!");
+            else alert("আপলোড ব্যর্থ হয়েছে!");
+        } catch (e) { 
+            alert("Error: " + e.message); 
+        }
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function generateStudyFile(d) {
+        var contentHtml = "";
+        d.blocks.forEach(function(b) {
+            if (b.value.trim() !== "") {
+                if (b.type === 'text') {
+                    contentHtml += '<div class="text-content">' + b.value.replace(/\n/g, '<br>') + '</div>';
+                } else if (b.type === 'image') {
+                    contentHtml += '<img src="' + b.value + '" class="image-content" alt="Study Graphic">';
+                }
+            }
+        });
+
+        var titleStr = d.title || 'Study Material';
+        var metaStr = (d.sub ? '<b>বিষয়:</b> ' + d.sub : '') + (d.chapter ? ' | <b>অধ্যায়:</b> ' + d.chapter : '');
+
+        return '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+            '<title>' + titleStr + '</title>\n' +
+            '<script>\nwindow.MathJax = { tex: { inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]] } };\n<\/script>\n' +
+            '<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async><\/script>\n' +
+            '<style>\n' +
+            'body { font-family: sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }\n' +
+            '.container { background: white; padding: 25px; border-radius: 12px; max-width: 650px; margin: 20px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }\n' +
+            'h2 { text-align: center; color: #2c3e50; margin-bottom: 5px; }\n' +
+            '.meta-info { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }\n' +
+            '.text-content { font-size: 16px; line-height: 1.7; color: #2c3e50; margin-bottom: 20px; white-space: normal; }\n' +
+            '.image-content { width: 100%; border-radius: 8px; margin: 15px 0; display: block; max-height: 450px; object-fit: contain; }\n' +
+            'mjx-utext { font-family: "Segoe UI", Tahoma, sans-serif !important; font-style: normal !important; display: inline !important; direction: ltr !important; }\n' +
+            '<\/style>\n<\/head>\n<body>\n' +
+            '<div class="container">\n<h2>' + titleStr + '</h2>\n' +
+            '<div class="meta-info">' + metaStr + '</div>\n' +
+            '<hr style="border: 0; border-top: 1px dashed #ccc; margin-bottom: 25px;">\n' +
+            contentHtml + '\n<\/div>\n<\/body>\n<\/html>';
+    }
+
+    window.onload = function() {
+        var saved = localStorage.getItem('study_material_draft');
+        if (saved) {
+            try {
+                var d = JSON.parse(saved);
+                document.getElementById('qTitle').value = d.title || "";
+                document.getElementById('qSub').value = d.sub || "";
+                document.getElementById('qChapter').value = d.chapter || "";
+                document.getElementById('fName').value = d.fName || "";
+                
+                if (d.blocks && d.blocks.length > 0) {
+                    d.blocks.forEach(function(b) {
+                        addBlock(b.type, b.value);
+                    });
+                } else {
+                    addBlock('text');
+                }
+            } catch(e) {
+                addBlock('text');
+            }
+        } else {
+            addBlock('text');
+        }
+        updateGlobalPreview();
+        document.getElementById('qTitle').addEventListener('input', updateGlobalPreview);
+        document.getElementById('qSub').addEventListener('input', updateGlobalPreview);
+        document.getElementById('qChapter').addEventListener('input', updateGlobalPreview);
+    };
+</script>
+</body>
+</html>
