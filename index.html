@@ -139,13 +139,10 @@
         .btn-a { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .btn-b { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
         .btn-c { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .btn-f { background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%); }
+        .btn-g { background: linear-gradient(135deg, #11998e 0%, #114b99 100%); }
         .btn-d { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
-        
-        /* নতুন বাটন ই (file_E) এর স্টাইল এবং পজিশন ফিক্স */
-        .btn-e { 
-            background: linear-gradient(135deg, #8a2be2 0%, #ff1493 100%); 
-            grid-column: 1; /* এর মাধ্যমে বাটনটি কোডে সবার শেষে থাকলেও স্ক্রিনে বাম কলামে (file_C এর নিচে) চলে আসবে */
-        }
+        .btn-e { background: linear-gradient(135deg, #8a2be2 0%, #ff1493 100%); }
         
         .logout-link {
             display: block; text-align: center; margin-top: 35px;
@@ -155,7 +152,6 @@
     </style>
 </head>
 <body>
-
     <div id="login-overlay">
         <div class="login-box">
             <div class="header-profile">
@@ -173,7 +169,6 @@
             </div>
         </div>
     </div>
-
     <div class="dashboard" id="main-content">
         <div class="header-profile">
             <img src="photo1.jpg" alt="Palash Mahmod" class="profile-pic">
@@ -198,20 +193,27 @@
                 <i class="fas fa-list-check"></i>
                 <span>প্রশ্ন সিলেকশন</span>
             </a>
+            
+            <a href="file_F.html" class="nav-btn btn-f">
+                <i class="fas fa-sliders"></i>
+                <span>Mcq রিভিও মেকার</span>
+            </a>
+            <a href="file_G.html" class="nav-btn btn-g">
+                <i class="fas fa-clipboard-check"></i>
+                <span>রিভিউ প্রশ্ন সিলেকশন</span>
+            </a>
+            
             <a href="file_D.html" class="nav-btn btn-d">
                 <i class="fas fa-square-poll-vertical"></i>
                 <span>রেজাল্ট পর্যবেক্ষণ</span>
             </a>
-            
             <a href="file_E.html" class="nav-btn btn-e">
                 <i class="fas fa-note-sticky"></i>
                 <span>কুইজ নোট সংরক্ষণ</span>
             </a>
         </div>
-
         <a class="logout-link" onclick="logout()">লগআউট করুন</a>
     </div>
-
     <script>
         const secret = "cG01NTIy"; // pm5522
         if(localStorage.getItem('isLoggedIn') === 'true') {
