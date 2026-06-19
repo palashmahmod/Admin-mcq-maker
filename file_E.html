@@ -24,6 +24,13 @@
             padding: 15px;
             color: var(--text-main);
         }
+        
+        /* মডাল ওপেন থাকলে বডির ব্যাকগ্রাউন্ড স্ক্রোল এবং রিফ্রেশ বন্ধ করার ক্লাস */
+        body.modal-open {
+            overflow: hidden;
+            overscroll-behavior-y: contain; /* ব্রাউজারের ওভার-স্ক্রোল বা পুল-টু-রিফ্রেশ লক করার আধুনিক CSS */
+        }
+
         /* হেডার ও নেভিগেশন */
         .top-navbar {
             display: flex;
@@ -78,7 +85,7 @@
             font-weight: bold;
         }
         
-        /* এখানে কিবোর্ড সমস্যার সমাধানসহ নতুন মডাল স্টাইল যুক্ত করা হয়েছে */
+        /* মডাল ব্যাকগ্রাউন্ড এবং স্ক্রোল সেটিংস */
         .modal {
             display: none;
             position: fixed;
@@ -92,6 +99,8 @@
             justify-content: center;
             overflow-y: auto;
             padding: 20px 0;
+            -webkit-overflow-scrolling: touch; /* আইফোনে মসৃণ স্ক্রোলিংয়ের জন্য */
+            overscroll-behavior-y: contain; /* মডালের ভেতর টানলে যাতে মেইন পেজ রিফ্রেশ না হয় */
         }
         .modal-content {
             background: var(--card-bg);
@@ -102,7 +111,7 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             animation: slideDown 0.3s ease;
             margin-top: 10px;
-            margin-bottom: 280px; /* এই বাড়তি মার্জিনের কারণে কিবোর্ড আসলেও নিচের ইনপুট বক্সটি স্ক্রোল করে উপরে তোলা যাবে */
+            margin-bottom: 320px; /* কিবোর্ডের জন্য নিচে পর্যাপ্ত সেফ স্পেস */
         }
         @keyframes slideDown {
             from { transform: translateY(-30px); opacity: 0; }
@@ -307,7 +316,6 @@
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/", 
         projectId: "quiz-storage-d8707" 
     };
-
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
@@ -319,10 +327,17 @@
         document.getElementById('modalTitle').innerText = 'নতুন কুইজ তথ্য যুক্ত করুন';
         document.getElementById('saveBtn').innerText = 'সংরক্ষণ করুন';
         document.getElementById('noteModal').style.display = 'flex';
+        
+        // মডাল খুললে বডিতে ক্লাস যুক্ত করা (রিফ্রেশ এবং ব্যাকগ্রাউন্ড স্ক্রোল লক করার জন্য)
+        document.body.classList.add('modal-open');
     }
+
     function closeModal() {
         document.getElementById('noteModal').style.display = 'none';
+        // মডাল বন্ধ হলে লক রিমুভ করা
+        document.body.classList.remove('modal-open');
     }
+
     function saveQuizData(e) {
         e.preventDefault();
         const key = document.getElementById('editKey').value;
@@ -438,12 +453,17 @@
         document.getElementById('modalTitle').innerText = 'কুইজ তথ্য সংশোধন (Edit)';
         document.getElementById('saveBtn').innerText = 'আপডেট করুন';
         document.getElementById('noteModal').style.display = 'flex';
+        
+        // এডিট করার সময়ও বডি লক করা
+        document.body.classList.add('modal-open');
     }
+
     function deleteEntry(key) {
         if (confirm("আপনি কি নিশ্চিত যে এই কুইজ তথ্যটি ডিলিট করতে চান? ফায়ারবেস থেকে এটি সাথে সাথে মুছে যাবে।")) {
             db.ref("quz_note/" + key).remove();
         }
     }
+
     function escapeHtml(str) {
         return str
             .replace(/&/g, "&amp;")
@@ -452,6 +472,7 @@
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
+
     loadQuizNotes();
 </script>
 </body>
