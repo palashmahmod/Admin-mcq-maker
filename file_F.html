@@ -40,6 +40,23 @@
         .p-text-block { font-size: 15px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal; }
         .p-img-block { width: 100%; border-radius: 8px; margin: 10px 0 20px 0; display: block; max-height: 400px; object-fit: contain; }
         mjx-utext { font-family: 'Segoe UI', Tahoma, sans-serif !important; font-style: normal !important; display: inline !important; direction: ltr !important; }
+
+        /* উত্তর হাইড করার নতুন স্টাইল (লাইভ প্রিভিউ ও ফাইনাল ফাইল উভয়ের জন্য) */
+        .hidden-ans {
+            background-color: #e67e22 !important;
+            color: #e67e22 !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s, color 0.2s;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .hidden-ans.reveal {
+            background-color: #d5f5e3 !important;
+            color: #196f3d !important;
+        }
     </style>
 </head>
 <body>
@@ -56,7 +73,7 @@
 
 <div class="container">
     <div class="card">
-        <input type="text" id="qTitle" placeholder="কুইজ বা স্টাডি শিটের টাইটেল (উদা: পদার্থবিজ্ঞান অধ্যায় ১ অধ্যায়ন)">
+        <input type="text" id="qTitle" placeholder="কুইজ বা স্টাডি শিটের টাইটেল (উদা: পদার্থবিজ্ঞান অধ্যায় ১ অধ্যায়ন)">
         <div class="grid">
             <input type="text" id="qSub" placeholder="বিষয়" style="width:48%">
             <input type="text" id="qChapter" placeholder="অধ্যায়" style="width:48%">
@@ -81,7 +98,7 @@
     <div class="card" style="background: #ffffff; border: 2px dashed #34495e;">
         <span style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 10px; display: block; border-bottom: 1px solid #eee; font-weight: bold;"><i class="fas fa-eye"></i> সম্পূর্ণ লাইভ ভিউ (Live Preview)</span>
         <div id="global-preview-area">
-            <p style="color: #bbb; text-align: center; font-style: italic; padding: 20px;">কোনো কন্টেন্ট যুক্ত করা হয়নি।</p>
+            <p style="color: #bbb; text-align: center; font-style: italic; padding: 20px;">কোনো কন্টেন্ট যুক্ত করা হয়নি।</p>
         </div>
     </div>
 </div>
@@ -94,6 +111,24 @@
     function refreshMath() {
         if (window.MathJax && window.MathJax.typeset) {
             window.MathJax.typeset();
+        }
+    }
+
+    // উত্তর সনাক্তকরণ এবং কমলার বক্স তৈরি করার মূল ফাংশন
+    function formatAnswerText(text) {
+        var formatted = text.replace(/\n/g, '<br>');
+        // Regex যা "উত্তর: ক", "উত্তর: খ", "উত্তর: গ", "উত্তর: ঘ" খুঁজে বের করবে
+        var regex = /(উত্তর:\s*[কখগঘ])/g;
+        return formatted.replace(regex, '<span class="hidden-ans" onclick="revealAnswer(this)">$1</span>');
+    }
+
+    // ক্লিক করলে ২ সেকেন্ডের জন্য উত্তর দেখানোর ফাংশন
+    function revealAnswer(element) {
+        if (!element.classList.contains('reveal')) {
+            element.classList.add('reveal');
+            setTimeout(function() {
+                element.classList.remove('reveal');
+            }, 2000); // ২০০০ মিলিসেকেন্ড = ২ সেকেন্ড
         }
     }
 
@@ -114,11 +149,10 @@
             '</div>';
 
         if (type === 'text') {
-            html += '<textarea placeholder="এখানে MCQ প্রশ্ন, অপশন এবং উত্তর লিখুন (লাইনের ব্রেকের জন্য <br> ব্যবহার করুন)..." class="block-input" oninput="updateGlobalPreview()">' + value + '</textarea>';
+            html += '<textarea placeholder="এখানে MCQ প্রশ্ন, অপশন এবং উত্তর লিখুন (যেমন- উত্তর: ক)..." class="block-input" oninput="updateGlobalPreview()">' + value + '</textarea>';
         } else {
             html += '<input type="text" placeholder="ছবির ডিরেক্ট লিঙ্ক দিন..." class="block-input" value="' + value + '" oninput="updateGlobalPreview()">';
         }
-
         div.innerHTML = html;
         document.getElementById('block-container').appendChild(div);
         reorderBlocks();
@@ -134,7 +168,6 @@
         }
     }
 
-    // ব্লকের সিরিয়াল নম্বর ঠিক করা
     function reorderBlocks() {
         var nos = document.getElementsByClassName('block-no');
         for (var i = 0; i < nos.length; i++) {
@@ -152,14 +185,14 @@
         if (title) html += '<div class="preview-title">' + title + '</div>';
         if (sub || chap) {
             html += '<p style="font-size:13px; color:#666; text-align:center; margin-top:-10px; margin-bottom:20px;">';
-            if (sub) html += '<b>বিষয়:</b> ' + sub + ' ';
-            if (chap) html += '| <b>অধ্যায়:</b> ' + chap;
+            if (sub) html += '<b>বিষয়:</b> ' + sub + ' ';
+            if (chap) html += '| <b>অধ্যায়:</b> ' + chap;
             html += '</p><hr style="border:0; border-top:1px dashed #ccc; margin-bottom:20px;">';
         }
 
         var blocks = document.querySelectorAll('#block-container .block-card');
         if (blocks.length === 0 && !title) {
-            previewArea.innerHTML = '<p style="color: #bbb; text-align: center; font-style: italic; padding: 20px;">কোনো কন্টেন্ট যুক্ত করা হয়নি।</p>';
+            previewArea.innerHTML = '<p style="color: #bbb; text-align: center; font-style: italic; padding: 20px;">কোনো কন্টেন্ট যুক্ত করা হয়নি।</p>';
             return;
         }
 
@@ -169,8 +202,7 @@
             
             if (val.trim() !== "") {
                 if (type === 'text') {
-                    var formattedText = val.replace(/\n/g, '<br>');
-                    html += '<div class="p-text-block">' + formattedText + '</div>';
+                    html += '<div class="p-text-block">' + formatAnswerText(val) + '</div>';
                 } else if (type === 'image') {
                     html += '<img src="' + val + '" class="p-img-block" alt="Study Image">';
                 }
@@ -199,7 +231,6 @@
             fName: document.getElementById('fName').value,
             blocks: blocksData
         };
-
         localStorage.setItem('study_material_draft', JSON.stringify(fullData));
     }
 
@@ -216,7 +247,6 @@
         }
 
         document.getElementById('loader').style.display = 'flex';
-
         var finalHTML = generateStudyFile(data);
         var base64Content = btoa(unescape(encodeURIComponent(finalHTML)));
         var apiUrl = "https://api.github.com/repos/" + GITHUB_USER + "/" + GITHUB_REPO + "/contents/" + data.fName + ".html";
@@ -243,12 +273,16 @@
         document.getElementById('loader').style.display = 'none';
     }
 
+    // ফাইনাল জেনারেট হওয়া ফাইলটিতেও একই নিয়ম কাজ করার জন্য জাভাস্ক্রিপ্ট যুক্ত করা হয়েছে
     function generateStudyFile(d) {
         var contentHtml = "";
         d.blocks.forEach(function(b) {
             if (b.value.trim() !== "") {
                 if (b.type === 'text') {
-                    contentHtml += '<div class="text-content">' + b.value.replace(/\n/g, '<br>') + '</div>';
+                    // জেনারেট ফাইলে উত্তর কনভার্ট করা হচ্ছে
+                    var regex = /(উত্তর:\s*[কখগঘ])/g;
+                    var formatted = b.value.replace(/\n/g, '<br>').replace(regex, '<span class="hidden-ans" onclick="revealAnswer(this)">$1</span>');
+                    contentHtml += '<div class="text-content">' + formatted + '</div>';
                 } else if (b.type === 'image') {
                     contentHtml += '<img src="' + b.value + '" class="image-content" alt="Study Graphic">';
                 }
@@ -256,7 +290,7 @@
         });
 
         var titleStr = d.title || 'Study Material';
-        var metaStr = (d.sub ? '<b>বিষয়:</b> ' + d.sub : '') + (d.chapter ? ' | <b>অধ্যায়:</b> ' + d.chapter : '');
+        var metaStr = (d.sub ? '<b>বিষয়:</b> ' + d.sub : '') + (d.chapter ? ' | <b>অধ্যায়:</b> ' + d.chapter : '');
 
         return '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n' +
             '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
@@ -271,7 +305,19 @@
             '.text-content { font-size: 16px; line-height: 1.7; color: #2c3e50; margin-bottom: 20px; white-space: normal; }\n' +
             '.image-content { width: 100%; border-radius: 8px; margin: 15px 0; display: block; max-height: 450px; object-fit: contain; }\n' +
             'mjx-utext { font-family: "Segoe UI", Tahoma, sans-serif !important; font-style: normal !important; display: inline !important; direction: ltr !important; }\n' +
-            '<\/style>\n<\/head>\n<body>\n' +
+            '/* উত্তর হাইডের সিএসএস */\n' +
+            '.hidden-ans { background-color: #e67e22 !important; color: #e67e22 !important; padding: 2px 6px; border-radius: 4px; cursor: pointer; user-select: none; transition: background 0.2s, color 0.2s; font-weight: bold; display: inline-block; }\n' +
+            '.hidden-ans.reveal { background-color: #d5f5e3 !important; color: #196f3d !important; }\n' +
+            '<\/style>\n' +
+            '<script>\n' +
+            'function revealAnswer(element) {\n' +
+            '    if (!element.classList.contains("reveal")) {\n' +
+            '        element.classList.add("reveal");\n' +
+            '        setTimeout(function() { element.classList.remove("reveal"); }, 2000);\n' +
+            '    }\n' +
+            '}\n' +
+            '<\/script>\n' +
+            '<\/head>\n<body>\n' +
             '<div class="container">\n<h2>' + titleStr + '</h2>\n' +
             '<div class="meta-info">' + metaStr + '</div>\n' +
             '<hr style="border: 0; border-top: 1px dashed #ccc; margin-bottom: 25px;">\n' +
@@ -301,6 +347,7 @@
         } else {
             addBlock('text');
         }
+        
         updateGlobalPreview();
         document.getElementById('qTitle').addEventListener('input', updateGlobalPreview);
         document.getElementById('qSub').addEventListener('input', updateGlobalPreview);
