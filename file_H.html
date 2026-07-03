@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Study Material Generator - Full Width Fluid Layout</title>
+    <!-- MathJax for rendering equations -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #f97316;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+            --input-focus: #818cf8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Body padding optimized to be almost zero on mobile, and standard on desktop */
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            padding: 12px; 
+            transition: padding 0.2s ease;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 6px; /* Edge-to-edge on small phones */
+            }
+        }
+        
+        /* Top Navigation Area - Fluid Full Width */
+        .top-nav { 
+            width: 100%; 
+            margin: 0 auto 15px auto; 
+            display: flex; 
+            align-items: center; 
+        }
+        .back-btn { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            background: #475569; 
+            color: white; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            font-size: 13px; 
+            transition: background 0.2s, transform 0.1s; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        .back-btn:hover { background: #334155; transform: translateY(-1px); }
+        
+        /* Main Workspace Container - Taking up nearly 100% width with reduced mobile paddings */
+        .container { 
+            width: 100%; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 24px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+            border: 1px solid #e2e8f0; 
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px; /* Reclaiming 36px width space on mobile screens */
+            }
+        }
+        
+        /* Meta Grid & GitHub Control - Optimized Grid spacing */
+        .workspace-config { 
+            display: grid; 
+            grid-template-columns: 2fr 1fr; 
+            gap: 16px; 
+            margin-bottom: 24px; 
+            border-bottom: 2px solid #f1f5f9; 
+            padding-bottom: 20px; 
+        }
+        @media (max-width: 768px) { 
+            .workspace-config { 
+                grid-template-columns: 1fr; 
+                gap: 16px; 
+            } 
+        }
+        
+        .meta-section { display: flex; flex-direction: column; gap: 12px; }
+        .meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (max-width: 480px) { .meta-grid { grid-template-columns: 1fr; } }
+        
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        .input-group label { font-size: 13px; font-weight: 700; color: #475569; }
+        input[type="text"] { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: #fff; transition: all 0.2s; color: var(--text); }
+        input[type="text"]:focus { border-color: var(--input-focus); box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
+        
+        /* GitHub Sync Box */
+        .github-box { 
+            background: #f8fafc; 
+            padding: 16px; 
+            border-radius: 10px; 
+            border: 1px solid #e2e8f0; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            min-height: 110px;
+        }
+        .github-box h4 { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 12px; }
+        .github-box h4::before { content: "☁️"; font-size: 15px; }
+        .github-btn-container { display: flex; gap: 8px; width: 100%; }
+        .github-btn-container .btn { flex: 1; text-align: center; justify-content: center; white-space: nowrap; padding: 10px 8px; font-size: 13px; }
+        
+        /* Global Button Layout */
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-orange { background: #ea580c; }
+        .btn-orange:hover { background: #c2410c; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #10b981; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
+        .btn-success:hover { background: #059669; }
+        
+        /* Multi-Topic Structure - Expanding widths fully on mobile */
+        .topic-manager { margin-top: 15px; }
+        .topic-card { border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 20px; background: #fff; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .topic-header { background: #f8fafc; padding: 12px 16px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #e2e8f0; }
+        .topic-title-input { flex: 1; font-weight: 600; background: #fff; }
+        .topic-body { padding: 16px; background: #fdfdfd; }
+        @media (max-width: 600px) {
+            .topic-body {
+                padding: 10px; /* Reduced padding from 20px -> 10px for mobile spacing */
+            }
+        }
+        
+        /* Content Blocks inside topics - Minimal spacing design */
+        .block-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .content-block { background: white; border: 1px solid #e2e8f0; padding: 14px; border-radius: 8px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        @media (max-width: 600px) {
+            .content-block {
+                padding: 10px; /* Slashed unnecessary internal paddings */
+            }
+        }
+        .block-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Large expansive Textarea style */
+        textarea { width: 100%; height: 140px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; outline: none; font-size: 14px; transition: border 0.2s; }
+        textarea:focus { border-color: var(--input-focus); box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15); }
+        .block-actions { display: flex; gap: 8px; margin-top: 12px; }
+        
+        /* Preview Section Header */
+        .preview-section { margin-top: 30px; border-top: 2px dashed #e2e8f0; padding-top: 24px; }
+        .preview-title { font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 16px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .preview-title::before { content: "👁️"; }
+        
+        /* Live Preview Simulator - Extreme Responsive Width */
+        .user-view-simulation { 
+            background: #ffffff; 
+            padding: 16px; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); 
+            width: 100%; 
+        }
+        @media (max-width: 600px) {
+            .user-view-simulation {
+                padding: 8px; /* Massive space-saver on small viewports */
+            }
+        }
+        
+        .user-topic-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; justify-content: center; }
+        .user-topic-btn { background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13.5px; }
+        .user-topic-btn.active { background: var(--primary); color: white; box-shadow: 0 3px 8px rgba(79, 70, 229, 0.2); }
+        
+        /* Live content display matching screen border almost fully */
+        .user-content-display { 
+            background: #f8fafc; 
+            border: 1px solid #e2e8f0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            min-height: 120px; 
+            width: 100%; 
+            font-size: 15.5px; 
+        }
+        @media (max-width: 600px) {
+            .user-content-display {
+                padding: 10px; /* Reduced inner white gap from 24px to 10px on mobile */
+            }
+        }
+        
+        /* Fixed & Solid Hidden Answer Styles */
+        .hidden-ans { background-color: #334155; border: 1px solid #334155; color: #334155; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.1s; display: inline-block; user-select: none; }
+        .hidden-ans.reveal { background-color: #dcfce7; border: 1px solid #22c55e; color: #15803d; }
+        .preview-img { max-width: 100%; height: auto; border-radius: 6px; margin-top: 8px; display: block; }
+        
+        /* Loading Overlay */
+        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.8); z-index:9999; justify-content:center; align-items:center; color:white; flex-direction:column; gap:15px; backdrop-filter: blur(4px); }
+        .spinner { width: 50px; height: 50px; border: 5px solid #334155; border-top: 5px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Beautiful Custom Modal / Toast Alerts */
+        .custom-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            font-weight: 600;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .custom-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Beautiful Custom Confirmation dialogs */
+        .custom-dialog-wrapper {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(2px);
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .custom-dialog-box {
+            background: #fff;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            animation: modalPop 0.2s ease-out;
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .dialog-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+        .dialog-message { font-size: 14px; color: #475569; margin-bottom: 20px; line-height: 1.5; }
+        .dialog-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- Admin Page Top Back Button -->
+<div class="top-nav">
+    <a href="index.html" class="back-btn">⬅️ ব্যাক হোম</a>
+</div>
+<div class="container">
+    
+    <!-- Perfected Meta Grid & GitHub Area Side by Side -->
+    <div class="workspace-config">
+        
+        <!-- File Details Block -->
+        <div class="meta-section">
+            <div class="meta-grid">
+                <div class="input-group">
+                    <label>কুইজ টাইটেল</label>
+                    <input type="text" id="quizTitle" placeholder="উদা: বিসিএস প্রিলি প্রস্তুতি">
+                </div>
+                <div class="input-group">
+                    <label>বিষয়</label>
+                    <input type="text" id="quizSubject" placeholder="উদা: বাংলা সাহিত্য">
+                </div>
+            </div>
+            <div class="meta-grid">
+                <div class="input-group">
+                    <label>অধ্যায়</label>
+                    <input type="text" id="quizChapter" placeholder="উদা: ১ম অধ্যায়">
+                </div>
+                <div class="input-group">
+                    <label>ফাইনাল ফাইল নাম (HTML)</label>
+                    <input type="text" id="fileName" placeholder="উদা: bcs_bangla_ch1.html">
+                </div>
+            </div>
+        </div>
+        <!-- GitHub Control Block -->
+        <div class="github-box">
+            <h4>গিটহাব ক্লাউড সিঙ্ক</h4>
+            <div class="github-btn-container">
+                <button class="btn btn-orange" onclick="clearGitHubToken()">🔄 রিসেট</button>
+                <button class="btn btn-success" onclick="uploadToGitHub()">🚀 আপলোড</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Multi-Topic Dynamic Workspace -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="font-size: 16px; color: #334155; font-weight: 700;">অধ্যায়ের পাঠ বা টপিকসমূহ</h3>
+        <button class="btn" onclick="addNewTopic()">+ নতুন বাটন/টপিক যুক্ত করুন</button>
+    </div>
+    
+    <div id="topicContainer" class="topic-manager">
+        <!-- Topics will be dynamically injected here -->
+    </div>
+    
+    <!-- Live Preview Section -->
+    <div class="preview-section">
+        <div class="preview-title">লাইভ প্রিভিউ (ইউজাররা যেমন দেখবে)</div>
+        <div class="user-view-simulation">
+            <!-- Simulated Topic Buttons -->
+            <div id="previewTopicButtons" class="user-topic-buttons"></div>
+            <!-- Simulated Active Content Panel -->
+            <div id="previewContentDisplay" class="user-content-display tex2jax_process">
+                টপিক বাটন তৈরি করলে এখানে প্রশ্নসমূহ প্রদর্শিত হবে।
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="overlay">
+    <div class="spinner"></div>
+    <h3 id="loadingText" style="margin-top: 10px;">গিটহাবে আপলোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</h3>
+</div>
+
+<!-- Custom Toast Message UI element -->
+<div id="customToast" class="custom-toast"></div>
+
+<!-- Custom Confirm Modal UI elements -->
+<div id="customConfirmModal" class="custom-dialog-wrapper">
+    <div class="custom-dialog-box">
+        <div class="dialog-title" id="confirmTitle">সতর্কতা</div>
+        <div class="dialog-message" id="confirmMessage">আপনি কি এই কাজটি করতে চান?</div>
+        <div class="dialog-buttons">
+            <button class="btn" style="background: #64748b;" id="confirmCancelBtn">না</button>
+            <button class="btn btn-danger" id="confirmOkBtn">হ্যাঁ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State Management
+    let store = {
+        topics: []
+    };
+    
+    // Auto load on init
+    window.onload = function() {
+        const savedDraft = localStorage.getItem('study_material_h_draft');
+        if (savedDraft) {
+            try {
+                store = JSON.parse(savedDraft);
+                // Sync meta fields
+                document.getElementById('quizTitle').value = store.quizTitle || '';
+                document.getElementById('quizSubject').value = store.quizSubject || '';
+                document.getElementById('quizChapter').value = store.quizChapter || '';
+                document.getElementById('fileName').value = store.fileName || '';
+                
+                // Rebuild UI
+                renderTopics();
+            } catch (e) {
+                initDefaultStructure();
+            }
+        } else {
+            initDefaultStructure();
+        }
+        
+        // Setup input listeners for meta fields to save draft
+        ['quizTitle', 'quizSubject', 'quizChapter', 'fileName'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateAndSave);
+        });
+    };
+    
+    function initDefaultStructure() {
+        store.topics = [];
+        addNewTopic();
+    }
+    
+    function updateAndSave() {
+        store.quizTitle = document.getElementById('quizTitle').value;
+        store.quizSubject = document.getElementById('quizSubject').value;
+        store.quizChapter = document.getElementById('quizChapter').value;
+        store.fileName = document.getElementById('fileName').value;
+        
+        localStorage.setItem('study_material_h_draft', JSON.stringify(store));
+        renderLivePreview();
+    }
+
+    // Custom Toast Alert Helper
+    function showToast(message, duration = 3000) {
+        const toast = document.getElementById('customToast');
+        toast.innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, duration);
+    }
+
+    // Custom Confirmation Helper replacing native confirm()
+    function customConfirm(title, message, onConfirm) {
+        const wrapper = document.getElementById('customConfirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const messageEl = document.getElementById('confirmMessage');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+        const okBtn = document.getElementById('confirmOkBtn');
+
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        wrapper.style.display = 'flex';
+
+        const cleanUp = () => {
+            wrapper.style.display = 'none';
+            // Remove handlers to prevent duplicates
+            okBtn.onclick = null;
+            cancelBtn.onclick = null;
+        };
+
+        okBtn.onclick = () => {
+            cleanUp();
+            onConfirm();
+        };
+
+        cancelBtn.onclick = () => {
+            cleanUp();
+        };
+    }
+
+    // Topic Actions
+    function addNewTopic() {
+        const topicId = 'topic_' + Date.now() + Math.random().toString(36).substr(2, 5);
+        store.topics.push({
+            id: topicId,
+            title: 'নতুন টপিক বা পাঠ',
+            blocks: []
+        });
+        updateAndSave();
+        renderTopics();
+        showToast('নতুন টপিক যুক্ত করা হয়েছে');
+    }
+    
+    function removeTopic(topicId) {
+        customConfirm(
+            'টপিক ডিলিট', 
+            'এই বাটন/টপিকটি এবং এর ভেতরের সব প্রশ্ন ডিলিট করতে চান?', 
+            () => {
+                store.topics = store.topics.filter(t => t.id !== topicId);
+                updateAndSave();
+                renderTopics();
+                showToast('টপিকটি সফলভাবে ডিলিট করা হয়েছে');
+            }
+        );
+    }
+    
+    function updateTopicTitle(topicId, val) {
+        const topic = store.topics.find(t => t.id === topicId);
+        if(topic) {
+            topic.title = val;
+            updateAndSave();
+        }
+    }
+    
+    // Content Block Actions inside Topics
+    function addContentBlock(topicId, type) {
+        const topic = store.topics.find(t => t.id === topicId);
+        if(topic) {
+            const blockId = 'block_' + Date.now() + Math.random().toString(36).substr(2, 5);
+            topic.blocks.push({
+                id: blockId,
+                type: type, // 'text' or 'image'
+                value: ''
+            });
+            updateAndSave();
+            renderTopics();
+            showToast(type === 'text' ? 'টেক্সট ব্লক যুক্ত হয়েছে' : 'ইমেজ ব্লক যুক্ত হয়েছে');
+        }
+    }
+    
+    // Remove Block
+    function removeBlock(topicId, blockId) {
+        const topic = store.topics.find(t => t.id === topicId);
+        if(topic) {
+            topic.blocks = topic.blocks.filter(b => b.id !== blockId);
+            updateAndSave();
+            renderTopics();
+            showToast('ব্লক ডিলিট করা হয়েছে');
+        }
+    }
+    
+    function updateBlockValue(topicId, blockId, val) {
+        const topic = store.topics.find(t => t.id === topicId);
+        if(topic) {
+            const block = topic.blocks.find(b => b.id === blockId);
+            if(block) {
+                block.value = val;
+                updateAndSave();
+            }
+        }
+    }
+    
+    function moveBlock(topicId, blockIndex, direction) {
+        const topic = store.topics.find(t => t.id === topicId);
+        if(!topic) return;
+        const targetIndex = blockIndex + direction;
+        if(targetIndex < 0 || targetIndex >= topic.blocks.length) return;
+        
+        // Swap
+        const temp = topic.blocks[blockIndex];
+        topic.blocks[blockIndex] = topic.blocks[targetIndex];
+        topic.blocks[targetIndex] = temp;
+        
+        updateAndSave();
+        renderTopics();
+    }
+    
+    // UI Rendering for Admin Workspace
+    function renderTopics() {
+        const container = document.getElementById('topicContainer');
+        container.innerHTML = '';
+        store.topics.forEach((topic) => {
+            const topicCard = document.createElement('div');
+            topicCard.className = 'topic-card';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'topic-header';
+            header.innerHTML = `
+                <input type="text" class="topic-title-input" value="${escapeHtml(topic.title)}" placeholder="টপিক/বাটনের নাম লিখুন..." oninput="updateTopicTitle('${topic.id}', this.value)">
+                <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="removeTopic('${topic.id}')">টপিক ডিলিট</button>
+            `;
+            topicCard.appendChild(header);
+            
+            // Body Workspace
+            const body = document.createElement('div');
+            body.className = 'topic-body';
+            
+            const blockContainer = document.createElement('div');
+            blockContainer.className = 'block-container';
+            topic.blocks.forEach((block, idx) => {
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'content-block';
+                
+                const bHeader = document.createElement('div');
+                bHeader.className = 'block-header';
+                bHeader.innerHTML = `<span>${block.type === 'text' ? 'টেক্সট ব্লক' : 'ছবির লিংক ব্লক'}</span>`;
+                blockDiv.appendChild(bHeader);
+                
+                const textarea = document.createElement('textarea');
+                textarea.value = block.value;
+                textarea.placeholder = block.type === 'text' ? 'প্রশ্ন এবং অপশন লিখুন... উত্তর হাইড করতে "উত্তর: ক" লিখুন।' : 'ছবির সরাসরি URL লিংক দিন...';
+                textarea.oninput = (e) => updateBlockValue(topic.id, block.id, e.target.value);
+                blockDiv.appendChild(textarea);
+                
+                // Actions for Block
+                const bActions = document.createElement('div');
+                bActions.className = 'block-actions';
+                bActions.innerHTML = `
+                    <button class="btn" style="padding:4px 10px; background:#64748b;" onclick="moveBlock('${topic.id}', ${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>↑ ওপরে</button>
+                    <button class="btn" style="padding:4px 10px; background:#64748b;" onclick="moveBlock('${topic.id}', ${idx}, 1)" ${idx === topic.blocks.length - 1 ? 'disabled' : ''}>↓ নিচে</button>
+                    <button class="btn btn-danger" style="padding:4px 10px; margin-left:auto;" onclick="removeBlock('${topic.id}', '${block.id}')">ডিলিট</button>
+                `;
+                blockDiv.appendChild(bActions);
+                blockContainer.appendChild(blockDiv);
+            });
+            body.appendChild(blockContainer);
+            
+            // Add Block Action Buttons
+            const addActions = document.createElement('div');
+            addActions.style.display = 'flex';
+            addActions.style.gap = '10px';
+            addActions.innerHTML = `
+                <button class="btn" style="background:#4b5563;" onclick="addContentBlock('${topic.id}', 'text')">+ টেক্সট ব্লক যুক্ত করুন</button>
+                <button class="btn" style="background:#4b5563;" onclick="addContentBlock('${topic.id}', 'image')">+ ছবির লিংক যুক্ত করুন</button>
+            `;
+            body.appendChild(addActions);
+            topicCard.appendChild(body);
+            container.appendChild(topicCard);
+        });
+        renderLivePreview();
+    }
+    
+    // Live Preview Management
+    let activePreviewTopicId = null;
+    function renderLivePreview() {
+        const btnContainer = document.getElementById('previewTopicButtons');
+        const displayPanel = document.getElementById('previewContentDisplay');
+        
+        btnContainer.innerHTML = '';
+        
+        if (store.topics.length === 0) {
+            btnContainer.innerHTML = '<p style="color:#94a3b8;">কোনো বাটন তৈরি করা হয়নি</p>';
+            displayPanel.innerHTML = 'টপিক বাটন তৈরি করলে এখানে লিস্ট আকারে দেখাবে।';
+            return;
+        }
+        if (!activePreviewTopicId || !store.topics.some(t => t.id === activePreviewTopicId)) {
+            activePreviewTopicId = store.topics[0].id;
+        }
+        // Render Topic Buttons
+        store.topics.forEach(topic => {
+            const btn = document.createElement('button');
+            btn.className = `user-topic-btn ${topic.id === activePreviewTopicId ? 'active' : ''}`;
+            btn.innerText = topic.title || 'শিরোনামহীন বাটন';
+            btn.onclick = () => {
+                activePreviewTopicId = topic.id;
+                renderLivePreview();
+            };
+            btnContainer.appendChild(btn);
+        });
+        // Render Active Topic Content
+        const activeTopic = store.topics.find(t => t.id === activePreviewTopicId);
+        if (activeTopic && activeTopic.blocks.length > 0) {
+            displayPanel.innerHTML = '';
+            activeTopic.blocks.forEach(block => {
+                if (!block.value.trim()) return;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.style.marginBottom = '20px';
+                itemDiv.style.lineHeight = '1.6';
+                if (block.type === 'text') {
+                    let processedText = escapeHtml(block.value).replace(/\n/g, '<br>');
+                    processedText = processedText.replace(/(উত্তর:\s*[কখগঘ])/g, '<span class="hidden-ans" onclick="revealAnswer(this)">$1</span>');
+                    itemDiv.innerHTML = `<div>${processedText}</div>`;
+                } else if (block.type === 'image') {
+                    itemDiv.innerHTML = `<img src="${escapeHtml(block.value)}" class="preview-img" alt="Material Diagram" onerror="this.style.display='none'">`;
+                }
+                displayPanel.appendChild(itemDiv);
+            });
+        } else {
+            displayPanel.innerHTML = '<p style="color:#94a3b8; text-align:center;">এই বাটনের অধীনে কোনো প্রশ্ন যুক্ত করা হয়নি।</p>';
+        }
+        refreshMath();
+    }
+    
+    function revealAnswer(element) {
+        if (element.classList.contains('reveal')) return;
+        element.classList.add('reveal');
+        setTimeout(() => {
+            element.classList.remove('reveal');
+        }, 2000);
+    }
+    
+    function refreshMath() {
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise();
+        }
+    }
+    
+    function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    // Token Utilities
+    function clearGitHubToken() {
+        localStorage.removeItem('github_pat_token');
+        showToast('সংরক্ষিত গিটহাব টোকেন মুছে ফেলা হয়েছে');
+    }
+    
+    // --- HTML File Generation and GitHub Upload Core ---
+    function generateUserHTML() {
+        const title = store.quizTitle || 'Revision Study Material';
+        const subject = store.quizSubject || '';
+        const chapter = store.quizChapter || '';
+        const embeddedJSON = JSON.stringify(store.topics);
+        return `<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']], displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']] }
+        };
+    <\/script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #f8fafc; color: #1e293b; padding: 10px; font-family: system-ui, -apple-system, sans-serif; }
+        @media (max-width: 600px) {
+            body { padding: 4px; }
+        }
+        
+        /* Full Display Width Setup inside output file - Responsive Edge margins minimized */
+        .user-top-nav { width: 100%; margin: 0 auto 12px auto; display: flex; align-items: center; }
+        .user-back-btn { display: inline-flex; align-items: center; gap: 6px; background: #64748b; color: white; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; transition: background 0.2s; }
+        .user-back-btn:hover { background: #475569; }
+        
+        .wrapper { width: 100%; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        @media (max-width: 600px) {
+            .wrapper { padding: 12px; } /* Zero padding waste */
+        }
+        .header-box { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+        .main-title { font-size: 20px; color: #4f46e5; margin-bottom: 5px; }
+        .sub-meta { font-size: 14.5px; color: #64748b; }
+        .topic-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px; }
+        .topic-trigger { background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .topic-trigger.active { background: #4f46e5; color: white; }
+        .content-body { background: #ffffff; min-height: 120px; font-size: 16px; }
+        .block-item { margin-bottom: 22px; line-height: 1.6; word-wrap: break-word; }
+        
+        .hidden-ans { background-color: #334155; border: 1px solid #334155; color: #334155; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.1s; display: inline-block; user-select: none; }
+        .hidden-ans.reveal { background-color: #dcfce7; border: 1px solid #22c55e; color: #15803d; }
+        .content-img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 8px; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+<div class="user-top-nav">
+    <a href="index.html" class="user-back-btn">⬅️ হোমপেজ</a>
+</div>
+<div class="wrapper">
+    <div class="header-box">
+        <h2 class="main-title">${title}</h2>
+        <div class="sub-meta">${subject} ${chapter ? ' • ' + chapter : ''}</div>
+    </div>
+    <div id="topicButtons" class="topic-bar"></div>
+    <div id="mainContentArea" class="content-body"></div>
+</div>
+<script>
+    const dataset = ${embeddedJSON};
+    let currentActiveId = null;
+    window.onload = function() {
+        if(dataset && dataset.length > 0) {
+            setupNavigation();
+        } else {
+            document.getElementById('mainContentArea').innerHTML = '<p style="text-align:center;color:#94a3b8;">কোনো কন্টেন্ট পাওয়া যায়নি।</p>';
+        }
+    };
+    function setupNavigation() {
+        const container = document.getElementById('topicButtons');
+        currentActiveId = dataset[0].id;
+        dataset.forEach(topic => {
+            const btn = document.createElement('button');
+            btn.className = 'topic-trigger';
+            btn.id = 'btn_' + topic.id;
+            btn.innerText = topic.title || 'পাঠ';
+            btn.onclick = () => switchTopic(topic.id);
+            container.appendChild(btn);
+        });
+        
+        renderActiveContent();
+    }
+    function switchTopic(id) {
+        currentActiveId = id;
+        renderActiveContent();
+    }
+    function renderActiveContent() {
+        document.querySelectorAll('.topic-trigger').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.getElementById('btn_' + currentActiveId);
+        if(activeBtn) activeBtn.classList.add('active');
+        const displayArea = document.getElementById('mainContentArea');
+        displayArea.innerHTML = '';
+        const targetTopic = dataset.find(t => t.id === currentActiveId);
+        if(targetTopic && targetTopic.blocks.length > 0) {
+            targetTopic.blocks.forEach(block => {
+                if(!block.value.trim()) return;
+                const div = document.createElement('div');
+                div.className = 'block-item';
+                if(block.type === 'text') {
+                    let text = escapeData(block.value).replace(/\\n/g, '<br>');
+                    text = text.replace(/(উত্তর:\\s*[কখগঘ])/g, '<span class="hidden-ans" onclick="reveal(this)">$1</span>');
+                    div.innerHTML = text;
+                } else if(block.type === 'image') {
+                    div.innerHTML = \`<img src="\${escapeData(block.value)}" class="content-img" alt="Study Image" onerror="this.style.display='none'">\`;
+                }
+                displayArea.appendChild(div);
+            });
+        } else {
+            displayArea.innerHTML = '<p style="text-align:center;color:#94a3b8;padding-top:20px;">এই পাঠে কোনো প্রশ্ন নেই।</p>';
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise();
+        }
+    }
+    function reveal(el) {
+        if (el.classList.contains('reveal')) return;
+        el.classList.add('reveal');
+        setTimeout(() => el.classList.remove('reveal'), 2000);
+    }
+    function escapeData(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+<\/script>
+</body>
+</html>`;
+    }
+    
+    // GitHub Commits Integration Layer
+    async function uploadToGitHub() {
+        const fName = document.getElementById('fileName').value.trim();
+        if(!fName) {
+            showToast('ফাইলের একটি সঠিক নাম দিন!');
+            return;
+        }
+        
+        const finalFileName = fName.endsWith('.html') ? fName : fName + '.html';
+        let token = localStorage.getItem('github_pat_token');
+        if (!token) {
+            token = prompt("আপনার GitHub Personal Access Token (PAT) ইনপুট দিন:");
+            if (!token) return;
+            localStorage.setItem('github_pat_token', token);
+        }
+        const overlay = document.getElementById('loadingOverlay');
+        const loadText = document.getElementById('loadingText');
+        
+        overlay.style.display = 'flex';
+        loadText.innerText = "গিটহাব ফাইল তৈরি ও যাচাইকরণ চলছে...";
+        const owner = "palashmahmod";
+        const repo = "quiz-study-files";
+        const path = finalFileName;
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+        const generatedHtmlContent = generateUserHTML();
+        const base64Content = btoa(unescape(encodeURIComponent(generatedHtmlContent)));
+        let sha = null;
+        
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if(res.status === 200) {
+                const data = await res.json();
+                sha = data.sha;
+            }
+        } catch(e) { console.log("New file check executed"); }
+        
+        loadText.innerText = "গিটহাবে ডেটা পাঠানো হচ্ছে...";
+        const bodyPayload = {
+            message: `Generated Multi-Topic Study Material: ${finalFileName}`,
+            content: base64Content
+        };
+        if(sha) bodyPayload.sha = sha;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify(bodyPayload)
+            });
+            if(response.ok) {
+                showToast(`সফলভাবে আপলোড সম্পন্ন হয়েছে: ${finalFileName}`, 4000);
+            } else {
+                const errData = await response.json();
+                alert(`আপলোড ব্যর্থ হয়েছে: ${errData.message || response.statusText}`);
+            }
+        } catch(err) {
+            alert(`নেটওয়ার্ক ত্রুটি: ${err.message}`);
+        } finally {
+            overlay.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
