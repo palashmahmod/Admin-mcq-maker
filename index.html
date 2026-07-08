@@ -144,6 +144,7 @@
         .btn-h { background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%); }
         .btn-d { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
         .btn-e { background: linear-gradient(135deg, #8a2be2 0%, #ff1493 100%); }
+        .btn-i { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); } /* নতুন বাটনের কালার স্টাইল */
         
         .logout-link {
             display: block; text-align: center; margin-top: 35px;
@@ -216,6 +217,11 @@
                 <i class="fas fa-note-sticky"></i>
                 <span>কুইজ নোট সংরক্ষণ</span>
             </a>
+            <!-- এখানে নতুন বাটনটি যুক্ত করা হয়েছে -->
+            <a href="file_I.html" class="nav-btn btn-i">
+                <i class="fas fa-id-card"></i>
+                <span>GPA আইডি</span>
+            </a>
         </div>
         <a class="logout-link" onclick="logout()">লগআউট করুন</a>
     </div>
@@ -245,7 +251,7 @@
             document.getElementById('main-content').style.display = 'block';
         }
         function logout() {
-            localStorage.removeItem('isLoggedIn');
+            box = localStorage.removeItem('isLoggedIn');
             location.reload();
         }
     </script>
