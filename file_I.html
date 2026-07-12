@@ -6,8 +6,8 @@
     <title>অ্যাডমিন প্যানেল - আইডি ম্যানেজার</title>
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #eef2f3; padding: 20px; color: #333; margin: 0; }
-        .admin-container { width: 100%; max-width: 700px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .admin-container { width: 90%; max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; font-size: 16px; margin-bottom: 20px; }
         .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
         .full-width { grid-column: span 2; }
@@ -15,52 +15,54 @@
         .btn-add { background: #27ae60; color: white; margin-top: 5px; }
         .btn-add:hover { background: #219653; }
         
-        .user-list-section { margin-top: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 13px; }
+        .user-list-section { text-align: center; margin-top: 2px; }
+        table { width: 250%; border-collapse: collapse; margin-top: 5px; background: #fff; table-layout: auto; }
+        th, td { border: 1px solid #ddd; padding: 5px; text-align: center; font-size: 13px; }
         th { background: #2c3e50; color: white; }
-        .btn-del { background: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* কলামের প্রস্থ পরিবর্তনের নতুন স্টাইল */
+        .col-name { width: 35%; text-align: left; text-align: center; } /* নাম কলামের সাইজ ৩ গুণ বৃদ্ধি এবং টেক্সট বামে বিন্যাস */
+        .col-action { width: 140px; white-space: nowrap; } /* অ্যাকশন কলামের প্রস্থ বৃদ্ধি ও বাটন পাশাপাশি লক করা */
+        
+        /* অ্যাকশন বাটনের সংশোধিত ডিজাইন */
+        .action-btns-wrapper { display: flex; gap: 12px; justify-content: center; align-items: center; }
+        .btn-edit { background: #2980b9; color: white; padding: 3px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .btn-edit:hover { background: #3498db; }
+        .btn-del { background: #e74c3c; color: white; padding: 3px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .btn-del:hover { background: #c0392b; }
         
-        /* নতুন বাটনের সিম্পল স্টাইল */
-        .btn-back { display: inline-block; background: #7f8c8d; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 15px; transition: 0.2s; }
+        .btn-back { display: inline-block; background-color: #34495e; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 15px; transition: 0.2s; }
         .btn-back:hover { background: #95a5a6; }
-        .btn-edit { background: #2980b9; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-        .btn-edit:hover { background: #3498db; }
     </style>
 </head>
 <body>
-
 <div class="admin-container">
-    <!-- ১ ও ২ নম্বর পরিবর্তন: ফিরে যাওয়ার বাটন এবং তার ঠিক নিচে টাইটেল -->
     <a href="index.html" class="btn-back">← ফিরে যান</a>
-    <h2>🔑 শিক্ষক আইডি ও তথ্য প্যানেল</h2>
+    <h2><u>🔑 শিক্ষক আইডি ও তথ্য প্যানেল</u></h2>
     
-    <!-- নতুন ইউজার তৈরি ও এডিট করার ফর্ম -->
     <div class="form-group">
-        <input type="text" id="userId" placeholder="আইডি নম্বর (উদা: 101)">
-        <input type="password" id="userPin" placeholder="পিন নম্বর (উদা: 1234)">
+        <input type="text" id="userId" placeholder="আইডি নম্বর">
+        <input type="password" id="userPin" placeholder="পিন নম্বর">
         <input type="text" id="teacherName" placeholder="শিক্ষকের নাম" class="full-width">
-        <input type="text" id="className" placeholder="শ্রেণি (উদা: ৮ম)">
-        <input type="text" id="sectionName" placeholder="শাখা/বিভাগ (উদা: ক)">
+        <input type="text" id="className" placeholder="শ্রেণি">
+        <input type="text" id="sectionName" placeholder="শাখা/বিভাগ">
         <input type="text" id="year" placeholder="সাল (উদা: ২০২৬)" class="full-width" value="২০২৬">
         <button id="addBtn" class="btn-add full-width">নতুন আইডি যুক্ত করুন</button>
     </div>
 
-    <!-- নিবন্ধিত আইডির তালিকা -->
     <div class="user-list-section">
-        <h3>নিবন্ধিত আইডি সমূহ:</h3>
+        <h3><u>নিবন্ধিত আইডি সমূহ:</u></h3>
         <div style="overflow-x: auto;">
             <table>
                 <thead>
                     <tr>
                         <th>আইডি</th>
                         <th>পিন</th>
-                        <th>নাম</th>
+                        <th class="col-name">নাম</th>
                         <th>শ্রেণি</th>
                         <th>শাখা</th>
                         <th>সাল</th>
-                        <th>অ্যাকশন</th>
+                        <th class="col-action">অ্যাকশন</th>
                     </tr>
                 </thead>
                 <tbody id="userTableBody">
@@ -71,11 +73,10 @@
     </div>
 </div>
 
-<!-- Firebase Script -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
     import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
-
+    
     const firebaseConfig = {
         apiKey: "AIzaSyA_NQ7MQTKkQbvVXGAxUAAL9O50Z7OVOvw",
         authDomain: "gpa-calculation-710dc.firebaseapp.com",
@@ -88,11 +89,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    // লাইভ ডাটা লোকাল রাখার অবজেক্ট (এডিটের জন্য)
     let localUsersData = {};
 
-    // ফায়ারবেসে ডাটা সেভ ও আপডেট করার ফাংশন
     function addUser() {
         const id = document.getElementById('userId').value.trim();
         const pin = document.getElementById('userPin').value.trim();
@@ -113,8 +111,7 @@
             sectionName: sName,
             year: rYear
         }).then(() => {
-            alert("তথ্য সফলভাবে সংরক্ষিত হয়েছে!");
-            // ফর্ম ক্লিয়ার এবং রিসেট করা
+            alert("তথ্য সফলভাবে সংরক্ষিত হয়েছে!");
             document.getElementById('userId').value = '';
             document.getElementById('userId').disabled = false;
             document.getElementById('userPin').value = '';
@@ -127,25 +124,22 @@
         });
     }
 
-    // ৩ নম্বর পরিবর্তন: আইডি এডিট করার গ্লোবাল ফাংশন
     window.editUser = function(id) {
         const user = localUsersData[id];
         if(user) {
             document.getElementById('userId').value = id;
-            document.getElementById('userId').disabled = true; // এডিট করার সময় মেইন আইডি লক থাকবে
+            document.getElementById('userId').disabled = true;
             document.getElementById('userPin').value = user.pin || '';
             document.getElementById('teacherName').value = user.teacherName || '';
             document.getElementById('className').value = user.className || '';
             document.getElementById('sectionName').value = user.sectionName || '';
             document.getElementById('year').value = user.year || '২০২৬';
             
-            // বাটনের টেক্সট পরিবর্তন
             document.getElementById('addBtn').innerText = "তথ্য আপডেট করুন";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 
-    // আইডি ডিলিট করার ফাংশন
     window.deleteUser = function(id) {
         if(confirm(`আপনি কি নিশ্চিত যে আইডি: ${id} মুছে ফেলতে চান? এটি ডিলিট করলে ঐ ইউজারের ডিভাইস তাৎক্ষনিক লগআউট হয়ে যাবে!`)) {
             remove(ref(db, 'users/' + id))
@@ -154,7 +148,6 @@
         }
     }
 
-    // ফায়ারবেস থেকে লাইভ ডাটা এনে টেবিলে দেখানো (এডিট বাটনসহ)
     onValue(ref(db, 'users'), (snapshot) => {
         const tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
@@ -167,13 +160,15 @@
                     <tr>
                         <td><b>${id}</b></td>
                         <td>${user.pin}</td>
-                        <td>${user.teacherName}</td>
+                        <td class="col-name">${user.teacherName}</td>
                         <td>${user.className}</td>
                         <td>${user.sectionName}</td>
                         <td>${user.year}</td>
-                        <td>
-                            <button class="btn-edit" onclick="editUser('${id}')">এডিট</button>
-                            <button class="btn-del" onclick="deleteUser('${id}')">ডিলিট</button>
+                        <td class="col-action">
+                            <div class="action-btns-wrapper">
+                                <button class="btn-edit" onclick="editUser('${id}')">Edit</button>
+                                <button class="btn-del" onclick="deleteUser('${id}')">Delate</button>
+                            </div>
                         </td>
                     </tr>
                 `;
