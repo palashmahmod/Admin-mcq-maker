@@ -73,31 +73,33 @@
         .btn-cancel { background: var(--danger); }
         .btn:active { transform: translateY(2px); box-shadow: 0 2px 0px rgba(0,0,0,0.2); }
         .user-list { margin-top: 20px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
+        table { width: 200%; border-collapse: collapse; }
+        th, td { padding: 6px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
         th { background: var(--primary); color: white; }
+        
+        /* অ্যাকশন বাটনের সাধারণ স্টাইল */
+        .action-btn-wrapper { display: flex; gap: 10px; justify-content: center; }
+        .edit-btn { color: var(--accent); cursor: pointer; border: none; background: none; font-size: 18px; }
         .del-btn { color: var(--danger); cursor: pointer; border: none; background: none; font-size: 18px; }
         .status-msg { font-size: 12px; text-align: center; color: #7f8c8d; margin-top: 5px; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="top-bar">
         <a href="index.html" id="homeLink" class="back-btn"><i class="fas fa-arrow-left"></i></a>
         <h2 style="margin:0; font-size: 18px;">ইউজার ম্যানেজমেন্ট</h2>
     </div>
-
+    
     <button class="btn-toggle" onclick="toggleForm()" id="toggleBtn">
         <i class="fas fa-plus-circle"></i> আইডি তৈরি করুন
     </button>
-
+    
     <div id="input-form">
         <div class="form-group">
             <label>শিক্ষার্থীর নাম:</label>
             <input type="text" id="name" placeholder="নাম লিখুন">
         </div>
-
         <div style="display: flex; gap: 10px;">
             <div class="form-group" style="flex:1">
                 <label>শ্রেণি:</label>
@@ -123,7 +125,6 @@
                 </select>
             </div>
         </div>
-
         <div style="display: flex; gap: 10px;">
             <div class="form-group" style="flex:1">
                 <label>রোল নং (বাংলায়):</label>
@@ -139,13 +140,12 @@
             <label>পিন পাসওয়ার্ড (English):</label>
             <input type="number" id="userPass" placeholder="Login PIN">
         </div>
-
         <div class="btn-row">
-            <button class="btn btn-save" onclick="saveUser()">সেভ করুন</button>
-            <button class="btn btn-cancel" onclick="toggleForm()">বাতিল</button>
+            <button class="btn btn-save" id="submitBtn" onclick="saveUser()">সেভ করুন</button>
+            <button class="btn btn-cancel" onclick="cancelAction()">বাতিল</button>
         </div>
     </div>
-
+    
     <div class="user-list">
         <h3 style="font-size: 16px; color: var(--primary);"><i class="fas fa-users"></i> ইউজার তালিকা</h3>
         <table>
@@ -157,7 +157,7 @@
                     <th>শ্রেণি</th>
                     <th>শাখা</th>
                     <th>রোল</th>
-                    <th>#</th>
+                    <th>অ্যাকশন</th>
                 </tr>
             </thead>
             <tbody id="user-table-body">
@@ -169,9 +169,7 @@
 </div>
 
 <script>
-    // Cache busting for back link
     document.getElementById('homeLink').href = "index.html?v=" + Date.now();
-
     const firebaseConfig = {
         apiKey: "AIzaSyBmCTx0ytWLW6YPeAbUHGEixFOehynuEco",
         databaseURL: "https://quiz-storage-d8707-default-rtdb.firebaseio.com/",
@@ -182,25 +180,25 @@
         firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.database();
+    
+    let globalUsersList = []; // এডিট করার সুবিধার জন্য ডাটা গ্লোবালি রাখার ভেরিয়েবল
 
-    // অ্যাপ ওপেন হলেই Firebase থেকে ডাটা নিয়ে আসবে (ক্লিয়ার ডাটা করলেও থাকবে)
     window.onload = function() {
         syncWithFirebase();
     };
-
+    
     function toggleForm() {
         const form = document.getElementById('input-form');
         const btn = document.getElementById('toggleBtn');
         form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
         btn.style.display = (form.style.display === 'block') ? 'none' : 'block';
     }
-
+    
     function toBanglaNum(input) {
         const banglaDigits = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
         input.value = input.value.split('').map(digit => banglaDigits[digit] || digit).join('');
     }
-
-    // Firebase থেকে সকল ইউজার ডাটা সিঙ্ক করা
+    
     function syncWithFirebase() {
         db.ref('users').on('value', (snapshot) => {
             const data = snapshot.val();
@@ -209,25 +207,23 @@
                 Object.keys(data).forEach(key => {
                     users.push(data[key]);
                 });
-
-                // সর্টিং (শ্রেণি ও রোল অনুযায়ী)
                 const classOrder = {"৬ষ্ঠ":1, "৭ম":2, "৮ম":3, "৯ম":4, "১০ম":5, "এসএসসি":6};
                 users.sort((a, b) => (classOrder[a.cls] - classOrder[b.cls]) || a.roll.localeCompare(b.roll, 'bn'));
             }
             
-            // LocalStorage আপডেট রাখা যাতে অফলাইনেও দেখা যায়
+            globalUsersList = users; // গ্লোবাল লিস্ট আপডেট
             localStorage.setItem('studentDB', JSON.stringify(users));
             renderTable(users);
             document.getElementById('sync-status').innerText = "সার্ভার ডাটা সিঙ্ক্রোনাইজড";
         }, (error) => {
             console.error("Firebase sync failed: ", error);
-            // অফলাইন থাকলে লোকাল ডাটা দেখানো
             const cachedUsers = JSON.parse(localStorage.getItem('studentDB')) || [];
+            globalUsersList = cachedUsers;
             renderTable(cachedUsers);
             document.getElementById('sync-status').innerText = "অফলাইন মোড (লোকাল ডাটা)";
         });
     }
-
+    
     function saveUser() {
         const name = document.getElementById('name').value.trim();
         const cls = document.getElementById('class').value;
@@ -235,12 +231,12 @@
         const roll = document.getElementById('roll').value.trim();
         const userId = document.getElementById('userId').value.trim();
         const password = document.getElementById('userPass').value.trim(); 
-
+        
         if(!name || !roll || !userId || !password) {
             alert("সবগুলো তথ্য সঠিকভাবে দিন!");
             return;
         }
-
+        
         const userData = { 
             name, 
             cls, 
@@ -250,26 +246,24 @@
             password, 
             createdAt: firebase.database.ServerValue.TIMESTAMP 
         };
-
-        // সরাসরি Firebase এ সেভ (সেখান থেকে অটুমেটিক লিস্ট আপডেট হবে)
+        
         db.ref('users/' + userId).set(userData)
         .then(() => {
+            const isEditing = document.getElementById('userId').disabled;
             clearForm();
             toggleForm();
-            alert("ইউজার সফলভাবে তৈরি হয়েছে!");
+            alert(isEditing ? "ইউজার তথ্য সফলভাবে আপডেট হয়েছে!" : "ইউজার সফলভাবে তৈরি হয়েছে!");
         })
         .catch(err => alert("ত্রুটি: " + err.message));
     }
-
+    
     function renderTable(users) {
         const tbody = document.getElementById('user-table-body');
         tbody.innerHTML = '';
-
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7">কোন ইউজার পাওয়া যায়নি</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">কোন ইউজার পাওয়া যায়নি</td></tr>';
             return;
         }
-
         users.forEach((u) => {
             tbody.innerHTML += `
                 <tr>
@@ -279,27 +273,68 @@
                     <td>${u.cls}</td>
                     <td>${u.section}</td>
                     <td>${u.roll}</td>
-                    <td><button class="del-btn" onclick="deleteUser('${u.userId}')"><i class="fas fa-trash-alt"></i></button></td>
+                    <td>
+                        <div class="action-btn-wrapper">
+                            <button class="edit-btn" onclick="editUser('${u.userId}')" title="এডিট"><i class="fas fa-edit"></i></button>
+                            <button class="del-btn" onclick="deleteUser('${u.userId}')" title="ডিলিট"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
                 </tr>`;
         });
     }
-
-    function deleteUser(uId) {
-        if(confirm("আপনি কি নিশ্চিত? ডিলিট করলে Firebase ডাটাবেজ থেকে এই ইউজারের সকল তথ্য স্থায়ীভাবে মুছে যাবে।")) {
-            // Firebase থেকে ডিলিট করা হলে syncWithFirebase এর কারণে লিস্ট অটো আপডেট হবে
-            db.ref('users/' + uId).remove()
-            .then(() => {
-                alert("ইউজার সফলভাবে মুছে ফেলা হয়েছে।");
-            })
-            .catch(err => alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message));
+    
+    // এডিট ফাংশন যুক্ত করা হলো
+    window.editUser = function(uId) {
+        const user = globalUsersList.find(u => u.userId == uId);
+        if(user) {
+            document.getElementById('name').value = user.name || '';
+            document.getElementById('class').value = user.cls || '৬ষ্ঠ';
+            document.getElementById('section').value = user.section || 'ক';
+            document.getElementById('roll').value = user.roll || '';
+            
+            // আইডি ফিল্ডটি ডিজেবল করে দেওয়া হলো যাতে পরিবর্তন না করা যায়
+            document.getElementById('userId').value = user.userId || '';
+            document.getElementById('userId').disabled = true;
+            
+            document.getElementById('userPass').value = user.password || '';
+            
+            // বাটনের লেখা পরিবর্তন
+            document.getElementById('submitBtn').innerText = "আপডেট করুন";
+            
+            // ফর্ম ওপেন না থাকলে ওপেন করা
+            const form = document.getElementById('input-form');
+            if(form.style.display === 'none' || form.style.display === '') {
+                toggleForm();
+            }
+            
+            // পেজের ওপরের দিকে স্ক্রল হবে যাতে ফর্মটি দেখা যায়
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
-
+    
+    function deleteUser(uId) {
+        if(confirm("আপনি কি নিশ্চিত? ডিলিট করলে Firebase ডাটাবেজ থেকে এই ইউজারের সকল তথ্য স্থায়ীভাবে মুছে যাবে।")) {
+            db.ref('users/' + uId).remove()
+            .then(() => {
+                alert("ইউজার সফলভাবে মুছে ফেলা হয়েছে।");
+            })
+            .catch(err => alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message));
+        }
+    }
+    
     function clearForm() {
         document.getElementById('name').value = '';
         document.getElementById('roll').value = '';
         document.getElementById('userId').value = '';
+        document.getElementById('userId').disabled = false;
         document.getElementById('userPass').value = '';
+        document.getElementById('submitBtn').innerText = "সেভ করুন";
+    }
+
+    // বাতিল বাটনের জন্য আলাদা হ্যান্ডলার যাতে এডিট মোড রিসেট হয়
+    window.cancelAction = function() {
+        clearForm();
+        toggleForm();
     }
 </script>
 </body>
