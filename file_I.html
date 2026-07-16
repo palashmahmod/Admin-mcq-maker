@@ -15,20 +15,20 @@
         .btn-add { background: #27ae60; color: white; margin-top: 5px; }
         .btn-add:hover { background: #219653; }
         
-        .user-list-section { text-align: center; margin-top: 2px; }
-        table { width: 250%; border-collapse: collapse; margin-top: 5px; background: #fff; table-layout: auto; }
-        th, td { border: 1px solid #ddd; padding: 5px; text-align: center; font-size: 13px; }
+        .user-list-section { text-align: center; margin-top: 20px; }
+        table { width: 100%; min-width: 650px; border-collapse: collapse; margin-top: 5px; background: #fff; table-layout: auto; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 13px; }
         th { background: #2c3e50; color: white; }
         
-        /* কলামের প্রস্থ পরিবর্তনের নতুন স্টাইল */
-        .col-name { width: 35%; text-align: left; text-align: center; } /* নাম কলামের সাইজ ৩ গুণ বৃদ্ধি এবং টেক্সট বামে বিন্যাস */
-        .col-action { width: 140px; white-space: nowrap; } /* অ্যাকশন কলামের প্রস্থ বৃদ্ধি ও বাটন পাশাপাশি লক করা */
+        /* কলামের প্রস্থ */
+        .col-name { width: 30%; text-align: center; } 
+        .col-action { width: 140px; white-space: nowrap; } 
         
-        /* অ্যাকশন বাটনের সংশোধিত ডিজাইন */
-        .action-btns-wrapper { display: flex; gap: 12px; justify-content: center; align-items: center; }
-        .btn-edit { background: #2980b9; color: white; padding: 3px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        /* অ্যাকশন বাটন */
+        .action-btns-wrapper { display: flex; gap: 8px; justify-content: center; align-items: center; }
+        .btn-edit { background: #2980b9; color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .btn-edit:hover { background: #3498db; }
-        .btn-del { background: #e74c3c; color: white; padding: 3px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .btn-del { background: #e74c3c; color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .btn-del:hover { background: #c0392b; }
         
         .btn-back { display: inline-block; background-color: #34495e; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 15px; transition: 0.2s; }
@@ -36,6 +36,7 @@
     </style>
 </head>
 <body>
+
 <div class="admin-container">
     <a href="index.html" class="btn-back">← ফিরে যান</a>
     <h2><u>🔑 শিক্ষক আইডি ও তথ্য প্যানেল</u></h2>
@@ -75,7 +76,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-    import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+    import { getDatabase, ref, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
     
     const firebaseConfig = {
         apiKey: "AIzaSyA_NQ7MQTKkQbvVXGAxUAAL9O50Z7OVOvw",
@@ -104,23 +105,27 @@
             return;
         }
 
-        set(ref(db, 'users/' + id), {
-            pin: pin,
-            teacherName: tName,
-            className: cName,
-            sectionName: sName,
-            year: rYear
-        }).then(() => {
+        // এখানে set() এর পরিবর্তে update() ব্যবহার করা হয়েছে যেন results ও config মুছে না যায়
+        const updates = {};
+        updates['users/' + id + '/pin'] = pin;
+        updates['users/' + id + '/teacherName'] = tName;
+        updates['users/' + id + '/className'] = cName;
+        updates['users/' + id + '/sectionName'] = sName;
+        updates['users/' + id + '/year'] = rYear;
+
+        update(ref(db), updates).then(() => {
             alert("তথ্য সফলভাবে সংরক্ষিত হয়েছে!");
+            // ফর্ম ক্লিয়ার করা
             document.getElementById('userId').value = '';
             document.getElementById('userId').disabled = false;
             document.getElementById('userPin').value = '';
             document.getElementById('teacherName').value = '';
             document.getElementById('className').value = '';
             document.getElementById('sectionName').value = '';
+            document.getElementById('year').value = '২০২৬';
             document.getElementById('addBtn').innerText = "নতুন আইডি যুক্ত করুন";
         }).catch((err) => {
-            alert("ত্রুটি: " + err.message);
+            alert(" can't update data: " + err.message);
         });
     }
 
@@ -167,7 +172,7 @@
                         <td class="col-action">
                             <div class="action-btns-wrapper">
                                 <button class="btn-edit" onclick="editUser('${id}')">Edit</button>
-                                <button class="btn-del" onclick="deleteUser('${id}')">Delate</button>
+                                <button class="btn-del" onclick="deleteUser('${id}')">Delete</button>
                             </div>
                         </td>
                     </tr>
