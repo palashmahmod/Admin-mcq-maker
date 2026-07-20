@@ -633,11 +633,8 @@
                 itemDiv.style.marginBottom = '20px';
                 itemDiv.style.lineHeight = '1.6';
                 if (block.type === 'text') {
-                    let processedText = block.value;
-														processedText = processedText.replace(/(উত্তর:\s*[কখগঘ])/g, '####ANS_START####$1####ANS_END####');
-														processedText = escapeHtml(processedText).replace(/\n/g, '<br>');
-														processedText = processedText .replace(/&lt;b&gt;/gi, '<b>').replace(/&lt;\/b&gt;/gi, '</b>') .replace(/&lt;u&gt;/gi, '<u>').replace(/&lt;\/u&gt;/gi, '</u>') .replace(/&lt;i&gt;/gi, '<i>').replace(/&lt;\/i&gt;/gi, '</i>') .replace(/&lt;center&gt;/gi, '<center>').replace(/&lt;\/center&gt;/gi, '</center>') .replace(/\[color=(.*?)\](.*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>');
-														processedText = processedText .replace(/####ANS_START####/g, '<span class="hidden-ans" onclick="revealAnswer(this)">') .replace(/####ANS_END####/g, '</span>');
+                    let processedText = escapeHtml(block.value).replace(/\n/g, '<br>');
+                    processedText = processedText.replace(/(উত্তর:\s*[কখগঘ])/g, '<span class="hidden-ans" onclick="revealAnswer(this)">$1</span>');
                     itemDiv.innerHTML = `<div>${processedText}</div>`;
                 } else if (block.type === 'image') {
                     itemDiv.innerHTML = `<img src="${escapeHtml(block.value)}" class="preview-img" alt="Material Diagram" onerror="this.style.display='none'">`;
@@ -774,11 +771,8 @@
                 const div = document.createElement('div');
                 div.className = 'block-item';
                 if(block.type === 'text') {
-                    let text = block.value; 
-																	text = text.replace(/(উত্তর:\s*[কখগঘ])/g, '####ANS_START####$1####ANS_END####');
-																	text = escapeData(text).replace(/\\n/g, '<br>');
-																	text = text .replace(/&lt;b&gt;/gi, '<b>').replace(/&lt;\/b&gt;/gi, '</b>') .replace(/&lt;u&gt;/gi, '<u>').replace(/&lt;\/u&gt;/gi, '</u>') .replace(/&lt;i&gt;/gi, '<i>').replace(/&lt;\/i&gt;/gi, '</i>') .replace(/&lt;center&gt;/gi, '<center>').replace(/&lt;\/center&gt;/gi, '</center>') .replace(/\[color=(.*?)\](.*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>');
-																	text = text .replace(/####ANS_START####/g, '<span class="hidden-ans" onclick="reveal(this)">') .replace(/####ANS_END####/g, '</span>');
+                    let text = escapeData(block.value).replace(/\\n/g, '<br>');
+                    text = text.replace(/(উত্তর:\\s*[কখগঘ])/g, '<span class="hidden-ans" onclick="reveal(this)">$1</span>');
                     div.innerHTML = text;
                 } else if(block.type === 'image') {
                     div.innerHTML = \`<img src="\${escapeData(block.value)}" class="content-img" alt="Study Image" onerror="this.style.display='none'">\`;
