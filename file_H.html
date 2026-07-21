@@ -506,7 +506,6 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.style.cssText = 'margin-bottom:20px; line-height:1.6;';
                 if (block.type === 'text') {
-                    // HTML ট্যাগের জন্য escape করার প্রয়োজন তুলে নেওয়া হলো
                     let processedText = block.value.replace(/\n/g, '<br>');
                     processedText = processedText.replace(/(উত্তর:\s*[কখগঘ])/g, '<span class="hidden-ans" onclick="revealAnswer(this)">$1</span>');
                     itemDiv.innerHTML = `<div>${processedText}</div>`;
@@ -550,141 +549,128 @@
         const chapter = store.quizChapter || '';
         const embeddedJSON = JSON.stringify(store.topics);
 
-        return `<!DOCTYPE html>
-<html lang="bn">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']], displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']] }
-        };
-    <\/script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #f8fafc; color: #1e293b; padding: 10px; font-family: system-ui, -apple-system, sans-serif; }
-        @media (max-width: 600px) { body { padding: 4px; } }
-        
-        .user-top-nav { width: 100%; margin: 0 auto 12px auto; display: flex; align-items: center; }
-        .user-back-btn { display: inline-flex; align-items: center; gap: 6px; background: #64748b; color: white; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; transition: background 0.2s; }
-        .user-back-btn:hover { background: #475569; }
-        
-        .wrapper { width: 100%; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        @media (max-width: 600px) { .wrapper { padding: 12px; } }
-        .header-box { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
-        .main-title { font-size: 20px; color: #4f46e5; margin-bottom: 5px; }
-        .sub-meta { font-size: 14.5px; color: #64748b; }
-        .topic-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px; }
-        .topic-trigger { background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; }
-        .topic-trigger.active { background: #4f46e5; color: white; }
-        .content-body { background: #ffffff; min-height: 120px; font-size: 16px; }
-        .block-item { font-size: 15px; margin-bottom: 16px; line-height: 1.6; word-wrap: break-word; }
-        
-        .hidden-ans { background-color: #334155; border: 1px solid #334155; color: #334155; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.1s; display: inline-block; user-select: none; }
-        .hidden-ans.reveal { background-color: #dcfce7; border: 1px solid #22c55e; color: #15803d; }
-        .content-img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 8px; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    </style>
-</head>
-<body>
-<div class="user-top-nav"> <a href="javascript:history.back()" class="user-back-btn">⬅️ হোমপেজ</a> </div>
-<div class="wrapper">
-    <div class="header-box">
-        <h2 class="main-title">${title}</h2>
-        <div class="sub-meta">${subject} ${chapter ? ' • ' + chapter : ''}</div>
-    </div>
-    <div id="topicButtons" class="topic-bar"></div>
-    <div id="mainContentArea" class="content-body"></div>
-</div>
-<script>
-    var dataset = ${embeddedJSON};
-    var currentActiveId = null;
-
-    window.onload = function() {
-        if(dataset && dataset.length > 0) {
-            setupNavigation();
-        } else {
-            document.getElementById('mainContentArea').innerHTML = '<p style="text-align:center;color:#94a3b8;">কোনো কন্টেন্ট পাওয়া যায়নি।</p>';
-        }
-    };
-
-    function setupNavigation() {
-        var container = document.getElementById('topicButtons');
-        currentActiveId = dataset[0].id;
-        dataset.forEach(function(topic) {
-            var btn = document.createElement('button');
-            btn.className = 'topic-trigger';
-            btn.id = 'btn_' + topic.id;
-            btn.innerText = topic.title || 'পাঠ';
-            btn.onclick = function() { switchTopic(topic.id); };
-            container.appendChild(btn);
-        });
-        renderActiveContent();
-    }
-
-    function switchTopic(id) {
-        currentActiveId = id;
-        renderActiveContent();
-    }
-
-    function renderActiveContent() {
-        var buttons = document.querySelectorAll('.topic-trigger');
-        for (var i = 0; i < buttons.length; i++) {
-            buttons[i].classList.remove('active');
-        }
-        var activeBtn = document.getElementById('btn_' + currentActiveId);
-        if(activeBtn) activeBtn.classList.add('active');
-
-        var displayArea = document.getElementById('mainContentArea');
-        displayArea.innerHTML = '';
-
-        var targetTopic = null;
-        for (var j = 0; j < dataset.length; j++) {
-            if (dataset[j].id === currentActiveId) {
-                targetTopic = dataset[j];
-                break;
-            }
-        }
-
-        if(targetTopic && targetTopic.blocks && targetTopic.blocks.length > 0) {
-            targetTopic.blocks.forEach(function(block) {
-                if(!block.value || !block.value.trim()) return;
-                var div = document.createElement('div');
-                div.className = 'block-item';
-
-                if(block.type === 'text') {
-                    // HTML ট্যাগ সুন্দরভাবে রেন্ডার হওয়ার ব্যবস্থা
-                    var text = block.value.split('\\n').join('<br>').split('\n').join('<br>');
-                    text = text.replace(/(উত্তর:\\s*[কখগঘ])/g, '<span class="hidden-ans" onclick="reveal(this)">$1</span>');
-                    div.innerHTML = text;
-                } else if(block.type === 'image') {
-                    var img = document.createElement('img');
-                    img.src = block.value;
-                    img.className = 'content-img';
-                    img.alt = 'Study Image';
-                    img.onerror = function() { this.style.display = 'none'; };
-                    div.appendChild(img);
-                }
-                displayArea.appendChild(div);
-            });
-        } else {
-            displayArea.innerHTML = '<p style="text-align:center;color:#94a3b8;padding-top:20px;">এই পাঠে কোনো প্রশ্ন নেই।</p>';
-        }
-
-        if (window.MathJax && MathJax.typesetPromise) {
-            MathJax.typesetPromise();
-        }
-    }
-
-    function reveal(el) {
-        if (el.classList.contains('reveal')) return;
-        el.classList.add('reveal');
-        setTimeout(function() { el.classList.remove('reveal'); }, 2000);
-    }
-<\/script>
-</body>
-</html>`;
+        // সেফ স্ট্রিং যোগফল (String Concatenation) যাতে কোনো SyntaxError না হয়
+        return '<!DOCTYPE html>\n' +
+'<html lang="bn">\n' +
+'<head>\n' +
+'    <meta charset="UTF-8">\n' +
+'    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+'    <title>' + title + '</title>\n' +
+'    <script>\n' +
+'        window.MathJax = {\n' +
+'            tex: { inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]], displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]] }\n' +
+'        };\n' +
+'    <\/script>\n' +
+'    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>\n' +
+'    <style>\n' +
+'        * { box-sizing: border-box; margin: 0; padding: 0; }\n' +
+'        body { background-color: #f8fafc; color: #1e293b; padding: 10px; font-family: system-ui, -apple-system, sans-serif; }\n' +
+'        @media (max-width: 600px) { body { padding: 4px; } }\n' +
+'        .user-top-nav { width: 100%; margin: 0 auto 12px auto; display: flex; align-items: center; }\n' +
+'        .user-back-btn { display: inline-flex; align-items: center; gap: 6px; background: #64748b; color: white; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; transition: background 0.2s; }\n' +
+'        .user-back-btn:hover { background: #475569; }\n' +
+'        .wrapper { width: 100%; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }\n' +
+'        @media (max-width: 600px) { .wrapper { padding: 12px; } }\n' +
+'        .header-box { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }\n' +
+'        .main-title { font-size: 20px; color: #4f46e5; margin-bottom: 5px; }\n' +
+'        .sub-meta { font-size: 14.5px; color: #64748b; }\n' +
+'        .topic-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px; }\n' +
+'        .topic-trigger { background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; }\n' +
+'        .topic-trigger.active { background: #4f46e5; color: white; }\n' +
+'        .content-body { background: #ffffff; min-height: 120px; font-size: 16px; }\n' +
+'        .block-item { font-size: 15px; margin-bottom: 16px; line-height: 1.6; word-wrap: break-word; }\n' +
+'        .hidden-ans { background-color: #334155; border: 1px solid #334155; color: #334155; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.1s; display: inline-block; user-select: none; }\n' +
+'        .hidden-ans.reveal { background-color: #dcfce7; border: 1px solid #22c55e; color: #15803d; }\n' +
+'        .content-img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 8px; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }\n' +
+'    </style>\n' +
+'</head>\n' +
+'<body>\n' +
+'<div class="user-top-nav"> <a href="javascript:history.back()" class="user-back-btn">⬅️ হোমপেজ</a> </div>\n' +
+'<div class="wrapper">\n' +
+'    <div class="header-box">\n' +
+'        <h2 class="main-title">' + title + '</h2>\n' +
+'        <div class="sub-meta">' + subject + (chapter ? ' • ' + chapter : '') + '</div>\n' +
+'    </div>\n' +
+'    <div id="topicButtons" class="topic-bar"></div>\n' +
+'    <div id="mainContentArea" class="content-body"></div>\n' +
+'</div>\n' +
+'<script>\n' +
+'    var dataset = ' + embeddedJSON + ';\n' +
+'    var currentActiveId = null;\n' +
+'    window.onload = function() {\n' +
+'        if(dataset && dataset.length > 0) {\n' +
+'            setupNavigation();\n' +
+'        } else {\n' +
+'            document.getElementById("mainContentArea").innerHTML = "<p style=\\"text-align:center;color:#94a3b8;\\">কোনো কন্টেন্ট পাওয়া যায়নি।</p>";\n' +
+'        }\n' +
+'    };\n' +
+'    function setupNavigation() {\n' +
+'        var container = document.getElementById("topicButtons");\n' +
+'        currentActiveId = dataset[0].id;\n' +
+'        dataset.forEach(function(topic) {\n' +
+'            var btn = document.createElement("button");\n' +
+'            btn.className = "topic-trigger";\n' +
+'            btn.id = "btn_" + topic.id;\n' +
+'            btn.innerText = topic.title || "পাঠ";\n' +
+'            btn.onclick = function() { switchTopic(topic.id); };\n' +
+'            container.appendChild(btn);\n' +
+'        });\n' +
+'        renderActiveContent();\n' +
+'    }\n' +
+'    function switchTopic(id) {\n' +
+'        currentActiveId = id;\n' +
+'        renderActiveContent();\n' +
+'    }\n' +
+'    function renderActiveContent() {\n' +
+'        var buttons = document.querySelectorAll(".topic-trigger");\n' +
+'        for (var i = 0; i < buttons.length; i++) {\n' +
+'            buttons[i].classList.remove("active");\n' +
+'        }\n' +
+'        var activeBtn = document.getElementById("btn_" + currentActiveId);\n' +
+'        if(activeBtn) activeBtn.classList.add("active");\n' +
+'        var displayArea = document.getElementById("mainContentArea");\n' +
+'        displayArea.innerHTML = "";\n' +
+'        var targetTopic = null;\n' +
+'        for (var j = 0; j < dataset.length; j++) {\n' +
+'            if (dataset[j].id === currentActiveId) {\n' +
+'                targetTopic = dataset[j];\n' +
+'                break;\n' +
+'            }\n' +
+'        }\n' +
+'        if(targetTopic && targetTopic.blocks && targetTopic.blocks.length > 0) {\n' +
+'            targetTopic.blocks.forEach(function(block) {\n' +
+'                if(!block.value || !block.value.trim()) return;\n' +
+'                var div = document.createElement("div");\n' +
+'                div.className = "block-item";\n' +
+'                if(block.type === "text") {\n' +
+'                    var text = block.value.replace(/\\n/g, "<br>");\n' +
+'                    text = text.replace(/(উত্তর:\\s*[কখগঘ])/g, \'<span class="hidden-ans" onclick="reveal(this)">$1</span>\');\n' +
+'                    div.innerHTML = text;\n' +
+'                } else if(block.type === "image") {\n' +
+'                    var img = document.createElement("img");\n' +
+'                    img.src = block.value;\n' +
+'                    img.className = "content-img";\n' +
+'                    img.alt = "Study Image";\n' +
+'                    img.onerror = function() { this.style.display = "none"; };\n' +
+'                    div.appendChild(img);\n' +
+'                }\n' +
+'                displayArea.appendChild(div);\n' +
+'            });\n' +
+'        } else {\n' +
+'            displayArea.innerHTML = "<p style=\\"text-align:center;color:#94a3b8;padding-top:20px;\\">এই পাঠে কোনো প্রশ্ন নেই।</p>";\n' +
+'        }\n' +
+'        if (window.MathJax && MathJax.typesetPromise) {\n' +
+'            MathJax.typesetPromise();\n' +
+'        }\n' +
+'    }\n' +
+'    function reveal(el) {\n' +
+'        if (el.classList.contains("reveal")) return;\n' +
+'        el.classList.add("reveal");\n' +
+'        setTimeout(function() { el.classList.remove("reveal"); }, 2000);\n' +
+'    }\n' +
+'<\/script>\n' +
+'</body>\n' +
+'</html>';
     }
 
     async function uploadToGitHub() {
