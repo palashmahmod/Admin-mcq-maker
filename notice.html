@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>নোটিশ প্যানেল - অ্যাডমিন</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #eef2f3; padding: 20px; color: #333; margin: 0; }
+        .container { width: 90%; max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; font-size: 18px; margin-bottom: 20px; }
+        textarea { width: 100%; height: 200px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical; font-family: inherit; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-save { flex: 2; background: #27ae60; color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .btn-save:hover { background: #219653; }
+        .btn-delete { flex: 1; background: #e74c3c; color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-back { display: inline-block; background-color: #34495e; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="file_I.html" class="btn-back">← ফিরে যান</a>
+    <h2>📢 ইউজারদের জন্য সাধারণ নোটিশ</h2>
+    
+    <textarea id="noticeInput" placeholder="এখানে আপনার নোটিশ লিখুন... (একাধিক লাইনে লেখা যাবে)"></textarea>
+    
+    <div class="btn-group">
+        <button id="saveNoticeBtn" class="btn-save">পোস্ট / আপডেট করুন</button>
+        <button id="deleteNoticeBtn" class="btn-delete">মুছে ফেলুন</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA_NQ7MQTKkQbvVXGAxUAAL9O50Z7OVOvw",
+        authDomain: "gpa-calculation-710dc.firebaseapp.com",
+        projectId: "gpa-calculation-710dc",
+        storageBucket: "gpa-calculation-710dc.firebasestorage.app",
+        messagingSenderId: "1092344384301",
+        appId: "1:1092344384301:web:77350bd13958c125ac61a4",
+        measurementId: "G-19E7DVEF4M"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const noticeTextarea = document.getElementById('noticeInput');
+
+    // পূর্বে সেভ করা নোটিশ থাকলে তা লোড করা
+    onValue(ref(db, 'notices/general'), (snapshot) => {
+        if(snapshot.exists()) {
+            noticeTextarea.value = snapshot.val().text || '';
+        } else {
+            noticeTextarea.value = '';
+        }
+    });
+
+    // নোটিশ সেভ / এডিট ফাংশন
+    document.getElementById('saveNoticeBtn').onclick = function() {
+        const text = noticeTextarea.value.trim();
+        if(!text) {
+            alert("অনুগ্রহ করে কিছু লিখুন!");
+            return;
+        }
+
+        set(ref(db, 'notices/general'), {
+            text: text,
+            updatedAt: new Date().toLocaleString('bn-BD')
+        }).then(() => {
+            alert("নোটিশ সফলভাবে সংরক্ষিত হয়েছে!");
+        }).catch((err) => {
+            alert("সমস্যা হয়েছে: " + err.message);
+        });
+    };
+
+    // নোটিশ ডিলিট ফাংশন
+    document.getElementById('deleteNoticeBtn').onclick = function() {
+        if(confirm("আপনি কি নিশ্চিত যে বর্তমান নোটিশটি সম্পূর্ণ মুছে ফেলতে চান?")) {
+            remove(ref(db, 'notices/general')).then(() => {
+                alert("নোটিশটি মুছে ফেলা হয়েছে!");
+                noticeTextarea.value = '';
+            }).catch((err) => {
+                alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message);
+            });
+        }
+    };
+</script>
+
+</body>
+</html>
