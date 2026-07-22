@@ -20,27 +20,33 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 13px; }
         th { background: #2c3e50; color: white; }
         
-        /* কলামের প্রস্থ */
         .col-name { width: 30%; text-align: center; } 
         .col-action { width: 140px; white-space: nowrap; } 
         
-        /* অ্যাকশন বাটন */
         .action-btns-wrapper { display: flex; gap: 8px; justify-content: center; align-items: center; }
         .btn-edit { background: #2980b9; color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .btn-edit:hover { background: #3498db; }
         .btn-del { background: #e74c3c; color: white; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
         .btn-del:hover { background: #c0392b; }
         
-        .btn-back { display: inline-block; background-color: #34495e; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 15px; transition: 0.2s; }
+        /* টপ ন্যাভিগেশন বার - ফ্লেক্সবক্স দিয়ে বাটনের পজিশনিং */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-back { background-color: #34495e; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; transition: 0.2s; }
         .btn-back:hover { background: #95a5a6; }
+        .btn-notice { background-color: #e67e22; color: white; padding: 8px 15px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .btn-notice:hover { background: #d35400; }
     </style>
 </head>
 <body>
-
 <div class="admin-container">
-    <a href="index.html" class="btn-back">← ফিরে যান</a>
+
+    <div class="top-nav">
+        <a href="index.html" class="btn-back">← ফিরে যান</a>
+        <a href="notice.html" class="btn-notice">📢 নোটিশ লিখুন</a>
+    </div>
+
     <h2><u>🔑 শিক্ষক আইডি ও তথ্য প্যানেল</u></h2>
-    
+
     <div class="form-group">
         <input type="text" id="userId" placeholder="আইডি নম্বর">
         <input type="password" id="userPin" placeholder="পিন নম্বর">
@@ -90,6 +96,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+
     let localUsersData = {};
 
     function addUser() {
@@ -105,7 +112,6 @@
             return;
         }
 
-        // এখানে set() এর পরিবর্তে update() ব্যবহার করা হয়েছে যেন results ও config মুছে না যায়
         const updates = {};
         updates['users/' + id + '/pin'] = pin;
         updates['users/' + id + '/teacherName'] = tName;
@@ -115,7 +121,6 @@
 
         update(ref(db), updates).then(() => {
             alert("তথ্য সফলভাবে সংরক্ষিত হয়েছে!");
-            // ফর্ম ক্লিয়ার করা
             document.getElementById('userId').value = '';
             document.getElementById('userId').disabled = false;
             document.getElementById('userPin').value = '';
@@ -125,7 +130,7 @@
             document.getElementById('year').value = '২০২৬';
             document.getElementById('addBtn').innerText = "নতুন আইডি যুক্ত করুন";
         }).catch((err) => {
-            alert(" can't update data: " + err.message);
+            alert("Can't update data: " + err.message);
         });
     }
 
